@@ -1,0 +1,26 @@
+@inherits SettingsGroupBase
+
+<FontPicker Label="Code font" Get="() => T.Code.Font" Set="v => T.Code.Font = v ?? BundledFonts.Mono" />
+<NumberSetting Label="Size" Unit="pt" Min="6" Max="18" Step="0.5" Key="code-size" Get="() => T.Code.SizePt" Set="v => T.Code.SizePt = v" />
+<NumberSetting Label="Line height" Unit="×" Min="1" Max="2.2" Step="0.05" Key="code-lh" Get="() => T.Code.LineHeight" Set="v => T.Code.LineHeight = v" />
+<ColorField Label="Background" AllowNull="true" InheritLabel="Surface colour" Inherited="() => T.Colors.Surface" Get="() => T.Code.Background" Set="v => T.Code.Background = v" />
+<ColorField Label="Text colour" AllowNull="true" InheritLabel="Text colour" Inherited="() => T.Colors.Text" Get="() => T.Code.TextColor" Set="v => T.Code.TextColor = v" />
+<ColorField Label="Border colour" AllowNull="true" InheritLabel="Border colour" Inherited="() => T.Colors.Border" Get="() => T.Code.BorderColor" Set="v => T.Code.BorderColor = v" />
+<NumberSetting Label="Border width" Unit="pt" Min="0" Max="4" Step="0.25" Key="code-bw" Get="() => T.Code.BorderWidthPt" Set="v => T.Code.BorderWidthPt = v" />
+<NumberSetting Label="Corner radius" Unit="pt" Min="0" Max="16" Step="0.5" Key="code-r" Get="() => T.Code.CornerRadiusPt" Set="v => T.Code.CornerRadiusPt = v" />
+<NumberSetting Label="Padding" Unit="pt" Min="0" Max="30" Step="0.5" Key="code-pad" Get="() => T.Code.PaddingPt" Set="v => T.Code.PaddingPt = v" />
+<SwitchSetting Label="Line numbers" Get="() => T.Code.ShowLineNumbers" Set="v => T.Code.ShowLineNumbers = v" />
+<SwitchSetting Label="Language label above the block" Get="() => T.Code.ShowLanguageLabel" Set="v => T.Code.ShowLanguageLabel = v" />
+<SwitchSetting Label="Syntax highlighting" Hint="Colours keywords, strings, numbers and comments in code blocks whose language the app recognises."
+               Get="() => T.Code.SyntaxHighlighting" Set="v => T.Code.SyntaxHighlighting = v" />
+@if (T.Code.SyntaxHighlighting)
+{
+    <EnumSetting TEnum="SyntaxPalette" Label="Highlight palette" Segmented="true" Get="() => T.Code.Palette" Set="v => T.Code.Palette = v"
+                 Hint="Auto picks Light or Dark from the code background. Mono uses weight and italics only." />
+}
+<SwitchSetting Label="Wrap long lines" Hint="When off, the code text shrinks so the longest line fits the width." Get="() => T.Code.WrapLongLines" Set="v => T.Code.WrapLongLines = v" />
+
+<div class="tb-subhead"><span>Inline code</span></div>
+<ColorField Label="Inline background" AllowNull="true" InheritLabel="Code background" Inherited="() => T.Code.Background ?? T.Colors.Surface" Get="() => T.Code.InlineBackground" Set="v => T.Code.InlineBackground = v" />
+<ColorField Label="Inline text colour" AllowNull="true" InheritLabel="Code text colour" Inherited="() => T.Code.TextColor ?? T.Colors.Text" Get="() => T.Code.InlineTextColor" Set="v => T.Code.InlineTextColor = v" />
+<NumberSetting Label="Inline size" Unit="%" Min="60" Max="120" Step="1" Key="code-inline" Get="() => Math.Round(T.Code.InlineScale * 100)" Set="v => T.Code.InlineScale = v / 100" />

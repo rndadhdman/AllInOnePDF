@@ -1,0 +1,880 @@
+{
+  "profile": {
+    "id": "anti-ai-writing",
+    "name": "Universal Human-Centered Writing Quality",
+    "version": "1.0.0",
+    "revision_date": "2026-07-20",
+    "purpose": "Produce specific, accurate, source-faithful writing while detecting and revising common formulaic model patterns.",
+    "changelog_note": "Initial universal writing-quality profile with field-guide coverage, source integrity, mode-aware rules, and research provenance.",
+    "compatibility": [
+      "OpenAI GPT-5.5-class and newer",
+      "Claude Opus",
+      "Claude Sonnet",
+      "Google Gemini",
+      "Other instruction-following language models"
+    ]
+  },
+  "portable_prompt": {
+    "instruction": "Treat this JSON as an instruction profile. Apply relevant rules by priority, use exceptions when justified by the task, and revise underlying problems instead of mechanically replacing flagged words.",
+    "not_a_goal": "Do not optimize for AI detector scores or claim that style proves authorship."
+  },
+  "instruction_priority": [
+    "Factual accuracy, safety, law, and explicit source constraints",
+    "The user's current request and required output format",
+    "Domain and repository requirements",
+    "Universal quality and anti-tell rules",
+    "Personal style preferences supplied separately",
+    "Optional flavor, quirks, and variation"
+  ],
+  "operating_principles": [
+    "Treat style signals as review prompts, not proof of authorship.",
+    "Fix the factual, structural, rhetorical, or formatting problem beneath a signal instead of swapping flagged words.",
+    "Preserve justified technical terms, genre conventions, accessibility structures, and user-required formats.",
+    "Distinguish a claim supported by evidence from an inference, estimate, opinion, or unresolved question.",
+    "Prefer a smaller amount of verified, relevant material to a fuller-looking draft padded with generic claims.",
+    "Do not add errors, randomness, fake experience, or artificial burstiness to simulate humanity.",
+    "Use detector output, if supplied, only as fallible context; never as an acceptance criterion or sole basis for an authorship accusation."
+  ],
+  "field_guide_coverage": [
+    {
+      "category": "content",
+      "items": [
+        { "name": "Undue emphasis on significance, legacy, and broader trends", "classification": "strong", "rule_ids": ["WR-CONTENT-001"] },
+        { "name": "Canned emphasis on notability, attribution, and media coverage", "classification": "strong", "rule_ids": ["WR-CONTENT-002"] },
+        { "name": "Superficial analyses", "classification": "strong", "rule_ids": ["WR-CONTENT-003"] },
+        { "name": "Promotional and advertisement-like language, including heritage, travel-guide, person, and company subtypes", "classification": "strong", "rule_ids": ["WR-CONTENT-004"] },
+        { "name": "Vague attributions and overgeneralization of opinions", "classification": "hard", "rule_ids": ["WR-INTEGRITY-004"] },
+        { "name": "Outline-like conclusions about challenges and future prospects", "classification": "contextual", "rule_ids": ["WR-STRUCTURE-004"] },
+        { "name": "Leads treating lists or broad article titles as proper nouns", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-001"] }
+      ]
+    },
+    {
+      "category": "language_and_grammar",
+      "items": [
+        { "name": "High density of model-associated vocabulary", "classification": "contextual", "rule_ids": ["WR-LANGUAGE-001"] },
+        { "name": "Avoidance of basic copulatives such as is and are", "classification": "strong", "rule_ids": ["WR-LANGUAGE-002"] },
+        { "name": "Negative parallelism: not just X but also Y, not X but Y, and X rather than Y", "classification": "contextual", "rule_ids": ["WR-LANGUAGE-003"] },
+        { "name": "Rule of three", "classification": "contextual", "rule_ids": ["WR-LANGUAGE-004"] },
+        { "name": "Lexical diversity and elegant variation", "classification": "contextual", "rule_ids": ["WR-LANGUAGE-005"] }
+      ]
+    },
+    {
+      "category": "style",
+      "items": [
+        { "name": "Title case", "classification": "contextual", "rule_ids": ["WR-FORMAT-001"] },
+        { "name": "Overuse of boldface", "classification": "contextual", "rule_ids": ["WR-FORMAT-002"] },
+        { "name": "Inline-header vertical lists", "classification": "contextual", "rule_ids": ["WR-FORMAT-003"] },
+        { "name": "Overuse of em dashes", "classification": "contextual", "rule_ids": ["WR-PUNCTUATION-001"] },
+        { "name": "Emoji as formatting", "classification": "contextual", "rule_ids": ["WR-FORMAT-004"] },
+        { "name": "Unusual use of tables", "classification": "contextual", "rule_ids": ["WR-FORMAT-005"] },
+        { "name": "Curly quotation marks and apostrophes", "classification": "do_not_use_as_rule", "rule_ids": ["WR-PUNCTUATION-002"] },
+        { "name": "Skipping heading levels", "classification": "strong", "rule_ids": ["WR-STRUCTURE-001"] },
+        { "name": "Thematic breaks before headings", "classification": "contextual", "rule_ids": ["WR-FORMAT-001"] }
+      ]
+    },
+    {
+      "category": "user_directed_communication",
+      "items": [
+        { "name": "Collaborative chatbot communication copied into a deliverable", "classification": "hard", "rule_ids": ["WR-DELIVERY-001"] },
+        { "name": "Knowledge-cutoff disclaimers and speculation about gaps in sources", "classification": "hard", "rule_ids": ["WR-INTEGRITY-003"] },
+        { "name": "Phrasal templates and placeholder text", "classification": "hard", "rule_ids": ["WR-DELIVERY-002"] }
+      ]
+    },
+    {
+      "category": "markup",
+      "items": [
+        { "name": "Markdown used where wikitext is required", "classification": "wikipedia_only", "rule_ids": ["WR-MARKUP-001", "WR-WIKI-002"] },
+        { "name": "Broken wikitext", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-002"] },
+        { "name": "Internal provider formatting and reference tokens, including ChatGPT, Gemini, Grok, DeepSeek, Perplexity, unclassified writing blocks, and search links", "classification": "hard", "rule_ids": ["WR-MARKUP-002"] },
+        { "name": "Non-existent or out-of-place categories", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-003"] },
+        { "name": "Non-existent templates or parameters", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-003"] }
+      ]
+    },
+    {
+      "category": "citations",
+      "items": [
+        { "name": "Broken external links", "classification": "hard", "rule_ids": ["WR-CITATION-001"] },
+        { "name": "Invalid DOI and ISBN values", "classification": "hard", "rule_ids": ["WR-CITATION-001"] },
+        { "name": "DOIs that resolve to unrelated articles", "classification": "hard", "rule_ids": ["WR-CITATION-002"] },
+        { "name": "Book citations without page numbers or usable locators", "classification": "hard", "rule_ids": ["WR-CITATION-003"] },
+        { "name": "Incorrect or unconventional use of references", "classification": "hard", "rule_ids": ["WR-CITATION-004"] },
+        { "name": "AI-service tracking parameters", "classification": "strong", "rule_ids": ["WR-CITATION-005"] },
+        { "name": "Named references declared but unused or used but undefined", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-004"] }
+      ]
+    },
+    {
+      "category": "comment_indicators",
+      "items": [
+        { "name": "Misquoted policies and fabricated shortcuts", "classification": "hard", "rule_ids": ["WR-COMMUNITY-001"] },
+        { "name": "Unneeded transclusion of maintenance banners", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-005"] },
+        { "name": "Lengthy titled comment sections", "classification": "contextual", "rule_ids": ["WR-COMMUNITY-002"] },
+        { "name": "Canned assurances of policy adherence", "classification": "strong", "rule_ids": ["WR-COMMUNITY-002"] },
+        { "name": "Generic requests for others to identify every needed improvement", "classification": "strong", "rule_ids": ["WR-COMMUNITY-002"] },
+        { "name": "Accusations or defenses based only on writing style", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] }
+      ]
+    },
+    {
+      "category": "edit_summaries",
+      "items": [
+        { "name": "Formal paragraph-length or template-like edit summaries", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-006"] },
+        { "name": "Canned assurance of adherence to policies and guidelines", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-006"] },
+        { "name": "Specific mentions of preserved or retained information", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-006"] },
+        { "name": "Overemphasis on presence or reliability of citations", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-006"] }
+      ]
+    },
+    {
+      "category": "miscellaneous_indicators",
+      "items": [
+        { "name": "Pronounced shift in writing style or English variety", "classification": "contextual", "rule_ids": ["WR-VOICE-001"] },
+        { "name": "Submission statements in Articles for Creation drafts", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-005"] },
+        { "name": "Pre-placed maintenance or protection templates", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-005"] },
+        { "name": "Canned user pages", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-005"] },
+        { "name": "Permissions gaming", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Differences between models and versions", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] }
+      ]
+    },
+    {
+      "category": "signs_of_human_writing",
+      "items": [
+        { "name": "Age of text relative to the public ChatGPT launch", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Ability to explain editorial choices", "classification": "strong", "rule_ids": ["WR-REVISION-001"] },
+        { "name": "Human-associated syntax, including simple copulas, plain verbs, ordinary hedges, definitive statements, and isolated wordiness", "classification": "do_not_use_as_rule", "rule_ids": ["WR-LANGUAGE-002", "WR-INTEGRITY-005"] }
+      ]
+    },
+    {
+      "category": "ineffective_indicators",
+      "items": [
+        { "name": "Perfect grammar", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Combination of casual and formal registers, or language that sounds both clinical and emotional", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005", "WR-VOICE-001"] },
+        { "name": "Bland or robotic prose", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Fancy, academic, or formal prose", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Transition words in isolation", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Unsourced content as an authorship indicator", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Bizarre wikitext outside documented leakage patterns", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] },
+        { "name": "Correct wikitext", "classification": "do_not_use_as_rule", "rule_ids": ["WR-INTEGRITY-005"] }
+      ]
+    },
+    {
+      "category": "historical_indicators",
+      "items": [
+        { "name": "Didactic disclaimers", "classification": "contextual", "rule_ids": ["WR-LANGUAGE-006"] },
+        { "name": "Section summaries and repeated conclusions", "classification": "contextual", "rule_ids": ["WR-STRUCTURE-004"] },
+        { "name": "Prompt refusal language", "classification": "hard", "rule_ids": ["WR-DELIVERY-001"] },
+        { "name": "Abrupt cutoffs", "classification": "hard", "rule_ids": ["WR-DELIVERY-003"] },
+        { "name": "Outdated access-date parameters", "classification": "wikipedia_only", "rule_ids": ["WR-WIKI-004"] }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "WR-INTEGRITY-001",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Keep every factual statement faithful to the provided or verified source material; do not add, merge, strengthen, or generalize claims beyond what the evidence supports.",
+      "reason": "Fluent prose can conceal source divergence, and factual consistency is a separate requirement from readability.",
+      "avoid": ["Turning correlation into causation.", "Combining separate source statements into a stronger unsupported conclusion.", "Presenting an interpretation as a quoted source position."],
+      "prefer": ["Trace each material claim to a source passage or clearly identified evidence.", "Use narrower wording when the source is narrow.", "Preserve qualifications, populations, time frames, and limitations."],
+      "exceptions": ["Clearly labeled fiction, brainstorming, or hypothetical scenarios may invent details within the user's stated boundaries."],
+      "check": "For each material claim, identify what evidence supports its exact wording; narrow or remove any claim without support."
+    },
+    {
+      "id": "WR-INTEGRITY-002",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Do not fabricate facts, quotations, people, events, statistics, sources, links, identifiers, credentials, experiences, or publication details.",
+      "reason": "Plausible fabrication is an integrity failure regardless of whether readers or detectors notice it.",
+      "avoid": ["Invented first-person experience.", "Guessed numerical values presented as measured facts.", "A plausible title, DOI, ISBN, URL, or quotation generated from memory."],
+      "prefer": ["Verify the item.", "State that it could not be verified.", "Ask for the missing source or mark a clearly labeled editorial placeholder when the workflow allows one."],
+      "exceptions": ["Fictional or synthetic material is allowed only when the task explicitly requests it and it cannot be mistaken for real evidence."],
+      "check": "Challenge every specific name, number, quotation, link, and identifier that was not supplied or independently verified."
+    },
+    {
+      "id": "WR-INTEGRITY-003",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Practice epistemic honesty: distinguish verified fact, source-reported claim, inference, estimate, opinion, and uncertainty, and never infer a fact merely because sources are silent.",
+      "reason": "Generic knowledge-cutoff disclaimers and speculation about undocumented details can make unsupported claims appear cautious.",
+      "avoid": ["The details are not public, so the person likely keeps a low profile.", "Based on available information when the available information was not actually checked.", "Confident statements about absence, consensus, or likelihood without a basis."],
+      "prefer": ["The supplied sources do not address this point.", "This is an inference from X and Y, not a reported fact.", "I could not verify this claim with the available material."],
+      "exceptions": ["A concise limitations note is appropriate when the task requires current or exhaustive coverage and the evidence is genuinely incomplete."],
+      "check": "Label or remove every inference and uncertainty; verify that claims about missing evidence are themselves supported by a defined search or source set."
+    },
+    {
+      "id": "WR-INTEGRITY-004",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Attribute claims to the correct, specific source and represent the scope and number of supporting views accurately.",
+      "reason": "Vague authorities and inflated consensus distort evidence even when a citation is present.",
+      "avoid": ["Experts agree when only one expert is cited.", "Studies show when a single study is available.", "Attributing the draft's own interpretation to a source."],
+      "prefer": ["Name the person, organization, study, or source set.", "Use one source, two reviewers, or the cited survey when that is the actual scope.", "Separate the source's claim from the writer's analysis."],
+      "exceptions": ["A well-defined collective label may be used when the source itself establishes that group and individual enumeration would obstruct the task."],
+      "check": "Replace every vague attribution with a verifiable source or remove the attributed claim; audit plural nouns against the actual source count."
+    },
+    {
+      "id": "WR-INTEGRITY-005",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Do not infer or claim human or AI authorship from prose style, detector output, grammar, vocabulary, punctuation, formatting, or a single behavioral signal.",
+      "reason": "Detected patterns are probabilistic, model-dependent, easy to alter, and can penalize human writers, including non-native English writers.",
+      "avoid": ["This sounds formal, so it was written by AI.", "A detector score presented as proof.", "Adding errors or awkwardness to look human."],
+      "prefer": ["Evaluate accuracy, evidence, attribution, structure, and formatting directly.", "Describe concrete defects without assigning authorship.", "Use provenance evidence and fair process when authorship truly matters."],
+      "exceptions": ["A provenance investigation may discuss multiple indicators as uncertain evidence when the task explicitly calls for it, but must state limitations and avoid definitive style-only conclusions."],
+      "check": "Remove authorship claims that lack provenance evidence and remove any revision made solely to manipulate a detector."
+    },
+    {
+      "id": "WR-CITATION-001",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use only real, resolvable citations and identifiers; verify URLs, DOI targets, ISBN validity when applicable, and essential bibliographic metadata.",
+      "reason": "Generated references can look legitimate while being fabricated, broken, or internally inconsistent.",
+      "avoid": ["A citation reconstructed from memory.", "An unresolvable DOI presented as valid.", "Treating an inaccessible link as automatically fabricated."],
+      "prefer": ["Open the source or authoritative metadata record.", "Validate identifiers independently.", "Record access limitations without overstating what they imply."],
+      "exceptions": ["A known historical citation without a URL may be valid when its bibliographic metadata can be verified through an authoritative catalog."],
+      "check": "Resolve every link and identifier or mark it unverified; compare title, authors, venue, and date with the authoritative record."
+    },
+    {
+      "id": "WR-CITATION-002",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Verify that each cited source actually supports the adjacent claim at the stated level of certainty; resolution or topical similarity alone is insufficient.",
+      "reason": "A real source or DOI can be unrelated, contradict the prose, or support only a narrower statement.",
+      "avoid": ["Citing a general book as support for a precise claim without locating the passage.", "Using a real DOI whose article is unrelated.", "Citing a source for a conclusion found only in secondary commentary."],
+      "prefer": ["Inspect the relevant passage, table, result, or metadata.", "Bind the citation to the smallest supported claim.", "Preserve limitations and uncertainty from the source."],
+      "exceptions": ["A citation may support a paragraph-level synthesis when the target style permits it and the supported scope remains unambiguous."],
+      "check": "For each citation, answer: what exact words does this source support, and where?"
+    },
+    {
+      "id": "WR-CITATION-003",
+      "priority": "hard",
+      "scope": ["research_synthesis", "article_or_blog", "book_or_long_form", "documentation", "editing"],
+      "instruction": "Provide the locator and metadata needed to verify a cited passage, including page, section, chapter, timestamp, paragraph, or stable fragment when available and appropriate.",
+      "reason": "A valid source that cannot be connected to the claim is not adequate support for precise or contested material.",
+      "avoid": ["A whole-book citation for a narrow quotation without a page.", "A homepage URL when a stable article URL exists.", "A locator that was guessed rather than checked."],
+      "prefer": ["The narrowest stable locator supported by the source and citation style.", "A note that a source is unpaginated when that is true.", "Enough metadata for another reader to retrieve the same item."],
+      "exceptions": ["Locators may be omitted for general background references or genuinely unpaginated works when the target citation style permits it."],
+      "check": "Attempt to retrieve the supporting passage using only the completed citation."
+    },
+    {
+      "id": "WR-CITATION-004",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use the target's required citation syntax consistently, place references where their support is clear, and ensure every reference declaration and reuse is valid.",
+      "reason": "Incorrect reference syntax can hide missing support and make otherwise valid citations unusable.",
+      "avoid": ["Undefined reference names.", "Unused reference declarations.", "Mixed citation systems unless explicitly requested."],
+      "prefer": ["One valid target citation system.", "References attached to the claims they support.", "Rendered or parsed citation output with no reference errors."],
+      "exceptions": ["Mixed systems may be necessary when faithfully editing an existing document whose style must be preserved; do not expand the inconsistency."],
+      "check": "Parse or preview citations and confirm that every declaration, reuse, and backlink works."
+    },
+    {
+      "id": "WR-CITATION-005",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Remove irrelevant tracking and AI-service referral parameters from source URLs while preserving parameters needed to identify or access the source.",
+      "reason": "Tracking parameters add noise, leak tool provenance, and can make otherwise stable citations brittle.",
+      "avoid": ["utm_source=chatgpt.com in a publication link.", "Removing a query parameter that selects the cited document or language."],
+      "prefer": ["The canonical stable URL.", "A DOI or publisher permalink when appropriate."],
+      "exceptions": ["Retain the exact tracked URL when it is itself evidence, when the destination requires the parameter, or when the user explicitly requests an untouched archival record."],
+      "check": "Review every query string and remove only parameters that do not affect identity, access, or evidentiary value."
+    },
+    {
+      "id": "WR-CONTENT-001",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "State concrete facts before claims of significance, legacy, symbolism, impact, or broader trends, and include those claims only when relevant and supported.",
+      "reason": "Generic importance language can replace the specific detail that would let readers judge importance for themselves.",
+      "avoid": ["A routine date described as a pivotal moment without evidence.", "An ordinary feature said to reflect a broader movement by default.", "A generic claim of enduring legacy."],
+      "prefer": ["The specific event, consequence, comparison, or sourced interpretation.", "Letting a precise fact carry its own weight."],
+      "exceptions": ["A sourced analysis, persuasive brief, or commemorative genre may explicitly discuss significance when the task requires it."],
+      "check": "For every importance claim, ask what evidence makes it true and why it matters to this audience; substantiate or delete it."
+    },
+    {
+      "id": "WR-CONTENT-002",
+      "priority": "strong",
+      "scope": ["article_or_blog", "research_synthesis", "book_or_long_form", "editing"],
+      "instruction": "Explain what coverage or recognition establishes instead of reciting that prominent, independent, regional, national, trade, or social-media coverage exists.",
+      "reason": "Canned notability language substitutes source labels for the substance and quality of the evidence.",
+      "avoid": ["The subject has been profiled in several prominent outlets without summarizing relevant coverage.", "Maintains an active social-media presence as generic evidence of importance.", "Policy-like notability assurances in article prose."],
+      "prefer": ["The relevant fact, analysis, reception, or documented reach from each useful source.", "A direct assessment of source independence and depth when that is the actual task."],
+      "exceptions": ["A source audit, media analysis, legal filing, or notability review may need to classify and enumerate coverage explicitly."],
+      "check": "Remove source-status throat-clearing unless the status itself answers the assignment."
+    },
+    {
+      "id": "WR-CONTENT-003",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Do not append generic interpretation, impact, purpose, or symbolism to a fact; make analysis specific, necessary, and supported.",
+      "reason": "Superficial analysis often sounds complete while adding no verifiable meaning.",
+      "avoid": ["A trailing participial phrase that merely says a fact highlights or underscores importance.", "Generic claims that a design fosters connection or a location enhances significance.", "Unattributed symbolic interpretation."],
+      "prefer": ["A concrete consequence, mechanism, comparison, or attributed interpretation.", "Ending the sentence after the useful fact when no analysis is warranted."],
+      "exceptions": ["Interpretive criticism, argument, and analysis may draw supported inferences when their reasoning and evidentiary basis are explicit."],
+      "check": "Delete each analytical clause and see whether information is lost; if not, leave it deleted."
+    },
+    {
+      "id": "WR-CONTENT-004",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Match the requested stance and avoid unrequested promotional, press-release, travel-guide, or sales language; support evaluative claims with evidence.",
+      "reason": "Positive-sounding generalities can blur the line between description and persuasion.",
+      "avoid": ["Breathtaking, world-class, renowned, or groundbreaking without a defined basis.", "Boasts or offers when has is clearer.", "Claims of commitment inferred from corporate messaging."],
+      "prefer": ["Neutral description for informational work.", "Specific benefits and proof for requested marketing copy.", "Attribution when an evaluative statement belongs to a source."],
+      "exceptions": ["Application copy, advertising, advocacy, or a supplied brand voice may appropriately persuade, but factual claims still require support and the tone must fit the audience."],
+      "check": "Underline every adjective and benefit claim; keep it only if the task needs it and its basis is clear."
+    },
+    {
+      "id": "WR-LANGUAGE-001",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Review clusters of model-associated vocabulary for vagueness, repetition, or inflated tone, but do not ban a word or replace it only because it appears on a detection list.",
+      "reason": "Studies find lexical overrepresentation, but individual words remain legitimate and patterns vary by domain, model, and time.",
+      "avoid": ["Dense repetition of words such as delve, intricate, pivotal, vibrant, tapestry, showcase, highlight, and underscore when plainer exact terms exist.", "Mechanical synonym replacement that preserves the same vague sentence."],
+      "prefer": ["The most exact ordinary or technical term for the meaning.", "Revision of the unsupported claim beneath an inflated verb."],
+      "exceptions": ["Retain any word that is the natural, precise, quoted, domain-standard, or user-required choice."],
+      "check": "Review density and function across the passage; revise only words that are imprecise, repetitive, or tonally wrong in context."
+    },
+    {
+      "id": "WR-LANGUAGE-002",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use simple copulas and plain verbs when they express the meaning directly; do not inflate is, are, has, wrote, moved, used, tried, or died into less natural substitutes.",
+      "reason": "Avoiding ordinary syntax can make prose promotional, euphemistic, or needlessly formal.",
+      "avoid": ["Serves as when is is exact.", "Boasts or features when has is neutral.", "Authored or utilized when wrote or used fits."],
+      "prefer": ["The shortest accurate verb.", "Natural domain language over a blanket preference for formal synonyms."],
+      "exceptions": ["Use the longer construction when it changes meaning, fits a technical convention, avoids ambiguity, or is required by the requested voice."],
+      "check": "Test every inflated verb against a simpler one and keep the version that preserves the intended meaning and register."
+    },
+    {
+      "id": "WR-LANGUAGE-003",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use negative parallelism only for a real contrast the reader needs; revise repeated not-only, not-X-but-Y, and X-rather-than-Y frames that invent opposition or add drama.",
+      "reason": "A repeated contrast template can manufacture a misconception and make unrelated points sound rhetorically symmetrical.",
+      "avoid": ["It is not just a tool; it is a revolution when no contrast was established.", "Several consecutive sentences built around negative correction."],
+      "prefer": ["State the positive claim directly.", "Name the actual misconception or tradeoff when one exists."],
+      "exceptions": ["Keep negative parallelism when correcting a documented misconception, distinguishing alternatives, quoting a source, or sharpening a genuine argument."],
+      "check": "Remove the negative half; if the claim becomes clearer and loses no necessary contrast, use the direct version."
+    },
+    {
+      "id": "WR-LANGUAGE-004",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Let evidence determine list length and cadence; do not force adjectives, examples, clauses, headings, or recommendations into groups of three.",
+      "reason": "Mechanical triads can create false completeness or pad a point with a weak third item.",
+      "avoid": ["Adding a third example solely for rhythm.", "Three parallel adjectives that overlap in meaning.", "Every section using three bullets."],
+      "prefer": ["The exact number of distinct items the material supports.", "Uneven structures when the subject is uneven."],
+      "exceptions": ["Triads are effective when three real categories exist, a mnemonic or rhetorical cadence is useful, or the requested format requires three items."],
+      "check": "For each triad, remove the weakest item and add any omitted necessary item; keep three only if the content still calls for three."
+    },
+    {
+      "id": "WR-LANGUAGE-005",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Repeat the same term when it names the same thing; vary wording only when the alternative is equally precise and does not imply a new distinction.",
+      "reason": "Forced lexical diversity can make one entity look like several or replace a clear term with an awkward synonym.",
+      "avoid": ["Cycling through platform, solution, offering, and ecosystem for one product.", "Changing a defined technical term to avoid repetition."],
+      "prefer": ["Stable terminology for entities and concepts.", "Pronouns or sentence restructuring when repetition truly distracts."],
+      "exceptions": ["Variation may improve rhythm in literary, persuasive, or casual prose when referents and meanings stay clear."],
+      "check": "Map synonyms back to their referents; standardize any variation that creates ambiguity or false distinction."
+    },
+    {
+      "id": "WR-LANGUAGE-006",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use warnings and didactic cues for concrete reader needs, not as ritual editorializing such as important to note, crucial to remember, or worth noting.",
+      "reason": "Generic importance cues often announce emphasis without explaining the risk, condition, or consequence.",
+      "avoid": ["It is important to note that followed by an ordinary fact.", "Repeated reminders to the imagined reader."],
+      "prefer": ["State the fact directly.", "Name the specific hazard, jurisdictional difference, prerequisite, or consequence."],
+      "exceptions": ["A direct warning or callout is justified for safety, legal, operational, pedagogical, or accessibility reasons when its importance is concrete."],
+      "check": "Delete the cue; if the warning becomes too easy to miss, replace it with a specific label or consequence rather than generic emphasis."
+    },
+    {
+      "id": "WR-STRUCTURE-001",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "When headings are used, preserve a valid semantic hierarchy and do not skip levels.",
+      "reason": "Skipped or invalid heading levels harm navigation and accessibility regardless of whether the document needs headings.",
+      "avoid": ["Skipping from level one to level three.", "Choosing heading levels for visual size instead of semantic structure."],
+      "prefer": ["An ordered heading-level sequence that represents document nesting."],
+      "exceptions": ["The target template, imported source, or platform may impose nonstandard heading levels or capitalization; follow it when valid and accessible."],
+      "check": "Validate the heading-level sequence and confirm that each level represents semantic nesting in the target format."
+    },
+    {
+      "id": "WR-STRUCTURE-002",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Organize around the reader's task and the material's real relationships rather than a generic introduction, background, benefits, challenges, future, and conclusion template.",
+      "reason": "A reusable outline can produce orderly prose that fails to answer the actual question.",
+      "avoid": ["Sections added because articles usually have them.", "Equal space for topics of unequal importance.", "A generic future section with no evidence."],
+      "prefer": ["An order based on decisions, chronology, causality, comparison, procedure, or argument as the task requires."],
+      "exceptions": ["A mandated template, genre convention, curriculum, or reporting standard may require a fixed section order."],
+      "check": "For each section, state the reader need it serves; remove or reorder sections without a task-specific purpose."
+    },
+    {
+      "id": "WR-STRUCTURE-003",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Stop at the last useful point; do not append a recap, moral, offer for more help, or motivational flourish unless the task benefits from it.",
+      "reason": "Unrequested closings dilute the final useful statement and make short work feel templated.",
+      "avoid": ["I hope this helps.", "Let me know if you want more.", "A final paragraph that only restates the answer."],
+      "prefer": ["End on the answer, action, result, or necessary caveat.", "Include a next step only when it is useful or requested."],
+      "exceptions": ["Correspondence, support, teaching, sales, and collaborative planning may require a courteous close, invitation, recap, or explicit next action."],
+      "check": "Remove the final sentence or paragraph; keep it only if the reader loses necessary information, tone, or action."
+    },
+    {
+      "id": "WR-STRUCTURE-004",
+      "priority": "contextual",
+      "scope": ["article_or_blog", "book_or_long_form", "research_synthesis", "editing"],
+      "instruction": "Review conclusion shape for ritual restatement, formulaic challenges-and-future-prospects language, unsupported optimism, and speculative initiatives; keep only a conclusion that performs a real task.",
+      "reason": "A generic conclusion can repeat the outline and introduce unsupported forecasts after the evidence has ended.",
+      "avoid": ["Despite its success, it faces challenges followed by vague future opportunities.", "In conclusion followed by a near-copy of the introduction.", "Future improvements could ensure continued relevance without evidence."],
+      "prefer": ["Synthesize the actual finding, resolve the argument, state the supported implication, name a concrete next action, or simply end after the final substantive section."],
+      "exceptions": ["Academic, legal, policy, educational, or long-form genres may require a conclusion, limitations section, future-work section, or recap; retain it when it adds supported synthesis or navigation."],
+      "check": "Compare the conclusion with the body sentence by sentence; remove repeated or newly speculative claims and confirm the remaining section earns its place."
+    },
+    {
+      "id": "WR-FORMAT-001",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use headings, title case, and thematic breaks according to the target format and the document's hierarchy, not as automatic decoration.",
+      "reason": "These devices are valid but become noise when repeated without a structural boundary.",
+      "avoid": ["A thematic break before every heading.", "Title case that conflicts with the target style.", "Several headings in a response that needs one paragraph."],
+      "prefer": ["The target style guide and the smallest structure that makes navigation easier."],
+      "exceptions": ["Presentation slides, marketing pages, creative work, and platform templates may intentionally use title case or repeated separators as part of a coherent design."],
+      "check": "Confirm that every heading or break marks a real change in hierarchy or topic and renders correctly in the target."
+    },
+    {
+      "id": "WR-FORMAT-002",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use boldface sparingly and semantically; do not mechanically bold every label, takeaway, repeated term, or claim.",
+      "reason": "Excessive emphasis flattens hierarchy because everything competes for attention.",
+      "avoid": ["Bold labels on every bullet when the list already scans clearly.", "Multiple bold fragments in each paragraph.", "Bold used as a substitute for structure."],
+      "prefer": ["Emphasis on the few items readers must find quickly.", "Headings, spacing, or concise wording when those solve the hierarchy problem better."],
+      "exceptions": ["Reference documents, interfaces, safety instructions, study aids, and accessibility-tested templates may use repeated bold labels for scanning."],
+      "check": "Read the bold text alone; if it does not form a useful scan path, reduce or restructure it."
+    },
+    {
+      "id": "WR-FORMAT-003",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Choose prose, bullets, numbered steps, or inline-label lists from the information relationship; do not default to repeated bold-label-colon bullets.",
+      "reason": "One canned list shape can fragment connected reasoning or imply false equivalence among items.",
+      "avoid": ["A vertical list for two simple sentences.", "Every bullet beginning with a bold mini-heading.", "Numbering items that have no sequence or rank."],
+      "prefer": ["Prose for connected reasoning.", "Bullets for parallel scan items.", "Numbers for sequence or priority.", "Definitions or tables for repeated fields."],
+      "exceptions": ["Support runbooks, API references, slide decks, forms, and compact decision aids may benefit from consistent inline labels."],
+      "check": "Name the relationship among list items and choose the format that exposes that relationship with the least friction."
+    },
+    {
+      "id": "WR-FORMAT-004",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use emoji only when it suits the audience, brand, medium, and meaning; do not use emoji as automatic heading or bullet decoration.",
+      "reason": "Decorative emoji can introduce tonal mismatch, clutter, and accessibility ambiguity.",
+      "avoid": ["An emoji before every heading in formal documentation.", "Emoji that carry an unlabeled status or instruction."],
+      "prefer": ["Text labels and semantic icons for critical meaning.", "A restrained, consistent emoji vocabulary in an appropriate informal context."],
+      "exceptions": ["Casual messages, social posts, branded interfaces, and user-requested styles may use emoji when meaning remains clear without them."],
+      "check": "Remove each emoji; retain it only if it adds appropriate tone or recognized meaning without being the sole carrier of essential information."
+    },
+    {
+      "id": "WR-FORMAT-005",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use a table only when readers need to compare several items across repeated fields; do not convert a tiny list or connected argument into a table for appearance.",
+      "reason": "Unnecessary tables add markup and scanning overhead, while a good comparison table exposes relationships efficiently.",
+      "avoid": ["A two-row key-value table that reads better as one sentence.", "Long prose paragraphs inside every cell.", "A table that will not fit the target viewport or accessibility constraints."],
+      "prefer": ["A compact table for exact mappings or repeated-field comparison.", "Prose or bullets when sequence, explanation, or a single dimension matters more."],
+      "exceptions": ["Forms, specifications, data dictionaries, and strict templates may require small tables even when prose would be shorter."],
+      "check": "Identify the comparison axis and repeated fields; if either is missing, choose another format."
+    },
+    {
+      "id": "WR-PUNCTUATION-001",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Use em dashes for a purposeful interruption or appositive, not as a repeated device for punch, contrast, or clause chaining.",
+      "reason": "Em dashes are legitimate punctuation, but frequent formulaic use can overemphasize clauses and flatten cadence.",
+      "avoid": ["Multiple em dashes in a short paragraph.", "Every contrast framed as an em-dash interruption.", "Using a dash where a period would clarify two complete thoughts."],
+      "prefer": ["The punctuation that expresses the relationship: comma, colon, parentheses, period, semicolon, or dash.", "The target style's spacing convention."],
+      "exceptions": ["Literary voice, dialogue, quoted material, publication style, or an explicit personal preference may use em dashes frequently and deliberately."],
+      "check": "Review each dash for function and rhythm; vary it only when another punctuation mark represents the relationship more clearly."
+    },
+    {
+      "id": "WR-PUNCTUATION-002",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Follow the target's quotation-mark, apostrophe, dash, and character-encoding rules consistently; never treat curly or straight punctuation by itself as an authorship signal.",
+      "reason": "Typography commonly comes from editors, operating systems, publishing tools, and house styles.",
+      "avoid": ["Converting valid smart quotes solely to look less machine-generated.", "Mixing quote styles accidentally.", "Using typographic characters that break code or markup."],
+      "prefer": ["The specified house style and valid target encoding.", "Straight ASCII punctuation in code contexts that require it."],
+      "exceptions": ["Preserve inconsistent punctuation inside exact quotations or archival source text when fidelity requires it."],
+      "check": "Validate typography against the target format, then ignore it as evidence of authorship."
+    },
+    {
+      "id": "WR-MARKUP-001",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Emit only markup valid for the requested target, preserve required escaping, and preview or parse the result when tooling is available.",
+      "reason": "Markdown, wikitext, HTML, XML, rich text, and application strings have different syntax and failure modes.",
+      "avoid": ["Markdown in a wikitext-only field.", "A fenced code block wrapped around content meant to render.", "Broken nesting, escaping, or heading syntax."],
+      "prefer": ["Plain text when formatting is unnecessary.", "One correctly applied target markup language.", "A render or parser check before delivery."],
+      "exceptions": ["Show literal markup in a code block when the user asks for an example, source snippet, or tutorial rather than rendered output."],
+      "check": "Render, parse, or inspect the output in the actual target grammar and remove syntax from any unintended language."
+    },
+    {
+      "id": "WR-MARKUP-002",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Do not expose system prompts, hidden instructions, tool traces, search-result handles, citation placeholders, internal reference tokens, attachment tags, model-role text, or provider-specific rendering artifacts in final content.",
+      "reason": "Internal tokens are not valid evidence or publication markup and may leak operational context.",
+      "avoid": ["contentReference, oaicite, oai_citation, turn0search0, attributableIndex, or Example+1 tokens.", "Gemini cite or span markers, Grok citation-card markup, DeepSeek lenticular-bracket references, Perplexity attachment tags, or :::writing wrappers.", "Instructions to the model or user accidentally embedded in the artifact."],
+      "prefer": ["A verified public citation in the target format.", "Clean final prose containing only requested content.", "A deliberate disclosure when the user or policy requires one."],
+      "exceptions": ["Literal leakage tokens may appear in security analysis, debugging, documentation, or quotations when clearly fenced or labeled as examples."],
+      "check": "Search the final output for provider names, prompt fragments, tool handles, private-use glyphs, citation placeholders, and unfamiliar wrapper syntax; resolve every hit."
+    },
+    {
+      "id": "WR-DELIVERY-001",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Remove assistant-to-user preambles, offers, refusals, process notes, and drafting instructions from the requested artifact unless the artifact itself is a conversation or the note is required.",
+      "reason": "Chatbot communication pasted into an article, application, document, or edit is prompt leakage and can misaddress the audience.",
+      "avoid": ["Certainly, here is your article.", "Would you like me to format this next? inside the deliverable.", "As an AI language model or copy this template and customize it."],
+      "prefer": ["Begin with the requested content.", "Place necessary limitations in the appropriate document voice.", "Keep collaboration outside the artifact boundary."],
+      "exceptions": ["Conversational replies, letters, support messages, and transparent AI-use statements may appropriately address the user or disclose process."],
+      "check": "Read the artifact as its intended audience; remove any line that belongs to the drafting conversation rather than the artifact."
+    },
+    {
+      "id": "WR-DELIVERY-002",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Do not deliver unresolved placeholders, dummy links, fill-in-the-blank phrases, invented defaults, or template instructions as finished content.",
+      "reason": "Placeholders can be mistaken for real values and frequently break citations, applications, and publication workflows.",
+      "avoid": ["[Your Name], INSERT_SOURCE_URL, 2026-XX-XX, lorem ipsum, or TODO in final copy.", "A guessed value silently substituted for missing data."],
+      "prefer": ["Resolve from verified input.", "Ask for the value.", "Use an unmistakable, explicitly approved editorial marker when the task is intentionally a template."],
+      "exceptions": ["Reusable templates, forms, scaffolds, and draft specifications may require placeholders when they are consistently named and clearly documented as fields to complete."],
+      "check": "Search for brackets, XX, TODO, TBD, dummy domains, sample names, and instructional imperatives; resolve or explicitly approve each occurrence."
+    },
+    {
+      "id": "WR-DELIVERY-003",
+      "priority": "hard",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Deliver complete requested units and never conceal a token, tool, or time cutoff as a finished ending.",
+      "reason": "Abruptly truncated prose can omit qualifications, steps, citations, or required sections.",
+      "avoid": ["A sentence ending mid-clause.", "A list that promises items not present.", "Claims that all sections are complete when output stopped early."],
+      "prefer": ["Complete the requested unit.", "Clearly label an intentional excerpt or partial draft.", "State what remains when the user requested staged delivery."],
+      "exceptions": ["An intentional fragment, excerpt, cliffhanger, redaction, or user-specified partial delivery may end abruptly when clearly signaled by the genre or label."],
+      "check": "Verify sentence closure, list counts, cross-references, promised sections, and the final requested item."
+    },
+    {
+      "id": "WR-COMMUNITY-001",
+      "priority": "hard",
+      "scope": ["concise_communication", "editing", "research_synthesis"],
+      "instruction": "Verify every quoted policy, guideline, shortcut, requirement, and procedural claim against the current authoritative source before relying on it.",
+      "reason": "A fluent but invented rule or shortcut can mislead decisions and participants.",
+      "avoid": ["A plausible policy identifier that does not exist.", "Paraphrasing a guideline more strongly than its text.", "Transcluding a banner merely because it was mentioned."],
+      "prefer": ["A direct link and accurate narrow paraphrase.", "A specific quotation within applicable quotation limits when wording controls."],
+      "exceptions": ["Informal discussion may omit a link for a widely known rule, but the substance still must be accurate and should be linked when disputed."],
+      "check": "Open the authoritative rule and compare both identifier and scope with the statement."
+    },
+    {
+      "id": "WR-COMMUNITY-002",
+      "priority": "strong",
+      "scope": ["concise_communication", "editing"],
+      "instruction": "In comments and collaborative discussion, address the concrete issue with proportionate length and specific questions rather than canned assurances, formal mini-essays, or generic requests for guidance.",
+      "reason": "Process-heavy language can obscure the actual disagreement and shift review work onto others.",
+      "avoid": ["I ensured full compliance with every policy.", "Several titled sections for a simple point.", "Tell me exactly everything I need to improve without identifying the disputed passage."],
+      "prefer": ["State what changed, why, and which specific question remains.", "Quote or link the relevant text.", "A brief acknowledgment when that is enough."],
+      "exceptions": ["Complex proposals, incident reports, mediation, and requests for comment may need headings, detailed evidence, and an explicit request for broad input."],
+      "check": "Reduce the comment to issue, evidence, requested action, and necessary context; restore detail only when it changes the decision."
+    },
+    {
+      "id": "WR-VOICE-001",
+      "priority": "contextual",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Maintain the requested voice, English variety, terminology, and level of formality across a document while allowing intentional changes of speaker, genre, audience, or register.",
+      "reason": "Accidental voice shifts can make a document incoherent, but code-switching and register changes are normal human choices.",
+      "avoid": ["Switching between US and UK spelling without a reason.", "A sudden corporate voice in a personal narrative.", "Flattening quoted or character voices to enforce uniformity."],
+      "prefer": ["A stable baseline voice with deliberate, explainable changes.", "Preservation of quoted, localized, and user-supplied language."],
+      "exceptions": ["Dialogue, multi-author documents, localization, quotations, code-switching, and audience-specific sections may intentionally differ."],
+      "check": "Mark every noticeable shift and confirm that it follows a real change in speaker, purpose, source, or audience."
+    },
+    {
+      "id": "WR-REVISION-001",
+      "priority": "strong",
+      "scope": ["concise_communication", "technical_explanation", "article_or_blog", "book_or_long_form", "documentation", "application_copy", "editing", "research_synthesis"],
+      "instruction": "Make revisions explainable in terms of audience, evidence, meaning, structure, or target format, and preserve a traceable rationale for material editorial choices.",
+      "reason": "Purposeful revision improves the work; unexplained cosmetic anti-tell edits can damage accuracy and voice.",
+      "avoid": ["Changing punctuation or synonyms only to appear human.", "Deleting useful structure because a detector disliked it.", "Claiming improvement without identifying the defect."],
+      "prefer": ["A reason tied to clarity, correctness, support, consistency, or user intent.", "A source-to-claim trail for factual changes."],
+      "exceptions": ["Minor copyedits need not be individually documented unless the workflow requires an edit summary or audit trail."],
+      "check": "For every material revision, finish the sentence: This change improves the draft because..."
+    },
+    {
+      "id": "WR-WIKI-001",
+      "priority": "strong",
+      "scope": ["editing", "research_synthesis"],
+      "instruction": "Introduce a Wikipedia list, broad topic, or disambiguated subject naturally; do not define the page title as though the title itself were a real-world entity.",
+      "reason": "Page titles can be editorial labels rather than proper nouns or terms that need definition.",
+      "avoid": ["The List of X is a curated compilation of X.", "Y editions is the chronological list of Y events."],
+      "prefer": ["State what the list contains or introduce the underlying subject in natural prose."],
+      "exceptions": ["Use the title directly when it is a genuine proper name, defined term, work title, or natural subject phrase."],
+      "check": "Ask whether the lead describes the subject or awkwardly describes the page title."
+    },
+    {
+      "id": "WR-WIKI-002",
+      "priority": "hard",
+      "scope": ["editing", "research_synthesis"],
+      "instruction": "Use valid wikitext rather than Markdown for Wikipedia-bound content, and preview the rendered page before delivery when possible.",
+      "reason": "Markdown headings, emphasis, links, lists, and fences have different meanings or fail in MediaWiki.",
+      "avoid": ["Hash headings, Markdown links, and triple-backtick wrappers in article wikitext.", "Mixed Markdown and attempted wikitext."],
+      "prefer": ["Valid MediaWiki heading, link, list, template, and reference syntax.", "Plain prose when formatting is unnecessary."],
+      "exceptions": ["Markdown is valid in tools or discussions that explicitly support it; literal Markdown may be shown as an example when clearly fenced."],
+      "check": "Preview the wikitext and search for Markdown-only syntax or rendering errors."
+    },
+    {
+      "id": "WR-WIKI-003",
+      "priority": "hard",
+      "scope": ["editing", "research_synthesis"],
+      "instruction": "Verify that every Wikipedia category, template, parameter, file, and shortcut exists, is current, and belongs in the intended namespace and context.",
+      "reason": "Plausible invented or obsolete wiki resources silently fail, create red links, or misclassify pages.",
+      "avoid": ["A guessed infobox name or parameter.", "A generic category title that does not exist.", "An obsolete template recalled from old data."],
+      "prefer": ["The live template documentation, category page, or current shortcut target.", "Omission when no verified resource fits."],
+      "exceptions": ["A red-linked category or template may be intentional only when the authorized task is to create that resource and applicable community rules are followed."],
+      "check": "Open each resource in the live wiki and validate its documentation and rendered use."
+    },
+    {
+      "id": "WR-WIKI-004",
+      "priority": "hard",
+      "scope": ["editing", "research_synthesis"],
+      "instruction": "Validate Wikipedia reference syntax, named-reference declarations and uses, access dates, and rendered citation errors against the actual source history.",
+      "reason": "Unused, undefined, malformed, or temporally implausible references impede verification, but older dates can also be legitimate.",
+      "avoid": ["A named reference declared but never used.", "A reused name with no definition.", "An access date guessed from a model cutoff or current date."],
+      "prefer": ["The actual date accessed when known.", "A valid list-defined or inline reference pattern used consistently.", "No rendered citation errors."],
+      "exceptions": ["Older access dates are valid when citations were copied, work was prepared offline, or content was moved or merged; preserve them when provenance supports them."],
+      "check": "Render references, inspect error categories, and compare access dates with the real editing or research history."
+    },
+    {
+      "id": "WR-WIKI-005",
+      "priority": "strong",
+      "scope": ["editing", "research_synthesis"],
+      "instruction": "Do not pre-place review outcomes, maintenance or protection state, submission assurances, reviewer notes, or canned user-page claims unless the live Wikipedia workflow and user-provided facts require them.",
+      "reason": "Speculative workflow markup and generic identity claims can misrepresent page state, authority, or the editor.",
+      "avoid": ["A pre-declined AfC template added by the submitter.", "A protection template on an unprotected page.", "A reviewer note claiming notability or policy compliance.", "Invented contribution counts or interests on a user page."],
+      "prefer": ["Only current, authorized workflow state.", "User-supplied biographical details.", "Leaving reviewer decisions to reviewers."],
+      "exceptions": ["Authorized maintenance, protection, submission, or user-page workflows may require these elements when their conditions are actually met."],
+      "check": "Verify every workflow or identity statement against live page state, authority, and user input."
+    },
+    {
+      "id": "WR-WIKI-006",
+      "priority": "strong",
+      "scope": ["editing"],
+      "instruction": "For Wikipedia-bound editing, write a brief, specific edit summary about what materially changed and why only when an edit summary is actually required by the live workflow; avoid generic assurances, exhaustive process narration, or mentioning untouched material without a review need.",
+      "reason": "When a Wikipedia edit summary is required, a specific summary helps another editor inspect the diff rather than advertising compliance or source quantity.",
+      "avoid": ["Creating a Wikipedia edit summary for ordinary editing or when the live workflow does not require one.", "A required Wikipedia edit summary that says only: Improved clarity, neutrality, flow, sourcing, and encyclopedic tone.", "A required Wikipedia edit summary that says content was preserved or citations were added without naming the material change."],
+      "prefer": ["When a Wikipedia edit summary is required: Corrected the launch date to 14 May using the annual report.", "When a Wikipedia edit summary is required: Removed duplicate paragraph per the linked discussion."],
+      "exceptions": ["Ordinary editing and Wikipedia-bound work whose workflow does not require an edit summary need none.", "A complex Wikipedia edit, merge, consensus implementation, or sensitive preservation constraint may require a longer summary or mention of intentionally retained material."],
+      "check": "First confirm that the task is Wikipedia-bound and the live workflow requires an edit summary; only then confirm that the summary names the actual content change and gives only the context needed to review the diff."
+    }
+  ],
+  "task_modes": {
+    "concise_communication": {
+      "instruction": "Answer directly in the shortest form that preserves necessary context, tone, caveats, and action.",
+      "focus": ["Lead with the outcome.", "Use prose unless a list improves scanning.", "End after the last useful point."]
+    },
+    "technical_explanation": {
+      "instruction": "Explain the mechanism, constraints, and practical consequence at the audience's technical level.",
+      "focus": ["Define terms only when needed.", "Use concrete examples and edge cases.", "Separate verified behavior from inference or version-dependent behavior."]
+    },
+    "article_or_blog": {
+      "instruction": "Build a specific, evidence-led narrative or argument with an audience-appropriate structure and no automatic conclusion template.",
+      "focus": ["Use an earned opening.", "Organize by the subject's real relationships.", "Attribute interpretations and stop when the point is complete."]
+    },
+    "book_or_long_form": {
+      "instruction": "Sustain a coherent voice, terminology, evidence trail, and chapter-level purpose across long material.",
+      "focus": ["Track definitions and claims across sections.", "Use summaries only when they aid orientation or synthesis.", "Audit long-range repetition, contradictions, and source drift."]
+    },
+    "documentation": {
+      "instruction": "Help the reader complete a task accurately with valid structure, examples, prerequisites, states, and failure guidance.",
+      "focus": ["Use stable terminology.", "Make sequence and conditions explicit.", "Validate commands, links, markup, and expected outcomes."]
+    },
+    "application_copy": {
+      "instruction": "Write interface or product copy that is concise, truthful, consistent with the product context, and useful in the current state.",
+      "focus": ["Name the action and consequence.", "Do not invent metrics, testimonials, urgency, or capabilities.", "Respect space, accessibility, localization, and error recovery needs."]
+    },
+    "editing": {
+      "instruction": "Preserve the author's intended meaning and legitimate voice while correcting concrete problems in evidence, clarity, structure, consistency, and format.",
+      "focus": ["Do not homogenize voice.", "Explain material changes when the workflow calls for it.", "Do not use detector scores or word blacklists as acceptance criteria."]
+    },
+    "research_synthesis": {
+      "instruction": "Represent the source set faithfully, distinguish evidence from inference, compare sources at the right level, and make every citation verifiable.",
+      "focus": ["Build a claim-to-source map before polishing.", "Report disagreement, scope, methods, and limitations.", "Verify citations independently from generated prose."]
+    }
+  },
+  "workflow": {
+    "name": "substance_first_revision",
+    "steps": [
+      { "step": 1, "instruction": "Determine the audience, purpose, medium, constraints, and available evidence." },
+      { "step": 2, "instruction": "Inspect source material or the existing product before generating." },
+      { "step": 3, "instruction": "Choose the relevant task mode and ignore irrelevant modes." },
+      { "step": 4, "instruction": "Draft for substance and function first." },
+      { "step": 5, "instruction": "Review against a short set of high-value checks." },
+      { "step": 6, "instruction": "Revise underlying problems rather than swapping flagged words mechanically." },
+      { "step": 7, "instruction": "Stop when the requested work is complete." }
+    ]
+  },
+  "quality_checks": [
+    { "id": "WR-QC-001", "name": "specificity", "test": "Could a generic sentence apply unchanged to many unrelated subjects? Replace it with the concrete fact, mechanism, example, or remove it." },
+    { "id": "WR-QC-002", "name": "evidence", "test": "Does every material factual or interpretive claim have support at the same scope and certainty?" },
+    { "id": "WR-QC-003", "name": "attribution", "test": "Are opinions, disputed claims, quantities of support, and source positions attributed to the correct specific source?" },
+    { "id": "WR-QC-004", "name": "structure", "test": "Does each section, paragraph, list, and conclusion serve the audience's task rather than a reusable outline?" },
+    { "id": "WR-QC-005", "name": "formatting", "test": "Is every heading, list, table, emphasis mark, character, and markup construct valid and useful in the target?" },
+    { "id": "WR-QC-006", "name": "citations", "test": "Does every citation resolve, match its metadata, support the claim, include an adequate locator, and render correctly?" },
+    { "id": "WR-QC-007", "name": "voice_consistency", "test": "Are voice, terminology, locale, and formality consistent except where speaker, source, audience, or purpose intentionally changes?" },
+    { "id": "WR-QC-008", "name": "last_useful_point", "test": "Would deleting the ending remove necessary information, action, requested closure, or a brief courtesy that genuinely serves the audience and tone? If not, stop earlier." }
+  ],
+  "examples": [
+    {
+      "rule_ids": ["WR-CONTENT-001", "WR-CONTENT-003"],
+      "avoid": "The archive's 1989 opening marked a pivotal moment, underscoring its enduring importance to the region.",
+      "prefer": "The archive opened in 1989 and added public access to 42 municipal collections previously held in separate offices.",
+      "why": "The revision replaces generic importance with the concrete consequence."
+    },
+    {
+      "rule_ids": ["WR-STRUCTURE-004"],
+      "avoid": "Despite these challenges, continued innovation and collaboration will ensure a promising future.",
+      "prefer": "The pilot cannot proceed until the agency publishes the missing retention policy.",
+      "why": "A concrete unresolved condition is more useful than unsupported optimism; a real conclusion remains allowed."
+    },
+    {
+      "rule_ids": ["WR-LANGUAGE-004", "WR-FORMAT-005"],
+      "avoid": "Forcing three benefits into a three-row table when only two distinct benefits are supported.",
+      "prefer": "State the two supported benefits in prose, or use a table only if several options must be compared across the same fields.",
+      "why": "List length and format follow the material rather than a visual template."
+    },
+    {
+      "rule_ids": ["WR-INTEGRITY-001", "WR-CITATION-002"],
+      "avoid": "The study proves the intervention works for all adults when it reports an association in one sampled population.",
+      "prefer": "In the sampled group, intervention use was associated with the reported outcome; the study did not establish causation or population-wide effects.",
+      "why": "The revision preserves design, population, and certainty."
+    },
+    {
+      "rule_ids": ["WR-MARKUP-002", "WR-DELIVERY-002"],
+      "avoid": "Publish text containing [oai_citation:1], turn0search0, INSERT_SOURCE_URL, or instructions to delete a drafting note.",
+      "prefer": "Replace internal tokens with verified target citations and resolve every placeholder before publication.",
+      "why": "Internal artifacts and template fields are hard delivery failures, not style tells."
+    }
+  ],
+  "research_provenance": [
+    {
+      "id": "SRC-WR-001",
+      "url": "https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing",
+      "source_type": "Wikipedia community field guide and advice page",
+      "confidence": "medium",
+      "claims_supported": [
+        "The current field guide documents recurring content, language, style, communication, markup, citation, comment, edit-summary, miscellaneous, human-writing, ineffective, and historical indicators.",
+        "Its indicators are descriptive rather than prescriptive, many are Wikipedia-specific, and surface signs should lead to investigation of underlying problems rather than cosmetic replacement.",
+        "Broken markup, internal citation tokens, fabricated references, unsupported analysis, and placeholders are substantive failures even though most stylistic patterns are not proof of AI use."
+      ],
+      "limitations": "Community-maintained and Wikipedia-centered; the page explicitly warns that indicators are not proof and may not generalize outside informational writing."
+    },
+    {
+      "id": "SRC-WR-002",
+      "url": "https://en.wikipedia.org/wiki/Artificial_intelligence_content_detection",
+      "source_type": "Wikipedia overview",
+      "confidence": "medium",
+      "claims_supported": [
+        "AI content detectors can produce false positives and false negatives.",
+        "Style editing and paraphrasing can reduce detector effectiveness.",
+        "Detector outputs should not be treated as proof of authorship."
+      ],
+      "limitations": "Secondary overview; individual quantitative claims depend on the cited studies, detector versions, datasets, and dates."
+    },
+    {
+      "id": "SRC-WR-003",
+      "url": "https://doi.org/10.6028/NIST.AI.600-1",
+      "source_type": "Authoritative NIST risk-management profile",
+      "confidence": "high",
+      "claims_supported": [
+        "Generative systems can confidently produce false or internally inconsistent content, including confabulated logic and citations.",
+        "High-integrity information distinguishes fact from fiction, opinion, and inference; acknowledges uncertainty; is transparent about vetting; and can be linked to original evidence.",
+        "Prompt injection and information-integrity risks justify source, instruction, and output-boundary checks."
+      ],
+      "limitations": "Cross-sector risk guidance rather than a prose style manual; implementation must be adapted to the writing task."
+    },
+    {
+      "id": "SRC-WR-004",
+      "url": "https://aclanthology.org/2024.acl-long.674/",
+      "source_type": "Peer-reviewed primary benchmark study",
+      "confidence": "high",
+      "claims_supported": [
+        "In the RAID benchmark, evaluated detectors were vulnerable to adversarial attacks, sampling variation, repetition penalties, and unseen models.",
+        "Detector evaluation is domain- and condition-sensitive, so a score is not a stable writing-quality target."
+      ],
+      "limitations": "Benchmark results apply to the evaluated generators, detectors, domains, attacks, and decoding strategies, not every future system."
+    },
+    {
+      "id": "SRC-WR-005",
+      "url": "https://doi.org/10.1007/s40979-023-00146-z",
+      "source_type": "Peer-reviewed primary comparative study",
+      "confidence": "high",
+      "claims_supported": [
+        "The evaluated AI-text detection tools were not reliable enough to determine authorship on their own.",
+        "Manual editing, machine paraphrasing, translation, and obfuscation affected detector performance."
+      ],
+      "limitations": "The study evaluated a defined 2023-era tool and document set; product performance can change."
+    },
+    {
+      "id": "SRC-WR-006",
+      "url": "https://doi.org/10.1016/j.patter.2023.100779",
+      "source_type": "Peer-reviewed primary fairness study",
+      "confidence": "high",
+      "claims_supported": [
+        "Several evaluated GPT detectors misclassified non-native English writing at high rates.",
+        "Constrained linguistic variation can overlap with detector features, creating a fairness risk.",
+        "Writers should not be penalized for ordinary grammar, word choice, or language-learning patterns."
+      ],
+      "limitations": "Results concern the studied essays and detectors; later work may find different performance in other settings, reinforcing the need for context-specific validation."
+    },
+    {
+      "id": "SRC-WR-007",
+      "url": "https://www.pnas.org/doi/10.1073/pnas.2422455122",
+      "source_type": "Peer-reviewed primary linguistic study",
+      "confidence": "high",
+      "claims_supported": [
+        "Systematic lexical, grammatical, and rhetorical differences were observed between the evaluated human and LLM corpora and among LLMs.",
+        "Model-associated writing patterns are multivariate and model-dependent rather than universal proof from a single word or punctuation mark."
+      ],
+      "limitations": "The study's corpora used specified prompts and variants of Llama 3 and GPT-4o; results do not justify blanket bans across all models, genres, or human writers."
+    },
+    {
+      "id": "SRC-WR-008",
+      "url": "https://aclanthology.org/2025.coling-main.426/",
+      "source_type": "Peer-reviewed primary lexical study",
+      "confidence": "high",
+      "claims_supported": [
+        "The study identified a set of words whose increased frequency in scientific abstracts was likely related to LLM use.",
+        "Lexical overrepresentation is a distributional pattern and does not make each occurrence of a focal word defective."
+      ],
+      "limitations": "Focused on changes in scientific English and selected focal words; it does not establish a universal prohibited vocabulary."
+    },
+    {
+      "id": "SRC-WR-009",
+      "url": "https://aclanthology.org/2020.emnlp-main.750/",
+      "source_type": "Peer-reviewed primary summarization study",
+      "confidence": "high",
+      "claims_supported": [
+        "Readable summarization and factual consistency are separate evaluation dimensions.",
+        "Source-grounded span checking can help identify conflicts between a summary and its source."
+      ],
+      "limitations": "Evaluates abstractive summarization systems and a proposed consistency method, not every form of writing or modern general-purpose model."
+    },
+    {
+      "id": "SRC-WR-010",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10484980/",
+      "source_type": "Peer-reviewed primary citation study",
+      "confidence": "high",
+      "claims_supported": [
+        "The evaluated ChatGPT outputs contained fabricated bibliographic citations and errors in citations to real works.",
+        "Plausible appearance and a resolving link are insufficient; citation existence, metadata, locator, and claim support need independent verification."
+      ],
+      "limitations": "The study evaluated particular prompts and versions of GPT-3.5 and GPT-4 in selected disciplines; rates should not be generalized to all models or tasks."
+    }
+  ]
+}

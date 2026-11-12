@@ -1,0 +1,140 @@
+.aio-convert {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* PageHeader brings its own bottom margin; the flex gap handles spacing here. */
+.aio-convert ::deep .aio-page-header {
+  margin-bottom: 4px;
+}
+
+.aio-convert-skeleton {
+  min-height: 320px;
+}
+
+.aio-convert-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.aio-convert-count {
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-convert-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px;
+  background: var(--neutral-layer-1);
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-md, 8px);
+}
+
+.aio-convert-summary-text {
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-convert-summary-text .is-error {
+  color: var(--error, #C50F1F);
+}
+
+/* Toolbar and status line stay in view at the top of the scrolling page. */
+.aio-convert-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: -8px 0;
+  padding: 8px 0;
+  /* Same surface as the scrolling content area (.aio-content), so rows pass under it cleanly. */
+  background: var(--neutral-layer-1);
+}
+
+/* The file list is a size container: rows lay themselves out from its width (ConvertFileRow.razor.css). */
+.aio-convert-files {
+  container: aio-files / inline-size;
+}
+
+.aio-convert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aio-convert-head {
+  display: none;
+}
+
+/* Wide list: one line per file (type and size join as columns from 1400 px). The list owns the columns; the header and every row reuse them (subgrid), so
+   names, types, targets and statuses line up like a details view. Edge tracks are auto so the rows' padding and
+   border fit in them. */
+@container aio-files (min-width: 1040px) {
+  .aio-convert-list {
+    display: grid;
+    grid-template-columns:
+      [icon-start] auto [icon-end info-start] minmax(220px, 2fr) [info-end target-start] minmax(160px, 220px)
+      [target-end status-start] minmax(200px, 1.4fr) [status-end actions-start] auto [actions-end];
+    column-gap: 16px;
+    row-gap: 8px;
+  }
+
+  .aio-convert-item,
+  .aio-convert-head {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: subgrid;
+  }
+
+  .aio-convert-head {
+    padding: 0 17px;
+    color: var(--neutral-foreground-hint);
+    font-size: var(--type-ramp-minus-1-font-size, 12px);
+    font-weight: 600;
+  }
+
+  .aio-head-info { grid-column: info; }
+  .aio-head-type,
+  .aio-head-size { display: none; }
+  .aio-head-target { grid-column: target; }
+  .aio-head-status { grid-column: status; }
+
+  /* Keeps the icon column as wide as the row icon when no row has rendered yet. */
+  .aio-convert-head::before {
+    content: "";
+    grid-column: icon;
+    width: 40px;
+  }
+}
+
+@container aio-files (min-width: 1400px) {
+  .aio-convert-list {
+    grid-template-columns:
+      [icon-start] auto [icon-end info-start] minmax(240px, 2.4fr) [info-end type-start] minmax(110px, .7fr)
+      [type-end size-start] minmax(72px, .4fr) [size-end target-start] minmax(200px, 260px)
+      [target-end status-start] minmax(220px, 1.6fr) [status-end actions-start] auto [actions-end];
+  }
+
+  .aio-head-type {
+    display: block;
+    grid-column: type;
+  }
+
+  .aio-head-size {
+    display: block;
+    grid-column: size;
+    text-align: right;
+  }
+}
+
+@media (max-width: 640px) {
+  .aio-convert-toolbar ::deep fluent-button {
+    flex: 1 1 auto;
+  }
+}

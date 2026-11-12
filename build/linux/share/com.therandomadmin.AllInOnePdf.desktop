@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=AllInOne PDF
+GenericName=Document converter and page builder
+Comment=Convert anything to PDF and PDF to anything, read, style and lay out documents, all offline
+Exec=allinonepdf %F
+Icon=com.therandomadmin.AllInOnePdf
+Terminal=false
+Categories=Office;Publishing;
+MimeType=application/pdf;text/markdown;text/plain;text/html;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/epub+zip;application/rtf;
+Keywords=PDF;Convert;Markdown;Word;EPUB;Theme;Publish;
+StartupWMClass=AllInOnePdf

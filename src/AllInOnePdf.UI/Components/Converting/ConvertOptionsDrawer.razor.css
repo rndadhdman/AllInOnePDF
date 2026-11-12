@@ -1,0 +1,88 @@
+/* Header and footer stay put; only the body scrolls, so the footer never covers options. The drawer is a flex
+   item of the panel's column (fluent-dialog's control part), between the panel header and footer. The panel grows
+   with its content, so the drawer caps itself at the viewport minus the panel header and footer (20 px each). */
+.aio-drawer {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aio-drawer-header {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.aio-drawer-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.aio-drawer-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 8px 12px;
+  border-radius: var(--aio-radius-md, 8px);
+  background: var(--neutral-layer-2);
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-drawer-file-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* The two tab labels ("PDF output", "Reading Markdown") read as one phrase with the default spacing, and the
+   built-in indicator is sized before the panel finishes opening (it underlined only part of the label). Space the
+   tabs and draw the selection as a full-width underline on the tab itself. */
+.aio-drawer ::deep .aio-drawer-tabs::part(tablist) {
+  column-gap: 8px;
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.aio-drawer ::deep .aio-drawer-tabs::part(activeIndicator) {
+  display: none;
+}
+
+.aio-drawer ::deep .aio-drawer-tabs fluent-tab {
+  padding: 6px 12px;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+
+.aio-drawer ::deep .aio-drawer-tabs fluent-tab[aria-selected="true"] {
+  border-bottom-color: var(--accent-fill-rest);
+  font-weight: 600;
+}
+
+.aio-drawer-tab-body {
+  padding: 16px 2px 8px;
+}
+
+.aio-drawer-note {
+  color: var(--neutral-foreground-hint);
+  padding: 8px 0;
+}
+
+.aio-drawer-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--neutral-stroke-divider-rest);
+  background: var(--neutral-layer-floating, var(--neutral-layer-1));
+}

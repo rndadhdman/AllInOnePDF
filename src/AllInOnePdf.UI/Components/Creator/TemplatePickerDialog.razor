@@ -1,0 +1,83 @@
+@* Body of the "New publication" dialog: the built-in templates with rendered thumbnails. *@
+@implements IDialogContentComponent<TemplatePickerModel>
+@implements IDisposable
+@inject CreatorThumbnailCache Thumbnails
+
+<FluentDialogBody>
+    <div class="cr-pick-grid" role="radiogroup" aria-label="Templates">
+        @foreach (var template in BuiltInTemplates.All())
+        {
+            var on = template.Id == Content.SelectedId;
+            <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="cr-pick-card @(on ? "is-on" : null)"
+                    title="@template.Description" @onclick="() => Content.SelectedId = template.Id">
+                <span class="cr-pick-thumb">
+                    @if (_thumbs.TryGetValue(template.Id, out var url) && url is not null)
+                    {
+                        <img src="@url" alt="" />
+                    }
+                    else if (_failed.Contains(template.Id))
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size24.DocumentOnePage())" Color="Color.Neutral" />
+                    }
+                    else
+                    {
+                        <FluentSkeleton Shape="SkeletonShape.Rect" Width="100%" Height="100%" Shimmer="true" />
+                    }
+                </span>
+                <span class="cr-pick-name">@template.Name</span>
+                <span class="cr-pick-desc">@template.Description</span>
+            </button>
+        }
+    </div>
+</FluentDialogBody>
+
+@code {
+    /// <summary>The dialog model.</summary>
+    [Parameter] public TemplatePickerModel Content { get; set; } = new();
+
+    private readonly CancellationTokenSource _cts = new();
+    private readonly Dictionary<string, string?> _thumbs = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _failed = new(StringComparer.Ordinal);
+
+    protected override void OnInitialized()
+    {
+        Content.SelectedId ??= BuiltInTemplates.BlankId;
+        foreach (var t in BuiltInTemplates.All())
+        {
+            if (Thumbnails.TryGetTemplate(t.Id, out var url))
+            {
+                _thumbs[t.Id] = url;
+            }
+        }
+
+        _ = LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        foreach (var template in BuiltInTemplates.All().Where(t => !_thumbs.ContainsKey(t.Id)).ToList())
+        {
+            try
+            {
+                var url = await Thumbnails.GetTemplateAsync(template, _cts.Token);
+                _thumbs[template.Id] = url;
+                if (url is null)
+                {
+                    _failed.Add(template.Id);
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

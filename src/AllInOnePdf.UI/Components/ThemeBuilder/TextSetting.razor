@@ -1,0 +1,37 @@
+@* Free-text theme property (titles, notes, overrides). Empty text maps to null when AllowNull is set. *@
+@inject ThemeBuilderState State
+
+<div class="tb-field">
+    <FluentTextField Value="@(Get() ?? string.Empty)" ValueChanged="@((string? v) => Apply(v))" Label="@Label"
+                     Placeholder="@Placeholder" Immediate="true" ImmediateDelay="250" Style="width:100%" />
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <div class="tb-hint">@Hint</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+    [Parameter, EditorRequired] public Action<string?> Set { get; set; } = _ => { };
+    [Parameter] public bool AllowNull { get; set; } = true;
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Hint { get; set; }
+
+    private void Apply(string? value)
+    {
+        if (AllowNull && string.IsNullOrEmpty(value))
+        {
+            value = null;
+        }
+
+        value ??= AllowNull ? null : string.Empty;
+        if (string.Equals(value, Get(), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit("text:" + Label);
+    }
+}

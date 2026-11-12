@@ -1,0 +1,41 @@
+/* Title and description at the top left, the command bar at the right edge of the page (not of the text column).
+   The description keeps a reading measure; the header itself spans the page at every width. */
+.aio-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 24px;
+  flex-wrap: wrap;
+  margin-bottom: calc(var(--aio-gap, 16px) + 4px);
+}
+
+.aio-page-header-text {
+  flex: 1 1 32ch;
+  min-width: 0;
+}
+
+.aio-page-title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-page-description {
+  margin: 4px 0 0;
+  max-width: 80ch;
+  color: var(--neutral-foreground-hint, #616161);
+  line-height: 20px;
+}
+
+.aio-page-actions {
+  flex: 0 1 auto;
+  max-width: 100%;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}

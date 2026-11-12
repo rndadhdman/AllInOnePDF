@@ -1,0 +1,22 @@
+/* Native range input styled with the Fluent tokens so it matches the other fields in both themes. Size it from the
+   page (flex, width) through the Class parameter and ::deep. */
+.aio-range {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 24px;
+    margin: 0;
+    accent-color: var(--accent-fill-rest);
+    background: transparent;
+    cursor: pointer;
+}
+
+.aio-range:focus-visible {
+    outline: 2px solid var(--focus-stroke-outer, var(--accent-fill-rest));
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.aio-range:disabled {
+    cursor: not-allowed;
+    opacity: var(--disabled-opacity, .3);
+}

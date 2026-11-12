@@ -1,0 +1,34 @@
+@inherits SettingsGroupBase
+
+<div class="tb-tabs" role="tablist" aria-label="Header or footer">
+    @foreach (var (key, label) in new[] { ("header", "Header"), ("footer", "Footer") })
+    {
+        var on = key == Current;
+        <button type="button" role="tab" id="@($"tb-hftab-{key}")" aria-selected="@(on ? "true" : "false")" aria-controls="tb-hfpanel"
+                tabindex="@(on ? 0 : -1)" class="tb-tab @(on ? "is-on" : null)" @onclick="() => SelectSub(key)"
+                @onkeydown="@(e => e.Key is "ArrowLeft" or "ArrowRight" ? SelectSub(key == "header" ? "footer" : "header") : Task.CompletedTask)">
+            @label
+        </button>
+    }
+</div>
+<div id="tb-hfpanel" role="tabpanel" aria-labelledby="@($"tb-hftab-{Current}")" class="tb-tabpanel">
+    <SwitchSetting Label="@($"Show {Current}")" Get="() => Hf.Enabled" Set="v => Hf.Enabled = v" />
+    @if (Hf.Enabled)
+    {
+        <TemplateField Label="Left" Get="() => Hf.Left" Set="v => Hf.Left = v" />
+        <TemplateField Label="Centre" Get="() => Hf.Center" Set="v => Hf.Center = v" />
+        <TemplateField Label="Right" Get="() => Hf.Right" Set="v => Hf.Right = v" />
+        <NumberSetting Label="Text size" Unit="pt" Min="6" Max="14" Step="0.5" Key="@(Current + "-size")" Get="() => Hf.SizePt" Set="v => Hf.SizePt = v" />
+        <ColorField Label="Colour" AllowNull="true" InheritLabel="Muted colour" Inherited="() => T.Colors.Muted" Get="() => Hf.Color" Set="v => Hf.Color = v" />
+        <SwitchSetting Label="@(Current == "header" ? "Rule below" : "Rule above")" Get="() => Hf.Rule" Set="v => Hf.Rule = v" />
+        <SwitchSetting Label="Show on the first page" Get="() => Hf.ShowOnFirstPage" Set="v => Hf.ShowOnFirstPage = v" />
+        <SwitchSetting Label="Show on the cover" Get="() => Hf.ShowOnCover" Set="v => Hf.ShowOnCover = v" />
+        <NumberSetting Label="Distance from text" Unit="pt" Min="0" Max="40" Step="0.5" Key="@(Current + "-sp")" Get="() => Hf.SpacingPt" Set="v => Hf.SpacingPt = v" />
+    }
+</div>
+
+@code {
+    private string Current => Sub == "footer" ? "footer" : "header";
+
+    private HeaderFooterSettings Hf => Current == "footer" ? T.Footer : T.Header;
+}

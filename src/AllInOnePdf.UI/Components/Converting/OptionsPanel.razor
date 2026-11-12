@@ -1,0 +1,109 @@
+@* Generic renderer for importer/exporter options. Groups by OptionDefinition.Group, hides Advanced options behind a
+   toggle and honours VisibleWhen. Bind it to any OptionValues bag; it writes values in place and raises OnChanged. *@
+@inject IThemeStore ThemeStore
+
+<div class="aio-options" aria-label="@AriaLabel">
+    @if (Definitions.Count == 0)
+    {
+        <div class="aio-options-empty">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Info())" Color="Color.Neutral" />
+            <span>@EmptyText</span>
+        </div>
+    }
+    else
+    {
+        @foreach (var group in Groups(advanced: false))
+        {
+            <section class="aio-options-group">
+                @if (group.Name is not null)
+                {
+                    <h3 class="aio-options-heading">@group.Name</h3>
+                }
+                @foreach (var def in group.Items)
+                {
+                    <OptionField @key="def.Key" Definition="def" Values="Values" OnChanged="HandleChangedAsync"
+                                 Disabled="Disabled" Themes="_themes" IdPrefix="@IdPrefix" />
+                }
+            </section>
+        }
+
+        @if (AdvancedCount > 0)
+        {
+            <div class="aio-options-advanced">
+                <FluentButton Appearance="Appearance.Lightweight" OnClick="ToggleAdvanced"
+                              IconStart="@(_showAdvanced ? new Icons.Regular.Size16.ChevronDown() : new Icons.Regular.Size16.ChevronRight())"
+                              aria-expanded="@(_showAdvanced ? "true" : "false")" aria-controls="@($"{IdPrefix}-advanced")">
+                    @(_showAdvanced ? "Hide advanced" : $"Show advanced ({AdvancedCount})")
+                </FluentButton>
+                @if (_showAdvanced)
+                {
+                    <div id="@($"{IdPrefix}-advanced")" class="aio-options-advanced-body">
+                        @foreach (var group in Groups(advanced: true))
+                        {
+                            <section class="aio-options-group">
+                                @if (group.Name is not null)
+                                {
+                                    <h3 class="aio-options-heading">@group.Name</h3>
+                                }
+                                @foreach (var def in group.Items)
+                                {
+                                    <OptionField @key="def.Key" Definition="def" Values="Values" OnChanged="HandleChangedAsync"
+                                                 Disabled="Disabled" Themes="_themes" IdPrefix="@IdPrefix" />
+                                }
+                            </section>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private IReadOnlyList<PdfTheme>? _themes;
+    private bool _showAdvanced;
+
+    [Parameter, EditorRequired] public IReadOnlyList<OptionDefinition> Definitions { get; set; } = [];
+
+    [Parameter, EditorRequired] public OptionValues Values { get; set; } = default!;
+
+    /// <summary>Raised after any option changed, with its key.</summary>
+    [Parameter] public EventCallback<string> OnChanged { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Start with the advanced section expanded.</summary>
+    [Parameter] public bool ShowAdvanced { get; set; }
+
+    [Parameter] public string EmptyText { get; set; } = "There are no options for this step.";
+
+    [Parameter] public string IdPrefix { get; set; } = "opt";
+
+    [Parameter] public string? AriaLabel { get; set; }
+
+    private int AdvancedCount => Definitions.Count(d => ConvertOptionRules.IsAdvanced(d) && ConvertOptionRules.IsVisible(d, Values, Definitions));
+
+    protected override void OnInitialized() => _showAdvanced = ShowAdvanced;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_themes is null && Definitions.Any(d => d.Type == OptionType.Theme))
+        {
+            _themes = await ThemeStore.GetAllAsync();
+        }
+    }
+
+    private IEnumerable<(string? Name, List<OptionDefinition> Items)> Groups(bool advanced) =>
+        Definitions
+            .Where(d => ConvertOptionRules.IsAdvanced(d) == advanced && ConvertOptionRules.IsVisible(d, Values, Definitions))
+            .GroupBy(d => d.Group)
+            .Select(g => (g.Key, g.ToList()));
+
+    private void ToggleAdvanced() => _showAdvanced = !_showAdvanced;
+
+    private async Task HandleChangedAsync(string key)
+    {
+        await OnChanged.InvokeAsync(key);
+        StateHasChanged();
+    }
+}

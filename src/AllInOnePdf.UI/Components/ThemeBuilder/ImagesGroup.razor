@@ -1,0 +1,9 @@
+@inherits SettingsGroupBase
+
+<NumberSetting Label="Width" Unit="%" Min="5" Max="100" Step="1" Key="img-w" Hint="Share of the text column an image fills, unless the document sets its own width." Get="() => T.Images.MaxWidthPercent" Set="v => T.Images.MaxWidthPercent = v" />
+<EnumSetting TEnum="ImageAlign" Label="Alignment" Segmented="true" Get="() => T.Images.Align" Set="v => T.Images.Align = v" />
+<SwitchSetting Label="Show captions" Get="() => T.Images.ShowCaptions" Set="v => T.Images.ShowCaptions = v" />
+<NumberSetting Label="Caption size" Unit="pt" Min="6" Max="16" Step="0.5" Key="img-cap" Get="() => T.Images.CaptionSizePt" Set="v => T.Images.CaptionSizePt = v" />
+<NumberSetting Label="Corner radius" Unit="pt" Min="0" Max="24" Step="0.5" Key="img-r" Get="() => T.Images.CornerRadiusPt" Set="v => T.Images.CornerRadiusPt = v" />
+<SwitchSetting Label="Border" Get="() => T.Images.Border" Set="v => T.Images.Border = v" />
+<NumberSetting Label="Space after" Unit="pt" Min="0" Max="40" Step="0.5" Key="img-sp" Get="() => T.Images.SpacingPt" Set="v => T.Images.SpacingPt = v" />

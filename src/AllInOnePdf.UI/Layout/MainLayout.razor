@@ -1,0 +1,119 @@
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject ThemeService Theme
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject ConversionQueueTuner QueueTuner
+
+@* Fluent design tokens. Preferences (not local storage) are the source of truth, so no StorageName.
+   CustomColor is always set (default brand blue) so switching accents back and forth works. *@
+@* FluentDesignTheme writes GlobalState luminance itself after its first render (from the design tokens, which may
+   not reflect our mode yet) and on mode changes. GlobalState must carry our effective mode, so re-apply it right
+   after each of those (OnLoaded, OnLuminanceChanged) as well as on every ThemeService change. *@
+<FluentDesignTheme Mode="@Theme.Mode" CustomColor="@Theme.CustomColor"
+                   OnLoaded="@(() => Theme.SyncLuminance())"
+                   OnLuminanceChanged="@(() => Theme.SyncLuminance())" />
+
+<div class="@ShellClass">
+    @* First tab stop: jumps past the header and navigation (handled in app.js, no round trip). *@
+    <button type="button" class="aio-skip-link" data-aio-skip-to="aio-main">Skip to page content</button>
+    <AppHeader />
+
+    <div class="aio-body">
+        <NavMenu />
+        <main id="aio-main" class="aio-content" tabindex="-1">
+            <ErrorBoundary @ref="_errorBoundary">
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent Context="error">
+                    <ShellErrorCard Error="error" OnRetry="Recover" />
+                </ErrorContent>
+            </ErrorBoundary>
+        </main>
+    </div>
+
+    @* Providers live inside the shell root so density and theme classes reach dialogs, menus and toasts. *@
+    <FluentToastProvider MaxToastCount="4" Position="ToastPosition.BottomRight" />
+    <FluentDialogProvider />
+    <FluentTooltipProvider />
+    <FluentMessageBarProvider />
+    <FluentMenuProvider />
+</div>
+
+@code {
+    private readonly string _schemeWatchKey = $"shell-{Guid.NewGuid():N}";
+    private ErrorBoundary? _errorBoundary;
+    private DotNetObjectReference<MainLayout>? _selfRef;
+
+    private string ShellClass =>
+        "aio-shell" +
+        (Theme.Compact ? " aio-density-compact" : " aio-density-comfortable") +
+        (Theme.IsDark ? " aio-dark" : " aio-light");
+
+    protected override async Task OnInitializedAsync()
+    {
+        Theme.Changed += OnThemeChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+        await Theme.InitializeAsync();
+        QueueTuner.Apply();
+        Theme.SyncLuminance();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            var dark = await JS.InvokeAsync<bool>("aio.watchColorScheme", _selfRef, _schemeWatchKey);
+            Theme.ReportSystemDark(dark);
+            Theme.SyncLuminance();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    [JSInvokable]
+    public Task OnSystemDarkChanged(bool dark) => InvokeAsync(() => Theme.ReportSystemDark(dark));
+
+    // Every effective-mode change (preference or OS scheme) also updates Fluent's GlobalState luminance.
+    private void OnThemeChanged() => _ = InvokeAsync(() =>
+    {
+        Theme.SyncLuminance();
+        StateHasChanged();
+    });
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _ = InvokeAsync(Recover);
+
+    // A page that failed gets a fresh start when the user retries or navigates away.
+    private void Recover() => _errorBoundary?.Recover();
+
+    public async ValueTask DisposeAsync()
+    {
+        Theme.Changed -= OnThemeChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
+        try
+        {
+            await JS.InvokeVoidAsync("aio.unwatchColorScheme", _schemeWatchKey);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+        catch (InvalidOperationException)
+        {
+            // Prerendering: no JS runtime.
+        }
+
+        _selfRef?.Dispose();
+    }
+}

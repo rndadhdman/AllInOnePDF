@@ -1,0 +1,16 @@
+@* Root routable component shared by both hosts. *@
+<Router AppAssembly="typeof(Routes).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(MainLayout)">
+            <div class="aio-page">
+                <FluentLabel Typo="Typography.H3">Nothing here</FluentLabel>
+                <FluentLabel>The page you asked for does not exist.</FluentLabel>
+                <FluentAnchor Href="/" Appearance="Appearance.Accent">Back to Convert</FluentAnchor>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

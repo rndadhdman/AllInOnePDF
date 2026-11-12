@@ -1,0 +1,85 @@
+﻿@inherits SettingsGroupBase
+
+<FontPicker Label="Heading font" AllowNull="true" Get="() => T.Headings.Font" Set="v => T.Headings.Font = v" Inherited="() => T.Typography.BodyFont" />
+<ColorField Label="Colour" Get="() => T.Headings.Color" Set="v => T.Headings.Color = v ?? T.Headings.Color" Warning="@ThemeBuilderValidation.HeadingContrast(T, null)" />
+<NumberSetting Label="Line height" Unit="×" Min="0.9" Max="2" Step="0.05" Key="h-lh" Get="() => T.Headings.LineHeight" Set="v => T.Headings.LineHeight = v" />
+<SwitchSetting Label="Number headings (1, 1.1, 1.1.1)" Get="() => T.Headings.NumberHeadings" Set="v => T.Headings.NumberHeadings = v" />
+<SwitchSetting Label="Start each level 1 heading on a new page" Get="() => T.Headings.PageBreakBeforeH1" Set="v => T.Headings.PageBreakBeforeH1 = v" />
+<SwitchSetting Label="Keep headings with the next paragraph" Get="() => T.Headings.KeepWithNext" Set="v => T.Headings.KeepWithNext = v" />
+
+<div class="tb-tabs" role="tablist" aria-label="Heading level">
+    @for (var i = 1; i <= 6; i++)
+    {
+        var level = i;
+        var on = level == Level;
+        <button type="button" role="tab" id="@($"tb-htab-{level}")" aria-selected="@(on ? "true" : "false")" aria-controls="tb-hpanel"
+                tabindex="@(on ? 0 : -1)" class="tb-tab @(on ? "is-on" : null)" @onclick="() => SelectSub(HKey(level))" @onkeydown="e => OnTabKey(e, level)">
+            H@(level)
+        </button>
+    }
+</div>
+<div id="tb-hpanel" role="tabpanel" aria-labelledby="@($"tb-htab-{Level}")" class="tb-tabpanel">
+    @{
+        var h = T.Headings.Level(Level);
+        var k = "h" + Level.ToString(CultureInfo.InvariantCulture);
+    }
+    <NumberSetting Label="Size" Unit="pt" Min="6" Max="72" InputMax="120" Step="0.5" Key="@(k + "-size")" Get="() => T.Headings.Level(Level).SizePt" Set="v => T.Headings.Level(Level).SizePt = v" />
+    <NumberSetting Label="Space before" Unit="pt" Min="0" Max="96" Step="1" Key="@(k + "-before")" Get="() => T.Headings.Level(Level).SpaceBeforePt" Set="v => T.Headings.Level(Level).SpaceBeforePt = v" />
+    <NumberSetting Label="Space after" Unit="pt" Min="0" Max="60" Step="1" Key="@(k + "-after")" Get="() => T.Headings.Level(Level).SpaceAfterPt" Set="v => T.Headings.Level(Level).SpaceAfterPt = v" />
+    <EnumSetting TEnum="ThemeFontWeight" Label="Weight" Segmented="true" Get="() => T.Headings.Level(Level).Weight" Set="v => T.Headings.Level(Level).Weight = v" Text="WeightText" />
+    <EnumSetting TEnum="ThemeTextAlign" Label="Alignment" Segmented="true" Options="HeadingAlignments" Text="AlignText"
+                 Get="() => T.Headings.Level(Level).Alignment" Set="v => T.Headings.Level(Level).Alignment = v" />
+    <SwitchSetting Label="Italic" Get="() => T.Headings.Level(Level).Italic" Set="v => T.Headings.Level(Level).Italic = v" />
+    <SwitchSetting Label="Uppercase" Get="() => T.Headings.Level(Level).Uppercase" Set="v => T.Headings.Level(Level).Uppercase = v" />
+    <SwitchSetting Label="Rule under heading" Get="() => T.Headings.Level(Level).Underline" Set="v => T.Headings.Level(Level).Underline = v" />
+    @if (h.Underline)
+    {
+        <ColorField Label="Rule colour" AllowNull="true" InheritLabel="Accent colour" Inherited="() => T.Colors.Accent"
+                    Get="() => T.Headings.Level(Level).RuleColor" Set="v => T.Headings.Level(Level).RuleColor = v" />
+        <NumberSetting Label="Rule width" Unit="pt" Min="0.25" Max="4" Step="0.25" Key="@(k + "-rw")" Get="() => T.Headings.Level(Level).RuleWidthPt" Set="v => T.Headings.Level(Level).RuleWidthPt = v" />
+    }
+    <ColorField Label="Colour override" AllowNull="true" InheritLabel="Heading colour" Inherited="() => T.Headings.Color"
+                Get="() => T.Headings.Level(Level).Color" Set="v => T.Headings.Level(Level).Color = v"
+                Warning="@(h.Color is null ? null : ThemeBuilderValidation.HeadingContrast(T, h.Color))" />
+    <NumberSetting Label="Letter spacing" Unit="em" Min="-0.05" Max="0.3" Step="0.005" Key="@(k + "-ls")" Get="() => T.Headings.Level(Level).LetterSpacingEm" Set="v => T.Headings.Level(Level).LetterSpacingEm = v" />
+</div>
+
+@code {
+    private int Level => Sub is { Length: 2 } s && s[0] == 'h' && s[1] is >= '1' and <= '6' ? s[1] - '0' : 1;
+
+    private static string HKey(int level) => "h" + level.ToString(CultureInfo.InvariantCulture);
+
+    private static readonly ThemeTextAlign[] HeadingAlignments = [ThemeTextAlign.Left, ThemeTextAlign.Center, ThemeTextAlign.Right];
+
+    private static string AlignText(ThemeTextAlign a) => a switch
+    {
+        ThemeTextAlign.Center => "Centre",
+        ThemeTextAlign.Right => "Right",
+        ThemeTextAlign.Justify => "Justify",
+        _ => "Left",
+    };
+
+    private static string WeightText(ThemeFontWeight w) => w switch
+    {
+        ThemeFontWeight.Regular => "Regular",
+        ThemeFontWeight.Medium => "Medium",
+        ThemeFontWeight.SemiBold => "Semibold",
+        _ => "Bold",
+    };
+
+    private async Task OnTabKey(KeyboardEventArgs e, int level)
+    {
+        var next = e.Key switch
+        {
+            "ArrowRight" => level == 6 ? 1 : level + 1,
+            "ArrowLeft" => level == 1 ? 6 : level - 1,
+            "Home" => 1,
+            "End" => 6,
+            _ => 0,
+        };
+        if (next > 0)
+        {
+            await SelectSub(HKey(next));
+        }
+    }
+}

@@ -1,0 +1,442 @@
+@page "/help"
+@using AllInOnePdf.UI.Components.Shell
+@using AllInOnePdf.UI.Services.Shared
+@using AllInOnePdf.Core.Storage
+@inject IHostServices Host
+@inject AppPaths Paths
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+
+<PageTitle>Help · AllInOne PDF</PageTitle>
+
+<div class="aio-page aio-help">
+    <PageHeader Title="Help" Description="How each part of the app works, keyboard shortcuts, the formats it reads and writes, and where it keeps your data." />
+
+    @* Wide windows: contents on the left, the guide to each tab in a column at reading width and the reference
+       sections in a second column that takes the rest. Narrow windows: contents above, one column. *@
+    <div class="aio-help-layout">
+        <nav class="aio-help-toc" aria-label="Help contents">
+            @foreach (var group in TocGroups)
+            {
+                <div class="aio-help-toc-group">
+                    <span class="aio-help-toc-title">@group.Title</span>
+                    <ul>
+                        @foreach (var (id, title) in group.Items)
+                        {
+                            <li><a href="@($"help#{id}")" @onclick="() => JumpAsync(id)" @onclick:preventDefault="true">@title</a></li>
+                        }
+                    </ul>
+                </div>
+            }
+        </nav>
+
+        <div class="aio-help-main">
+            <div class="aio-help-column">
+                <SettingsCard Id="about" Title="What this app does" Icon="@(new Icons.Regular.Size20.Info())">
+                    <div class="aio-help-body">
+                        <p>
+                            AllInOne PDF converts documents to PDF and PDFs to other formats, shows documents in a reading view, and
+                            lays out publications that you build yourself. It works offline: it uses no online services and sends no
+                            usage data. In the desktop app your files never leave this computer.
+                        </p>
+                        <ul>
+                            <li><strong>Reader</strong> shows a document in a reading view you can adjust, or as the PDF pages Convert would make from it.</li>
+                            <li><strong>Create</strong> lays out publications such as newsletters, flyers and reports from sections, rows, columns and modules, and exports them.</li>
+                            <li><strong>Convert</strong> changes files from one format to another, many at a time.</li>
+                            <li><strong>Themes</strong> decide how PDFs look: fonts, colours, headings, page size, headers and footers.</li>
+                            <li><strong>History</strong> lists recent conversions so you can find or repeat them.</li>
+                        </ul>
+                        @if (IsDesktop && OperatingSystem.IsWindows())
+                        {
+                            <p>
+                                The bar along the top is the window's title bar, with Minimize, Maximize and Close on the right. Drag an
+                                empty part of it to move the window, and double-click it to maximize or restore. To use the Windows title
+                                bar instead, turn on <strong>Use the system title bar</strong> in Settings under Appearance.
+                            </p>
+                        }
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard Id="read" Title="Reader" Icon="@(new Icons.Regular.Size20.BookOpen())">
+                    <div class="aio-help-body">
+                        <h3>Open a document</h3>
+                        <p>
+                            Choose <strong>Reader</strong> in the navigation. The Open page lists the files you opened recently under
+                            <strong>Recent</strong> and every file type the Reader understands under <strong>File types</strong>. Drop a file
+                            on the page, choose <strong>Browse…</strong>, or choose a recent file to open it again.
+                            <strong>Try a sample document</strong> opens a sample when you have no file at hand.
+                        </p>
+                        <h3>The reading toolbar</h3>
+                        <ul>
+                            <li><strong>Reflow</strong> shows the text in one column that rewraps to the window. <strong>Pages</strong> shows a print preview: the pages Convert would produce with your default theme, with zoom, <strong>Fit width</strong> and <strong>Actual size</strong>.</li>
+                            <li>The four <strong>palette</strong> buttons switch between Paper, Sepia, Dusk and Night.</li>
+                            <li>The two <strong>A</strong> buttons make the text smaller or larger. <strong>Text</strong> opens the font, line height, line width and justify settings, with <strong>Reset to defaults</strong>. Changes made here last while the app is open; your defaults are set in Settings, and <strong>Reset to defaults</strong> goes back to them.</li>
+                            <li><strong>Outline</strong> shows the document's headings beside the text; the current heading is highlighted as you scroll, and clicking one jumps to it.</li>
+                            <li><strong>Focus</strong> fills the whole window with the document. The toolbar fades after a moment and comes back when you move the mouse.</li>
+                            <li><strong>Open</strong> opens another file, <strong>Close</strong> returns to the Open page with its Recent list, and <strong>Convert this</strong> takes the document to Convert.</li>
+                        </ul>
+                        <p>The reading defaults (palette, font, size, line height and width) are in Settings under Reading.</p>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard Id="create" Title="Create" Icon="@(new Icons.Regular.Size20.DesignIdeas())">
+                    <div class="aio-help-body">
+                        <h3>Start a publication</h3>
+                        <p>
+                            Choose <strong>Create</strong> in the navigation. Pick a template under "Start from a template" (newsletter, flyer,
+                            report, menu, résumé or invoice), or choose <strong>New publication</strong>. <strong>Import…</strong> opens
+                            a publication package (<code>.aiopub</code>) from another computer. Each publication in "Your publications" can be opened,
+                            duplicated, exported as a package or deleted.
+                        </p>
+                        <h3>How a page is built</h3>
+                        <p>
+                            A publication is a stack of <strong>sections</strong>. A section holds <strong>rows</strong>, a row is split
+                            into <strong>columns</strong>, and columns hold <strong>modules</strong>: text (written in Markdown), heading,
+                            image, button, quote, callout, table, code, divider, spacer, contents and page break.
+                        </p>
+                        <h3>Structure and Free flow</h3>
+                        <p>
+                            Every section uses one of two layouts. <strong>Structure</strong> lays modules out in rows and columns that
+                            flow onto the next page when they run out of room. <strong>Free flow</strong> turns the section into a canvas,
+                            one page tall unless you give it a height, where you drag modules anywhere, size them and stack them over each other, like a poster.
+                        </p>
+                        <ul>
+                            <li>The <strong>Structure | Free flow</strong> switch above the canvas sets the layout new sections get. When some sections use the other layout, the app asks whether to convert them too: <strong>Convert all</strong>, <strong>Only new sections</strong> or <strong>Cancel</strong>. Converting to Free flow keeps the modules where they are on the page as far as it can; converting back puts modules that sit side by side into one row.</li>
+                            <li>Each section has its own <strong>Layout</strong> in its Content settings. A Free flow section also has a <strong>Canvas height</strong>: a full page, or a custom height in points. A Free flow section always has a page of its own.</li>
+                            <li>On a Free flow canvas, drag a module to move it and drag the square handles of the selected module to resize it (the corners of an image keep its shape; hold <strong>Shift</strong> to do the opposite). Edges and centres snap to the canvas and to other modules, with a thin guide line; hold <strong>Alt</strong> to place freely, or <strong>Shift</strong> while moving to keep to one direction.</li>
+                            <li>Arrow keys move the selected module by 1 point, with Shift by 10. <strong>Ctrl+]</strong> and <strong>Ctrl+[</strong> bring it forward or send it backward; add Shift to bring it to the front or send it to the back. The same buttons are on its toolbar, and the <strong>Box</strong> settings in the Design tab set the position, size, Z level and Lock aspect exactly. In the Structure panel a Free flow section lists its modules from front to back; drag them to change the order.</li>
+                            <li>Drop a module from Insert where you want it on the canvas, or click its tile. Double-click a module to edit its content. Page breaks do not go on a canvas.</li>
+                            <li>Content that does not fit its box is cut off in the PDF. A small warning badge marks such a module on the canvas: make the box larger.</li>
+                        </ul>
+                        <h3>The builder</h3>
+                        <ul>
+                            <li>The <strong>Structure</strong> panel (left) shows the whole publication as a tree. Click an item to select it; drag it to move it. A dotted <strong>Page n</strong> line shows where each page of the PDF begins, and an item that runs over a page shows "p. 1–2". <strong>Add section</strong> adds a section; <strong>Add page</strong> adds one that starts on a new page.</li>
+                            <li><strong>Insert</strong> (left panel) has a tile for each module. Click a tile to insert it next to the selection, or drag it onto the canvas or the Structure panel. Below the modules are row layouts (column splits) and <strong>Add section</strong>.</li>
+                            <li>The <strong>canvas</strong> in the middle shows the pages as sheets ("Page 1 of 3"), one after the other. A new sheet starts wherever the PDF starts a new page, a moment after each change; a module or side-by-side row that the PDF splits inside stays on its first sheet with a "Continues on page n" mark. Click anything to select it; use the handles to drag sections, rows and modules, and the plus buttons to add rows, modules, sections and pages.</li>
+                            <li>The <strong>inspector</strong> (right panel) shows the settings of the selection, in a <strong>Content</strong> tab and a <strong>Design</strong> tab (margin, padding, background, border, corner radius, text colour and size). With nothing selected it shows the document settings: name, title and other details, page size, orientation, margins, background, and the header and footer.</li>
+                            <li><strong>Design</strong> and <strong>Preview</strong> switch between editing on the canvas and the real PDF, page by page. In Preview, click a page in the strip, use the previous and next buttons, press the left and right arrows, Home or End, Page Up or Page Down at the top or bottom of a page, or keep scrolling past the end of a page. On wide windows the zoom list sits next to them.</li>
+                            <li><strong>Theme…</strong> picks the look from the theme gallery. The publication keeps its own copy, so later changes to the gallery theme do not affect it, and its own page size, orientation, margins, header and footer stay as they are.</li>
+                        </ul>
+                        <h3>Save and export</h3>
+                        <ul>
+                            <li><strong>Save</strong> keeps the publication in the app; the dot next to the name says whether there are unsaved changes. The app asks before you leave with unsaved changes.</li>
+                            <li><strong>Export PDF</strong> makes the PDF. @(IsDesktop ? "You choose where to save it." : "Your browser downloads it.")</li>
+                            <li><strong>More</strong> has <strong>Export as</strong> Word, Excel, PowerPoint, HTML, EPUB, Markdown, plain text or page images (PNG, JPEG or WebP, one image per page), <strong>Read in Reader</strong>, <strong>Save package (.aiopub)</strong> to share or back up the publication with its images, <strong>Save as…</strong> for a copy, and <strong>Reset to saved</strong>.</li>
+                        </ul>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard Id="convert" Title="Convert" Icon="@(new Icons.Regular.Size20.ArrowSwap())">
+                    <div class="aio-help-body">
+                        <h3>Add files</h3>
+                        <p>
+                            Choose <strong>Convert</strong> in the navigation, then drop files on the page or choose <strong>Browse…</strong>.
+                            @if (IsDesktop)
+                            {
+                                <text><strong>Add folder</strong> adds every readable file in a folder, and <strong>Include sub-folders</strong> goes deeper.</text>
+                            }
+                            else
+                            {
+                                <text>Up to 200 files can be added at a time, each up to @UploadLimits.Describe(UploadLimits.MaxUploadBytes).</text>
+                            }
+                        </p>
+                        <h3>Choose a format and options</h3>
+                        <ul>
+                            <li>Each file has its own target format list. A new file starts with PDF (a PDF starts with Markdown), or with the target you last picked for files of the same type; the file then says <em>Last used for … files</em>. <strong>Set target for all</strong> changes every file at once.</li>
+                            <li>The options button on a file opens its options: what to produce (for example the PDF theme or the page range for images) and how to read the source (for example the password of a protected PDF). <strong>Reset to defaults</strong> undoes your changes, and <strong>Apply to … other files</strong> copies the options and target to the other files of the same type.</li>
+                            <li><strong>Convert</strong> or <strong>Convert all</strong> starts. Progress shows on each file. <strong>Cancel</strong> stops a file, <strong>Retry</strong> runs a failed file again and <strong>Convert again</strong> repeats a finished one. <strong>Clear completed</strong> and <strong>Clear all</strong> remove files from the list; files on disk are not deleted.</li>
+                        </ul>
+                        <h3>Where the output goes</h3>
+                        @if (IsDesktop)
+                        {
+                            <p>
+                                Converted files are saved to the folder shown under <strong>Save to</strong> (by default
+                                <code>@Paths.DefaultOutputDirectory</code>), or next to each source file when <strong>Save next to the source file
+                                when possible</strong> is on. <strong>If a file already exists</strong> decides between asking, keeping both and replacing.
+                                After converting, the app can open the file or show it in its folder. Use <strong>Open</strong> and
+                                <strong>Show in folder</strong> on a finished file, or <strong>Read</strong> to open it in the Reader.
+                            </p>
+                        }
+                        else
+                        {
+                            <p>
+                                In the browser, converted files stay in the app until you download them: use <strong>Download</strong> on a file or
+                                <strong>Download all</strong> above the list. A file with pictures in a folder of their own (Markdown or HTML with images)
+                                downloads as one zip that keeps the folder. When two files differ only by their extension (<code>notes.docx</code>,
+                                <code>notes.html</code>), the extension is added to the output name (<code>notes-docx.pdf</code>). After a download the file is released from memory; convert again to download it again.
+                                <strong>Read</strong> opens a converted file in the Reader.
+                            </p>
+                        }
+                        <p><strong>History</strong> lists past conversions, with filters, <strong>Convert again with the same options</strong> and (in the desktop app) <strong>Show in folder</strong>.</p>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard Id="themes" Title="Themes" Icon="@(new Icons.Regular.Size20.PaintBrush())">
+                    <div class="aio-help-body">
+                        <h3>The gallery</h3>
+                        <p>
+                            Choose <strong>Themes</strong> in the navigation. Search by name or filter by tag. <strong>Use as default</strong> makes a
+                            theme the one Convert and the Reader's print preview use. Built-in themes cannot be changed:
+                            <strong>Duplicate and edit</strong> makes your own copy. Your themes can be edited, duplicated, exported as a
+                            <code>.json</code> file and deleted; <strong>Import…</strong> brings in theme files (up to 2 MB each).
+                        </p>
+                        <h3>The theme builder</h3>
+                        <ul>
+                            <li><strong>Fast</strong> is an instant preview. Click any element in it (a heading, a table, a quote) to open its settings on the right. Escape clears the selection.</li>
+                            <li><strong>Exact</strong> shows the real PDF, page by page.</li>
+                            <li>The sample list switches between the welcome sample, a long sample and, when a document is open in the Reader, that document. <strong>Start from…</strong> copies the look of a built-in theme and keeps your theme's name and details; undo takes it back.</li>
+                            <li>The settings panel has a group for each part of the page: page, typography, headings, colours, code, tables, quotes, callouts, lists, links, images, header and footer, cover page and table of contents.</li>
+                            <li><strong>Save</strong> keeps your changes. On a built-in theme the button says <strong>Save copy</strong> and saves a new theme. <strong>Save as…</strong> saves under a new name, <strong>Reset</strong> goes back to the last save, and <strong>Export</strong> saves the theme as a <code>.json</code> file.</li>
+                        </ul>
+                    </div>
+                </SettingsCard>
+            </div>
+
+            <div class="aio-help-column">
+                <SettingsCard Id="shortcuts" Title="Keyboard shortcuts" Icon="@(new Icons.Regular.Size20.Keyboard())">
+                    <div class="aio-help-body">
+                        <p>On a Mac, use Cmd where the table says Ctrl. Shortcuts do not fire while you type in a text field, so the field's own undo still works there.</p>
+                        <div class="aio-help-shortcuts">
+                            @foreach (var group in Shortcuts)
+                            {
+                                <section class="aio-help-shortcut-group" aria-labelledby="@($"aio-keys-{group.Id}")">
+                                    <h3 id="@($"aio-keys-{group.Id}")">@group.Area</h3>
+                                    <table class="aio-help-table">
+                                        <thead>
+                                            <tr><th scope="col">Keys</th><th scope="col">What it does</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var (keys, action) in group.Items)
+                                            {
+                                                <tr>
+                                                    <td class="aio-help-keys">
+                                                        @for (var i = 0; i < keys.Length; i++)
+                                                        {
+                                                            @if (i > 0)
+                                                            {
+                                                                <span class="aio-help-or"> or </span>
+                                                            }
+                                                            <kbd>@keys[i]</kbd>
+                                                        }
+                                                    </td>
+                                                    <td>@action</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </section>
+                            }
+                        </div>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard Id="formats" Title="Files and formats" Icon="@(new Icons.Regular.Size20.DocumentMultiple())">
+                    <div class="aio-help-body">
+                        <div class="aio-help-topics">
+                            <section class="aio-help-topic">
+                                <h3>Reads and writes</h3>
+                                <p>
+                                    Every file the app can read can be converted to every format it can write, because all conversions go through
+                                    one shared document model.
+                                </p>
+                                <ul>
+                                    <li><strong>Reads:</strong> Markdown, PDF, HTML, Word (.docx), Excel (.xlsx), PowerPoint (.pptx), Rich Text (.rtf), EPUB, plain text, images (PNG, JPEG, WebP, GIF, BMP), CSV, JSON and source code.</li>
+                                    <li><strong>Writes:</strong> PDF, Markdown, HTML, Word, Excel, PowerPoint, EPUB, plain text, and PNG, JPEG or WebP page images.</li>
+                                    <li>A PDF turned into images keeps its original pages. Other documents are laid out with a theme first.</li>
+                                    <li>Password-protected PDFs can be read when you enter the password in the file's reading options.</li>
+                                </ul>
+                            </section>
+                            <section class="aio-help-topic">
+                                <h3>Not supported</h3>
+                                <ul>
+                                    <li>Scanned PDFs are not turned into text. A PDF that only contains pictures of pages has no text to extract, and the app does not include text recognition (OCR).</li>
+                                    <li>Old Office formats (.doc, .xls, .ppt). Save them as .docx, .xlsx or .pptx in Office or LibreOffice first.</li>
+                                    <li>TIFF images.</li>
+                                    <li>Writing Rich Text (.rtf). RTF files can be read and converted to anything else.</li>
+                                </ul>
+                            </section>
+                        </div>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard Id="data" Title="Your data" Icon="@(new Icons.Regular.Size20.Folder())">
+                    <div class="aio-help-body">
+                        <div class="aio-help-topics">
+                            <section class="aio-help-topic">
+                                <h3>The data folder</h3>
+                                <p>
+                                    Everything the app remembers is kept in one data folder. On this computer it is
+                                    <code class="aio-help-path">@Paths.DataDirectory</code>@(Paths.IsPortable ? " (portable mode is on)" : null).
+                                </p>
+                                <ul>
+                                    <li><code>preferences.json</code>: your settings.</li>
+                                    <li><code>themes</code>: the themes you made or imported. <code>theme-settings.json</code> remembers the default theme.</li>
+                                    <li><code>publications</code>: the publications you made in Create.</li>
+                                    <li><code>drafts</code>: unsaved work the theme builder and Create save as you go, offered back after a crash and under "Continue where you left off"; cleared when you save.</li>
+                                    <li><code>history.json</code>: the conversion history.</li>
+                                    <li><code>cache</code>: temporary working files.</li>
+                                    <li><code>browser</code>: the desktop window's browser profile.</li>
+                                    <li><code>logs</code>: crash reports from the desktop app.</li>
+                                </ul>
+                                <p>
+                                    Without portable mode the data folder is <code>%APPDATA%\AllInOnePdf</code> on Windows and
+                                    <code>~/.config/AllInOnePdf</code> on Linux. Converted files are not kept there: they go to the output folder, by default an
+                                    "AllInOne PDF" folder in your Documents folder. Change it in Settings under Output.
+                                </p>
+                            </section>
+                            <section class="aio-help-topic">
+                                <h3>Portable mode</h3>
+                                <p>
+                                    The portable packages keep everything in a <code>Data</code> folder next to the app, so the whole app can live on a
+                                    USB stick and leaves nothing in your user profile. Portable mode is on when a <code>portable.txt</code> file sits
+                                    next to the app's program file, or when the app is in the PortableApps.com folder layout. In portable mode the
+                                    default output folder is <code>Data\Output</code>.
+                                </p>
+                                <p>
+                                    To see where the app keeps its data, run <code>AllInOnePdf --paths</code> in a terminal from the app's folder.
+                                    <code>AllInOnePdf --help</code> lists all options.
+                                </p>
+                            </section>
+                            <section class="aio-help-topic">
+                                <h3>Start fresh</h3>
+                                <p>
+                                    Close the app and delete (or rename) the data folder. The next start creates a new one with default settings and
+                                    the built-in themes. This removes your own themes, publications and history, so export anything you want to keep
+                                    first. In portable mode the <code>Data\Output</code> folder is inside the data folder too. To reset only the
+                                    settings, use <strong>Reset to defaults</strong> in Settings.
+                                </p>
+                            </section>
+                        </div>
+                    </div>
+                </SettingsCard>
+
+                <SettingsCard Id="problems" Title="Problems" Icon="@(new Icons.Regular.Size20.ErrorCircle())">
+                    <div class="aio-help-body">
+                        <ul>
+                            <li>
+                                When the desktop app stops because of an unexpected error, it writes a crash report to the <code>logs</code>
+                                folder in the data folder (<code class="aio-help-path">@System.IO.Path.Combine(Paths.DataDirectory, DiagnosticsReport.LogsFolderName)</code>)
+                                and shows where it went.
+                            </li>
+                            <li>
+                                <strong>Copy diagnostics</strong> in Settings under About copies the app version, system details, the data
+                                folder and the start of the newest crash report, to paste into a problem report. Nothing is sent anywhere.
+                            </li>
+                            <li>
+                                A file that will not convert shows the reason on its row. <strong>Copy details</strong> copies the full error.
+                            </li>
+                        </ul>
+                        <div class="aio-help-actions">
+                            <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Open())" OnClick="ReportProblemAsync"
+                                          Title="@BuildInfo.IssuesUrl">Report a problem</FluentButton>
+                            <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Settings())" OnClick="@(() => Nav.NavigateTo("settings"))">Open Settings</FluentButton>
+                        </div>
+                        <p class="aio-muted">Problems are reported on GitHub (@BuildInfo.IssuesUrl). Include the copied diagnostics.</p>
+                    </div>
+                </SettingsCard>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private sealed record ShortcutGroup(string Id, string Area, (string[] Keys, string Action)[] Items);
+    private sealed record TocGroup(string Title, (string Id, string Title)[] Items);
+
+    // The two groups are the two columns of a wide window: the guide to each tab, then reference material.
+    private static readonly TocGroup[] TocGroups =
+    [
+        new("Guide", [
+            ("about", "What this app does"),
+            ("read", "Reader"),
+            ("create", "Create"),
+            ("convert", "Convert"),
+            ("themes", "Themes"),
+        ]),
+        new("Reference", [
+            ("shortcuts", "Keyboard shortcuts"),
+            ("formats", "Files and formats"),
+            ("data", "Your data"),
+            ("problems", "Problems"),
+        ]),
+    ];
+
+    private static readonly string[] SectionIds = TocGroups.SelectMany(g => g.Items).Select(i => i.Id).ToArray();
+
+    // Gathered from Pages/Reader.razor.js, Pages/CreatorBuilder.razor.js, Pages/ThemeBuilder.razor.js,
+    // Components/Creator/DesignCanvas.razor.js, Components/Creator/Editors/MarkdownEditor.razor.js,
+    // Components/ThemeBuilder/BuilderPreview.razor.js and Layout/NavMenu.razor.js. Keep in sync with them.
+    private static readonly ShortcutGroup[] Shortcuts =
+    [
+        new("reader", "Reader", [
+            (["J", "Down arrow"], "Scroll down"),
+            (["K", "Up arrow"], "Scroll up"),
+            (["+", "="], "Larger text (zoom in on the print preview)"),
+            (["-"], "Smaller text (zoom out on the print preview)"),
+            (["T"], "Show or hide the outline (Reflow view)"),
+            (["F"], "Focus mode on or off"),
+            (["1"], "Reflow view"),
+            (["2"], "Pages view (print preview)"),
+            (["Esc"], "Close the text settings, or leave focus mode"),
+        ]),
+        new("create", "Create", [
+            (["Ctrl+S"], "Save"),
+            (["Ctrl+Z"], "Undo"),
+            (["Ctrl+Y", "Ctrl+Shift+Z"], "Redo"),
+            (["Ctrl+D"], "Duplicate the selection (Design view)"),
+            (["Delete", "Backspace"], "Delete the selection (when the canvas or the Structure panel has focus)"),
+            (["Alt+Up arrow", "Alt+Down arrow"], "Move the selection up or down (a Free flow module: forward or backward)"),
+            (["Arrow keys", "Shift+arrow keys"], "Move a selected Free flow module by 1 pt or 10 pt"),
+            (["Ctrl+]", "Ctrl+["], "Bring a Free flow module forward or send it backward"),
+            (["Ctrl+Shift+]", "Ctrl+Shift+["], "Bring a Free flow module to the front or send it to the back"),
+            (["Alt"], "Hold while dragging on a Free flow canvas to turn snapping off"),
+            (["Shift"], "Hold while moving to keep to one direction, or while resizing a corner to switch the aspect lock"),
+            (["Enter", "Space"], "Select the focused item on the canvas or in the Structure panel"),
+            (["Esc"], "Close the side panels on a narrow window, otherwise clear the selection"),
+            (["Ctrl+B"], "Bold, in a text module's editor"),
+            (["Ctrl+I"], "Italic, in a text module's editor"),
+            (["Right arrow", "Page Down"], "Next page in Preview (Page Down once the page is scrolled to its bottom)"),
+            (["Left arrow", "Page Up"], "Previous page in Preview (Page Up once the page is scrolled to its top)"),
+            (["Home", "End"], "First or last page in Preview"),
+        ]),
+        new("theme-builder", "Theme builder", [
+            (["Ctrl+S"], "Save (Save copy on a built-in theme)"),
+            (["Ctrl+Z"], "Undo"),
+            (["Ctrl+Y", "Ctrl+Shift+Z"], "Redo"),
+            (["Esc"], "Clear the selection in the Fast preview"),
+        ]),
+        new("navigation", "Navigation", [
+            (["Up arrow", "Down arrow"], "Move between the items of the navigation"),
+            (["Home", "End"], "First or last navigation item"),
+            (["Esc"], "Close the navigation on a narrow window"),
+        ]),
+    ];
+
+    private bool IsDesktop => Host.Kind == HostKind.Desktop;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // A link such as help#data from elsewhere in the app lands on that section.
+        var fragment = new Uri(Nav.Uri).Fragment.TrimStart('#');
+        if (firstRender && SectionIds.Contains(fragment))
+        {
+            await JumpAsync(fragment);
+        }
+    }
+
+    private async Task JumpAsync(string id)
+    {
+        try
+        {
+            await JS.InvokeAsync<bool>("aio.scrollToId", id);
+        }
+        catch (JSException)
+        {
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    private Task ReportProblemAsync() => Host.OpenUrlAsync(BuildInfo.IssuesUrl);
+}

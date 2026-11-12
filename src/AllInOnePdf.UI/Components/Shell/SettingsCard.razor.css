@@ -1,0 +1,43 @@
+.aio-settings-card {
+  scroll-margin-top: 16px;
+  background: var(--neutral-layer-floating, var(--neutral-layer-1));
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-md);
+  box-shadow: var(--aio-shadow-2);
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-settings-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: var(--aio-card-padding) var(--aio-card-padding) 12px;
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+/* The icon marks the section (the same icon as in the section list); no tinted box behind it, which only added
+   another container inside the card. */
+.aio-settings-card-icon {
+  display: inline-flex;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  color: var(--accent-foreground-rest);
+}
+
+.aio-settings-card-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.aio-settings-card-description {
+  margin: 2px 0 0;
+  color: var(--neutral-foreground-hint);
+  line-height: 20px;
+}
+
+.aio-settings-card-body {
+  padding: 4px var(--aio-card-padding) 8px;
+}

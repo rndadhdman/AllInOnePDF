@@ -1,0 +1,3 @@
+# Packaging tools for build/linux/build-packages.ps1: rpmbuild.
+FROM fedora:41
+RUN dnf install -y rpm-build && dnf clean all

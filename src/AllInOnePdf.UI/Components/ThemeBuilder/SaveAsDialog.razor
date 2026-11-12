@@ -1,0 +1,13 @@
+@* Body of the "Save as" dialog: asks for the new theme's name. *@
+@implements IDialogContentComponent<SaveAsModel>
+
+<FluentDialogBody>
+    <FluentStack Orientation="Orientation.Vertical" VerticalGap="8">
+        <FluentTextField @bind-Value="Content.Name" Label="Theme name" Immediate="true" Required="true" Style="width:100%" autofocus />
+        <FluentLabel Color="Color.Neutral">Saves a copy under this name and opens it. The theme you started from does not change.</FluentLabel>
+    </FluentStack>
+</FluentDialogBody>
+
+@code {
+    [Parameter] public SaveAsModel Content { get; set; } = new();
+}

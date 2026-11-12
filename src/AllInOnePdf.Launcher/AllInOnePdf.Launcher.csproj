@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    AllInOnePdfPortable.exe: the single file at the root of the Windows portable folder. It starts
+    App\AllInOnePdf\AllInOnePdf.exe (the real, self-contained app), passes the command line through and
+    returns the app's exit code, which is how PortableApps.com launchers behave.
+
+    It targets .NET Framework 4.8 on purpose: every supported Windows 10 / 11 build ships it, so the
+    launcher is a 10 KB exe with nothing to install and no runtime folder of its own. The app itself
+    stays on .NET 10, self-contained, inside the App folder.
+  -->
+  <PropertyGroup>
+    <Description>Windows launcher for the portable package: starts App\AllInOnePdf\AllInOnePdf.exe from the folder root.</Description>
+    <TargetFramework>net48</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>AllInOnePdfPortable</AssemblyName>
+    <RootNamespace>AllInOnePdf.Launcher</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <ApplicationIcon>..\AllInOnePdf.Desktop\wwwroot\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugType>none</DebugType>
+    <!-- No .exe.config beside the launcher: nothing to redirect, and 4.8 runs the exe without a supportedRuntime hint. -->
+    <GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

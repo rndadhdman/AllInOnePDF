@@ -1,0 +1,164 @@
+.aio-drop ::deep .aio-drop-zone {
+  width: 100%;
+  border-radius: var(--aio-radius-lg, 12px);
+  border: 2px dashed var(--neutral-stroke-rest);
+  background: var(--neutral-layer-2);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.aio-drop ::deep .aio-drop-zone:hover,
+.aio-drop ::deep .aio-drop-zone[drop-files] {
+  border-color: var(--accent-fill-rest);
+  background: var(--neutral-fill-stealth-hover, var(--neutral-layer-3));
+}
+
+.aio-drop ::deep .aio-drop-zone .inputfile-content {
+  align-self: stretch;
+  justify-self: stretch;
+}
+
+.aio-drop.is-full ::deep .aio-drop-zone {
+  min-height: clamp(220px, 34vh, 380px);
+}
+
+.aio-drop.is-compact ::deep .aio-drop-zone {
+  min-height: 64px;
+  border-width: 1px;
+}
+
+.aio-drop-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.is-compact .aio-drop-content {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 10px 16px;
+  text-align: left;
+}
+
+.aio-drop-icon {
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--neutral-layer-1);
+  box-shadow: var(--aio-shadow-2);
+}
+
+.is-compact .aio-drop-icon {
+  width: 36px;
+  height: 36px;
+  box-shadow: none;
+}
+
+.aio-drop-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.is-compact .aio-drop-text {
+  flex: 1 1 160px;
+}
+
+.aio-drop-title {
+  font-size: var(--type-ramp-plus-2-font-size, 20px);
+  line-height: var(--type-ramp-plus-2-line-height, 28px);
+  font-weight: 600;
+  color: var(--neutral-foreground-rest);
+}
+
+.is-compact .aio-drop-title {
+  font-size: var(--type-ramp-base-font-size, 14px);
+  line-height: var(--type-ramp-base-line-height, 20px);
+}
+
+.aio-drop-hint {
+  color: var(--neutral-foreground-hint);
+}
+
+/* Buttons sit above FluentInputFile's invisible <input> so they get their own clicks. */
+.aio-drop-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.is-compact .aio-drop-actions {
+  justify-content: flex-end;
+}
+
+.aio-drop.is-busy ::deep .aio-drop-zone {
+  border-style: solid;
+  border-color: var(--accent-fill-rest);
+}
+
+/* "Files you can convert": rows of icon, name and extensions, one group per column as the width allows. */
+.aio-drop {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.aio-drop-types-title {
+  margin: 0 0 12px;
+  font-size: var(--type-ramp-plus-1-font-size, 16px);
+  line-height: var(--type-ramp-plus-1-line-height, 22px);
+  font-weight: 600;
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-drop-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px 24px;
+}
+
+.aio-drop-group-name {
+  margin: 0 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-drop-type-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aio-drop-type {
+  display: grid;
+  grid-template-columns: 20px minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-drop-type-ext {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--neutral-foreground-hint);
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+}

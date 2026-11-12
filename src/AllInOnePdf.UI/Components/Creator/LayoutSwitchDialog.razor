@@ -1,0 +1,54 @@
+@* Asked when the builder's "Structure | Free flow" switch changes and some sections use the other layout: convert
+   them too, keep them and use the new layout only for new sections, or cancel. Returns ConvertAllResult or
+   NewOnlyResult; Escape, the X and Cancel cancel. *@
+@implements IDialogContentComponent<LayoutSwitchModel>
+
+<FluentDialogHeader ShowDismiss="true">
+    <FluentLabel Typo="Typography.PaneHeader" id="cr-layout-switch-title">@Title</FluentLabel>
+</FluentDialogHeader>
+
+<FluentDialogBody>
+    <p class="cr-layout-switch-text" id="cr-layout-switch-desc">
+        @if (Content.Layout == SectionLayout.FreeFlow)
+        {
+            @($"{Sections} Structure. Converted sections keep their modules where they are on the page, and you can then drag them anywhere. ")
+        }
+        else
+        {
+            @($"{Sections} Free flow. Converted sections turn their modules into rows and columns, top to bottom. ")
+        }
+        New sections use @Name either way, and every section can be switched on its own in its settings.
+    </p>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+    <FluentButton Appearance="Appearance.Accent" OnClick="ConvertAsync" Autofocus="true">Convert all</FluentButton>
+    <FluentButton Appearance="Appearance.Outline" OnClick="NewOnlyAsync">Only new sections</FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="CancelAsync">Cancel</FluentButton>
+</FluentDialogFooter>
+
+@code {
+    /// <summary>Result: convert the existing sections too.</summary>
+    public const string ConvertAllResult = "all";
+
+    /// <summary>Result: only new sections get the layout.</summary>
+    public const string NewOnlyResult = "new";
+
+    /// <summary>The layout being switched to and how many sections use the other one.</summary>
+    [Parameter] public LayoutSwitchModel Content { get; set; } = new();
+
+    [CascadingParameter] public FluentDialog Dialog { get; set; } = default!;
+
+    private string Name => Content.Layout == SectionLayout.FreeFlow ? "Free flow" : "Structure";
+
+    private string Title => $"Convert the existing sections to {Name} too?";
+
+    /// <summary>"1 section uses" / "3 sections use", followed by the other layout's name.</summary>
+    private string Sections => Content.OtherSections == 1 ? "1 section uses" : $"{Content.OtherSections} sections use";
+
+    private Task ConvertAsync() => Dialog.CloseAsync(ConvertAllResult);
+
+    private Task NewOnlyAsync() => Dialog.CloseAsync(NewOnlyResult);
+
+    private Task CancelAsync() => Dialog.CancelAsync();
+}

@@ -1,0 +1,64 @@
+# RPM spec for AllInOne PDF. build-packages.ps1 fills the {PLACEHOLDERS} and runs rpmbuild -bb in fedora:41;
+# %install takes the tree from stage-tree.sh, which copies the self-contained linux-x64 publish output.
+
+# The bundled .NET runtime, SkiaSharp, HarfBuzz, pdfium and Photino binaries ship as published: no stripping,
+# no debuginfo package, no build-id links, no brp post-processing.
+%global __strip /bin/true
+%global __os_install_post %{nil}
+%global debug_package %{nil}
+%global _build_id_links none
+
+Name:           allinonepdf
+Version:        {VERSION}
+Release:        1
+Summary:        {SUMMARY}
+License:        MIT
+URL:            https://therandomadmin.com
+Group:          Applications/Office
+Packager:       AllInOne PDF contributors <noreply@github.com>
+Vendor:         AllInOne PDF contributors
+BuildArch:      x86_64
+# The self-contained .NET runtime must not be scanned: its libraries would add bogus provides and requires.
+AutoReqProv:    no
+Requires:       webkit2gtk4.1
+Requires:       gtk3
+# libnotify by its soname: Fedora's rpmlint rejects explicit "lib*" package names (explicit-lib-dependency).
+Requires:       libnotify.so.4()(64bit)
+Requires:       fontconfig
+Requires:       freetype
+Requires:       hicolor-icon-theme
+# Locale-aware dates; without it /usr/bin/allinonepdf switches .NET to invariant globalisation.
+Recommends:     libicu
+
+%description
+{DESCRIPTION}
+
+%prep
+
+%build
+
+%install
+sh /work/in/stage-tree.sh %{buildroot} rpm
+
+# Fedora refreshes the desktop database and the icon cache through file triggers in desktop-file-utils and
+# gtk-update-icon-cache, so no %%post/%%postun scriptlets are needed (Fedora packaging guidelines).
+
+%files
+/opt/allinonepdf
+%{_bindir}/allinonepdf
+%{_mandir}/man1/allinonepdf.1.gz
+%{_datadir}/applications/com.therandomadmin.AllInOnePdf.desktop
+%{_datadir}/metainfo/com.therandomadmin.AllInOnePdf.metainfo.xml
+%{_datadir}/icons/hicolor/256x256/apps/com.therandomadmin.AllInOnePdf.png
+%{_datadir}/icons/hicolor/128x128/apps/com.therandomadmin.AllInOnePdf.png
+%{_datadir}/icons/hicolor/64x64/apps/com.therandomadmin.AllInOnePdf.png
+%{_datadir}/icons/hicolor/48x48/apps/com.therandomadmin.AllInOnePdf.png
+%{_datadir}/icons/hicolor/32x32/apps/com.therandomadmin.AllInOnePdf.png
+%{_datadir}/icons/hicolor/16x16/apps/com.therandomadmin.AllInOnePdf.png
+%dir %{_docdir}/allinonepdf
+%license %{_docdir}/allinonepdf/LICENSE
+%doc %{_docdir}/allinonepdf/THIRD-PARTY-NOTICES.md
+
+%changelog
+* {RPMDATE} AllInOne PDF contributors <noreply@github.com> - {VERSION}-1
+- Release {VERSION}; see https://github.com/rndadhdman/AllInOnePDF/blob/main/CHANGELOG.md

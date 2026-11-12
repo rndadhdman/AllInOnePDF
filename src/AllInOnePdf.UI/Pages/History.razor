@@ -1,0 +1,178 @@
+@page "/history"
+@implements IDisposable
+
+<PageTitle>History · AllInOne PDF</PageTitle>
+
+<div class="aio-page aio-history">
+    <PageHeader Title="History" Description="@HeaderDescription">
+        <Actions>
+            @if (_entries is { Count: > 0 })
+            {
+                <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Delete())" OnClick="ClearAllAsync"
+                              Title="Remove every entry from the history (converted files are kept)" aria-label="Clear history">
+                    Clear history
+                </FluentButton>
+            }
+        </Actions>
+    </PageHeader>
+
+    @if (!Preferences.Current.KeepHistory)
+    {
+        <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false" Class="aio-history-bar">
+            History is turned off, so new conversions are not recorded. You can turn it on in Settings.
+        </FluentMessageBar>
+    }
+
+    @if (_entries is null)
+    {
+        <div class="aio-history-skeleton" aria-busy="true" aria-label="Loading history">
+            @for (var i = 0; i < 5; i++)
+            {
+                <FluentSkeleton Width="100%" Height="44px" Shape="SkeletonShape.Rect" Shimmer="true" />
+            }
+        </div>
+    }
+    else if (_entries.Count == 0)
+    {
+        <EmptyState Icon="@(new Icons.Regular.Size48.History())" Title="No conversions yet"
+                    Description="@(Host.SupportsNativeDialogs
+                        ? "Each file you convert is listed here, so you can open the result or convert the file again with the same options."
+                        : "Each file you convert is listed here with its target, the time and the result.")">
+            <FluentAnchor Href="/" Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.ArrowSwap())">Go to Convert</FluentAnchor>
+        </EmptyState>
+    }
+    else
+    {
+        <div class="aio-history-filters" role="search" aria-label="Filter history">
+            <FluentSearch @bind-Value="_search" @bind-Value:after="StateHasChanged" Immediate="true" ImmediateDelay="200"
+                          Placeholder="Search by file name" aria-label="Search by file name" Class="aio-history-search" />
+            <FluentSelect TOption="string" @bind-Value="_result" aria-label="Filter by result" Width="160px" Position="SelectPosition.Below">
+                <FluentOption TOption="string" Value="@ConvertHistoryView.AllResults">All results</FluentOption>
+                <FluentOption TOption="string" Value="@ConvertHistoryView.ConvertedOnly">Converted</FluentOption>
+                <FluentOption TOption="string" Value="@ConvertHistoryView.FailedOnly">Failed</FluentOption>
+            </FluentSelect>
+            <FluentSelect TOption="string" @bind-Value="_target" aria-label="Filter by target" Width="160px" Position="SelectPosition.Below">
+                <FluentOption TOption="string" Value="@ConvertHistoryView.AllTargets">All targets</FluentOption>
+                @foreach (var id in _entries.Select(e => e.TargetFormatId).Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase))
+                {
+                    <FluentOption TOption="string" Value="@id">@ConvertFormatting.FormatName(id)</FluentOption>
+                }
+            </FluentSelect>
+            <FluentSpacer />
+            <span class="aio-history-count" aria-live="polite">@ConvertHistoryView.CountText(Shown.Count, _entries.Count)</span>
+        </div>
+
+        <div class="aio-history-frame">
+            @* A plain table (not FluentDataGrid): its columns size to the window, and narrow windows stack each row. *@
+            <table class="aio-history-table @(Host.SupportsShellOpen ? "has-open" : null)" role="table" aria-label="Conversion history">
+                <thead role="rowgroup">
+                    <tr role="row" class="aio-history-head">
+                        @HeaderCell("File", HistorySortColumn.File, "file")
+                        @HeaderCell("Target", HistorySortColumn.Target, "target")
+                        @HeaderCell("When", HistorySortColumn.When, "when")
+                        @HeaderCell("Result", HistorySortColumn.Result, "result")
+                        <th role="columnheader" scope="col" class="aio-hc-theme"><span class="aio-history-th">Theme</span></th>
+                        @HeaderCell("Duration", HistorySortColumn.Duration, "duration", end: true)
+                        @HeaderCell("Size", HistorySortColumn.Size, "size", end: true)
+                        <th role="columnheader" scope="col" class="aio-hc-actions"><span class="aio-visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody role="rowgroup">
+                    @if (Shown.Count == 0)
+                    {
+                        <tr role="row" class="aio-history-nomatch-row">
+                            <td role="cell" class="aio-history-nomatch">No conversions match these filters.</td>
+                        </tr>
+                    }
+                    @foreach (var entry in Shown)
+                    {
+                        <tr role="row" @key="entry.Id" class="aio-history-row @(entry.Success ? null : "is-failed")">
+                            <td role="cell" class="aio-hc-file">
+                                <div class="aio-history-source" title="@(Host.SupportsNativeDialogs ? entry.SourcePath ?? entry.SourceFileName : entry.SourceFileName)">
+                                    <FluentIcon Value="@ConvertFormatting.FileIcon(KnownFormats.FindById(entry.SourceFormatId))" Color="Color.Neutral" Width="20px" />
+                                    <span class="aio-history-source-text">
+                                        <span class="aio-history-name">@entry.SourceFileName</span>
+                                        @if (Host.SupportsNativeDialogs && !CanRepeat(entry))
+                                        {
+                                            @* Shown inline: a missing button cannot explain itself. The web host says it once, in the header. *@
+                                            <span class="aio-history-note">@RepeatUnavailableReason(entry)</span>
+                                        }
+                                        @if (!entry.Success && entry.Error is { } error)
+                                        {
+                                            <span class="aio-history-error" title="@error">@(ConvertRules.RowError(error, -1) ?? error)</span>
+                                        }
+                                    </span>
+                                </div>
+                            </td>
+                            <td role="cell" class="aio-hc-target">@ConvertFormatting.FormatName(entry.TargetFormatId)</td>
+                            <td role="cell" class="aio-hc-when">
+                                <span title="@entry.Timestamp.ToLocalTime().ToString("F", System.Globalization.CultureInfo.CurrentCulture)">@ConvertFormatting.When(entry.Timestamp)</span>
+                            </td>
+                            <td role="cell" class="aio-hc-result">
+                                @if (entry.Success)
+                                {
+                                    <span class="aio-history-status is-ok">
+                                        <FluentIcon Value="@(new Icons.Filled.Size16.CheckmarkCircle())" Color="Color.Success" />
+                                        Converted
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="aio-history-status is-error">
+                                        <FluentIcon Value="@(new Icons.Filled.Size16.ErrorCircle())" Color="Color.Error" />
+                                        Failed
+                                    </span>
+                                }
+                            </td>
+                            <td role="cell" class="aio-hc-theme" data-label="Theme">
+                                <span class="@(entry.ThemeId is null ? "aio-history-muted" : null)">@ThemeName(entry.ThemeId)</span>
+                            </td>
+                            <td role="cell" class="aio-hc-duration">@ConvertFormatting.Duration(entry.ElapsedSeconds)</td>
+                            <td role="cell" class="aio-hc-size">@(entry.Success ? ConvertFormatting.Bytes(entry.OutputBytes) : "")</td>
+                            <td role="cell" class="aio-hc-actions">
+                                <div class="aio-history-actions">
+                                    @if (Host.SupportsShellOpen && entry.PrimaryOutput is { } output)
+                                    {
+                                        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Open())"
+                                                      Title="@($"Open {Path.GetFileName(output)}")" aria-label="@($"Open {Path.GetFileName(output)}")" OnClick="() => OpenAsync(output)" />
+                                        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.FolderOpen())"
+                                                      Title="Show in folder" aria-label="@($"Show {Path.GetFileName(output)} in folder")" OnClick="() => RevealAsync(output)" />
+                                    }
+                                    @if (CanRepeat(entry))
+                                    {
+                                        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowRepeatAll())"
+                                                      Title="Convert again with the same options"
+                                                      aria-label="@($"Convert {entry.SourceFileName} again with the same options")"
+                                                      OnClick="() => RepeatAsync(entry)" />
+                                    }
+                                    <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Delete())"
+                                                  Title="Remove from history (the converted file is kept)"
+                                                  aria-label="@($"Remove {entry.SourceFileName} from history")"
+                                                  OnClick="() => RemoveAsync(entry)" />
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    // A sortable column header: a button that flips the order, with aria-sort on the header cell.
+    private RenderFragment HeaderCell(string title, HistorySortColumn column, string css, bool end = false) => __builder =>
+    {
+        var active = _sort == column;
+        <th role="columnheader" scope="col" class="aio-hc-@css @(end ? "is-end" : null)"
+            aria-sort="@(active ? (_descending ? "descending" : "ascending") : "none")">
+            <button type="button" class="aio-history-sort" @onclick="() => SortBy(column)">
+                <span>@title</span>
+                @if (active)
+                {
+                    <FluentIcon Value="@(_descending ? (Icon)new Icons.Regular.Size16.ArrowDown() : new Icons.Regular.Size16.ArrowUp())" Color="Color.Accent" aria-hidden="true" />
+                }
+            </button>
+        </th>
+    };
+}

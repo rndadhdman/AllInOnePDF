@@ -1,0 +1,194 @@
+@* Table module content: a grid of cell inputs with add/remove row and column, header row, per-column alignment and caption. *@
+@inject CreatorState State
+
+@{
+    var cols = ColumnCount;
+}
+<SwitchField Label="First row is a header" Get="() => Module.HeaderRow" Set="v => Module.HeaderRow = v" />
+
+<div class="cr-field">
+    <div class="cr-field-head">
+        <span class="cr-label">Cells</span>
+        <span class="cr-hint">@Module.Cells.Count × @cols · inline Markdown</span>
+    </div>
+    <div class="cr-table-wrap">
+        <table class="cr-table-grid">
+            <thead>
+                <tr>
+                    @for (var c = 0; c < cols; c++)
+                    {
+                        var col = c;
+                        var align = AlignmentOf(col);
+                        <th scope="col">
+                            <div class="cr-table-colhead">
+                                <button type="button" class="cr-table-btn" title="@($"Column {col + 1}: {align}. Click to change.")"
+                                        aria-label="@($"Column {col + 1} alignment: {align}. Change")" @onclick="() => CycleAlignment(col)">
+                                    <FluentIcon Value="@AlignIcon(align)" Color="Color.Custom" CustomColor="currentColor" />
+                                </button>
+                                <button type="button" class="cr-table-btn" title="@($"Remove column {col + 1}")" aria-label="@($"Remove column {col + 1}")"
+                                        disabled="@(cols <= 1)" @onclick="() => RemoveColumn(col)">
+                                    <FluentIcon Value="@(new Icons.Regular.Size16.Dismiss())" Color="Color.Custom" CustomColor="currentColor" />
+                                </button>
+                            </div>
+                        </th>
+                    }
+                    <th class="cr-table-rowact" aria-hidden="true"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var r = 0; r < Module.Cells.Count; r++)
+                {
+                    var row = r;
+                    var isHeader = Module.HeaderRow && row == 0;
+                    <tr class="@(isHeader ? "is-header" : null)">
+                        @for (var c = 0; c < cols; c++)
+                        {
+                            var col = c;
+                            <td>
+                                <input class="cr-cell" value="@CellAt(row, col)" aria-label="@($"Row {row + 1}, column {col + 1}")"
+                                       @oninput="e => SetCell(row, col, e.Value?.ToString())" />
+                            </td>
+                        }
+                        <td class="cr-table-rowact">
+                            <button type="button" class="cr-table-btn" title="@($"Remove row {row + 1}")" aria-label="@($"Remove row {row + 1}")"
+                                    disabled="@(Module.Cells.Count <= 1)" @onclick="() => RemoveRow(row)">
+                                <FluentIcon Value="@(new Icons.Regular.Size16.Dismiss())" Color="Color.Custom" CustomColor="currentColor" />
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="cr-table-add">
+        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="AddRow">Add row</FluentButton>
+        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="AddColumn" Disabled="@(cols >= 12)">Add column</FluentButton>
+    </div>
+</div>
+
+<TextField Label="Caption" Get="() => Module.Caption" Set="v => Module.Caption = v" />
+
+@code {
+    /// <summary>The table module being edited.</summary>
+    [Parameter, EditorRequired] public TableModule Module { get; set; } = default!;
+
+    private int ColumnCount => Math.Max(1, Module.Cells.Count == 0 ? Module.Alignments.Count : Module.Cells.Max(r => r?.Count ?? 0));
+
+    protected override void OnParametersSet()
+    {
+        // An empty table gets a starter grid so there is something to type into (not an undo step on its own).
+        if (Module.Cells.Count == 0)
+        {
+            Module.Cells.Add(["", ""]);
+            Module.Cells.Add(["", ""]);
+        }
+    }
+
+    private string CellAt(int row, int col) => col < Module.Cells[row].Count ? Module.Cells[row][col] ?? string.Empty : string.Empty;
+
+    private ColumnAlignment AlignmentOf(int col) => col < Module.Alignments.Count ? Module.Alignments[col] : ColumnAlignment.Left;
+
+    private static Icon AlignIcon(ColumnAlignment align) => align switch
+    {
+        ColumnAlignment.Center => new Icons.Regular.Size16.TextAlignCenter(),
+        ColumnAlignment.Right => new Icons.Regular.Size16.TextAlignRight(),
+        _ => new Icons.Regular.Size16.TextAlignLeft(),
+    };
+
+    private void Pad()
+    {
+        var cols = ColumnCount;
+        foreach (var row in Module.Cells)
+        {
+            while (row.Count < cols)
+            {
+                row.Add(string.Empty);
+            }
+        }
+
+        while (Module.Alignments.Count < cols)
+        {
+            Module.Alignments.Add(ColumnAlignment.Left);
+        }
+
+        if (Module.Alignments.Count > cols)
+        {
+            Module.Alignments.RemoveRange(cols, Module.Alignments.Count - cols);
+        }
+    }
+
+    private void SetCell(int row, int col, string? value)
+    {
+        Pad();
+        if (row >= Module.Cells.Count || col >= Module.Cells[row].Count)
+        {
+            return;
+        }
+
+        Module.Cells[row][col] = value ?? string.Empty;
+        State.Commit($"cell:{Module.Id}:{row}:{col}");
+    }
+
+    private void CycleAlignment(int col)
+    {
+        Pad();
+        Module.Alignments[col] = Module.Alignments[col] switch
+        {
+            ColumnAlignment.Left => ColumnAlignment.Center,
+            ColumnAlignment.Center => ColumnAlignment.Right,
+            _ => ColumnAlignment.Left,
+        };
+        State.Commit();
+    }
+
+    private void AddRow()
+    {
+        Pad();
+        Module.Cells.Add([.. Enumerable.Repeat(string.Empty, ColumnCount)]);
+        State.Commit();
+    }
+
+    private void AddColumn()
+    {
+        Pad();
+        foreach (var row in Module.Cells)
+        {
+            row.Add(string.Empty);
+        }
+
+        Module.Alignments.Add(ColumnAlignment.Left);
+        State.Commit();
+    }
+
+    private void RemoveRow(int row)
+    {
+        if (Module.Cells.Count <= 1 || row >= Module.Cells.Count)
+        {
+            return;
+        }
+
+        Module.Cells.RemoveAt(row);
+        State.Commit();
+    }
+
+    private void RemoveColumn(int col)
+    {
+        Pad();
+        if (ColumnCount <= 1)
+        {
+            return;
+        }
+
+        foreach (var row in Module.Cells.Where(r => col < r.Count))
+        {
+            row.RemoveAt(col);
+        }
+
+        if (col < Module.Alignments.Count)
+        {
+            Module.Alignments.RemoveAt(col);
+        }
+
+        State.Commit();
+    }
+}

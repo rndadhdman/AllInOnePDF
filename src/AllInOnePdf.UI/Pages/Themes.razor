@@ -1,0 +1,139 @@
+@page "/themes"
+@implements IDisposable
+
+<PageTitle>Themes · AllInOne PDF</PageTitle>
+
+<div class="aio-page tg-page">
+    <PageHeader Title="Themes" Description="A theme sets the page, fonts, colours, header and footer of the PDFs you make. Conversions use the default theme unless you pick another.">
+        <Actions>
+            <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="NewTheme">New theme</FluentButton>
+            <FluentButton Id="tg-import" Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.ArrowImport())" Disabled="@_importing"
+                          Title="Import theme files (.json, up to 2 MB each)">Import…</FluentButton>
+        </Actions>
+    </PageHeader>
+
+    <FluentInputFile AnchorId="tg-import" DragDropZoneVisible="false" Accept=".json,application/json" Multiple="true" MaximumFileCount="10"
+                     MaximumFileSize="@MaxImportBytes" OnCompleted="OnImportCompletedAsync" OnFileCountExceeded="OnTooManyFiles" />
+
+    @* Search and the tag filter share one row across the page; the tag list is long (about 25 tags), so it is a select, not a row of pills. *@
+    <div class="tg-toolbar">
+        <div class="tg-search">
+            <FluentSearch @bind-Value="_query" Immediate="true" ImmediateDelay="150" Placeholder="Search by name, description or tag" AriaLabel="Search themes by name, description or tag" Style="width:100%" />
+        </div>
+        <div class="tg-tag">
+            <FluentSelect TOption="string" Value="@(_tag ?? string.Empty)" ValueChanged="@((string? v) => _tag = string.IsNullOrEmpty(v) ? null : v)" AriaLabel="Filter by tag" Width="100%">
+                <FluentOption TOption="string" Value="">All tags</FluentOption>
+                @foreach (var tag in AllTags)
+                {
+                    <FluentOption TOption="string" Value="@tag">@tag</FluentOption>
+                }
+            </FluentSelect>
+        </div>
+        @if (_themes is not null)
+        {
+            var shown = Filtered.Count();
+            <span class="tg-count" role="status" aria-live="polite">@shown of @_themes.Count @(_themes.Count == 1 ? "theme" : "themes")</span>
+        }
+    </div>
+
+    @if (_themes is null)
+    {
+        <div class="tg-grid" aria-busy="true">
+            @for (var i = 0; i < 6; i++)
+            {
+                <div class="tg-card tg-card-ghost"><FluentSkeleton Shape="SkeletonShape.Rect" Shimmer="true" Width="100%" Height="300px" /></div>
+            }
+        </div>
+    }
+    else
+    {
+        var list = Filtered.ToList();
+        @if (list.Count == 0)
+        {
+            <EmptyState Icon="@(new Icons.Regular.Size48.DocumentAdd())" Title="No themes match" Description="No theme has these words in its name, description or tags. Change the search or the tag.">
+                <FluentButton Appearance="Appearance.Outline" OnClick="ClearFilters">Clear search and tag</FluentButton>
+            </EmptyState>
+        }
+        else
+        {
+            @* Your own themes come first, in a section of their own; the built-ins follow. The section heading says
+               which themes are built in, so the cards carry no "Built-in" badge. *@
+            var groups = new[]
+            {
+                (Title: "Your themes", Themes: list.Where(t => !t.IsBuiltIn).ToList()),
+                (Title: "Built-in themes", Themes: list.Where(t => t.IsBuiltIn).ToList()),
+            };
+            @foreach (var group in groups.Where(g => g.Themes.Count > 0))
+            {
+            <h2 class="tg-section">@group.Title <span class="tg-section-count">(@group.Themes.Count)</span></h2>
+            <div class="tg-grid">
+                @foreach (var t in group.Themes)
+                {
+                    var isDefault = t.Id == _defaultId;
+                    var (w, h) = t.Page.GetSizeMm();
+                    var ratio = $"aspect-ratio:{w.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)} / {h.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}";
+                    <article @key="t.Id" class="tg-card @(isDefault ? "is-default" : null)" aria-labelledby="@($"tg-n-{t.Id}")">
+                        <button type="button" class="tg-thumb" title="@(t.IsBuiltIn ? "Preview in the builder" : "Edit in the builder")"
+                                aria-label="@($"Open {t.Name} in the theme builder")" @onclick="() => Open(t)">
+                            @if (_thumbs.TryGetValue(t.Id, out var url) && url is not null)
+                            {
+                                <img class="tg-thumb-img" src="@url" alt="" style="@ratio" />
+                            }
+                            else if (_failed.Contains(t.Id))
+                            {
+                                <span class="tg-thumb-fail" style="@ratio">
+                                    <FluentIcon Value="@(new Icons.Regular.Size24.DocumentError())" Color="Color.Neutral" />
+                                    <span>No preview</span>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="tg-thumb-skel" style="@ratio"><FluentSkeleton Shape="SkeletonShape.Rect" Shimmer="true" Width="100%" Height="100%" /></span>
+                            }
+                        </button>
+                        <div class="tg-body">
+                            <div class="tg-title-row">
+                                <h3 class="tg-name" id="@($"tg-n-{t.Id}")">@t.Name</h3>
+                                @if (isDefault)
+                                {
+                                    @* A status with text: the one theme conversions use. *@
+                                    <FluentBadge Appearance="Appearance.Accent">Default</FluentBadge>
+                                }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(t.Description))
+                            {
+                                <p class="tg-desc">@t.Description</p>
+                            }
+                            @if (t.Tags.Count > 0)
+                            {
+                                <p class="tg-tags"><span class="aio-visually-hidden">Tags: </span>@string.Join(" · ", t.Tags)</p>
+                            }
+                        </div>
+                        <div class="tg-actions">
+                            @* Accessible names start with the visible label (WCAG 2.5.3) and add the theme, so the cards are told apart.
+                               The default theme shows its badge instead of a disabled "Use as default" button. *@
+                            @if (!isDefault)
+                            {
+                                <FluentButton Appearance="Appearance.Outline" OnClick="() => UseAsDefaultAsync(t)" aria-label="@($"Use as default: {t.Name}")">Use as default</FluentButton>
+                            }
+                            <FluentButton Appearance="Appearance.Outline" OnClick="() => EditAsync(t)"
+                                          aria-label="@(t.IsBuiltIn ? $"Duplicate and edit: {t.Name}" : $"Edit: {t.Name}")">@(t.IsBuiltIn ? "Duplicate and edit" : "Edit")</FluentButton>
+                            <span class="tg-icons">
+                            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Copy())" Title="@($"Duplicate {t.Name}")"
+                                          aria-label="@($"Duplicate {t.Name}")" OnClick="() => DuplicateAsync(t)" />
+                            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowDownload())" Title="@($"Export {t.Name}")"
+                                          aria-label="@($"Export {t.Name}")" OnClick="() => ExportAsync(t)" />
+                            @if (!t.IsBuiltIn)
+                            {
+                                <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Delete())" Title="@($"Delete {t.Name}")"
+                                              aria-label="@($"Delete {t.Name}")" OnClick="() => DeleteAsync(t)" />
+                            }
+                            </span>
+                        </div>
+                    </article>
+                }
+            </div>
+            }
+        }
+    }
+</div>

@@ -1,0 +1,67 @@
+@* A native range input (use it instead of FluentSlider wherever the value is stored and re-rendered on change).
+   The fluent-slider web component re-emits "input" and "change" whenever the circuit sets its value, so during a drag
+   (several values in flight) every stale value the server rendered came straight back as a new edit and the value
+   ping-ponged for ever. A native input only reports what the user does. While the pointer holds the thumb this
+   component does not re-render, so renders of values still in flight never pull the thumb back under the pointer; on
+   release it renders once. The owner rounds, clamps and stores the value it receives. *@
+@using AllInOnePdf.UI.Services.Shared
+
+<input @attributes="AdditionalAttributes" type="range" id="@Id" class="aio-range @Class"
+       min="@NumberInputMath.Format(Min)" max="@NumberInputMath.Format(UpperBound)" step="@StepText"
+       value="@NumberInputMath.Format(Math.Clamp(Value, Min, UpperBound))" disabled="@Disabled" aria-label="@AriaLabel"
+       @oninput="OnInputAsync" @onchange="OnChangeAsync" @onpointerdown="OnPointerDown"
+       @onpointerup="Release" @onpointercancel="Release" @onblur="Release" />
+
+@code {
+    /// <summary>The current value (clamped to the range for display).</summary>
+    [Parameter] public double Value { get; set; }
+
+    /// <summary>Called with every value the user moves to (while dragging, with the arrow keys and on release).</summary>
+    [Parameter] public EventCallback<double> ValueChanged { get; set; }
+
+    /// <summary>Lowest value.</summary>
+    [Parameter] public double Min { get; set; }
+
+    /// <summary>Highest value.</summary>
+    [Parameter] public double Max { get; set; } = 100;
+
+    /// <summary>Step of the thumb and the arrow keys (0 or less: any).</summary>
+    [Parameter] public double Step { get; set; } = 1;
+
+    /// <summary>Accessible name (or use aria-labelledby through the extra attributes).</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>Element id (for a &lt;label for&gt;).</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Extra CSS class (size it from the page).</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Disables the input.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Other attributes (aria-describedby, title…), applied first.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private bool _held;
+
+    private double UpperBound => Math.Max(Min, Max);
+
+    private string StepText => Step > 0 ? NumberInputMath.Format(Step) : "any";
+
+    /// <inheritdoc />
+    protected override bool ShouldRender() => !_held;
+
+    private void OnPointerDown() => _held = true;
+
+    private Task OnInputAsync(ChangeEventArgs e) =>
+        NumberInputMath.TryParse(e.Value as string, out var v) ? ValueChanged.InvokeAsync(v) : Task.CompletedTask;
+
+    private Task OnChangeAsync(ChangeEventArgs e)
+    {
+        _held = false;
+        return OnInputAsync(e);
+    }
+
+    private void Release() => _held = false;
+}

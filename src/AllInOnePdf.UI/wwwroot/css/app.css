@@ -1,0 +1,396 @@
+/* =====================================================================
+   AllInOne PDF — global stylesheet
+   Design language: Microsoft Fluent 2 (Intune / Azure portal). Fluent UI
+   Blazor supplies component tokens (--neutral-*, --accent-*). This file adds
+   app-level tokens, the shell layout, bundled fonts and the reader baseline.
+   Component-specific styles belong in <Component>.razor.css (CSS isolation).
+   ===================================================================== */
+
+/* ---- Bundled fonts (SIL OFL) ---------------------------------------- */
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/Inter-Variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/Inter-Italic-Variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Literata";
+  src: url("../fonts/Literata-Variable.ttf") format("truetype");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Literata";
+  src: url("../fonts/Literata-Italic-Variable.ttf") format("truetype");
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../fonts/JetBrainsMono-Variable.ttf") format("truetype");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("../fonts/JetBrainsMono-Italic-Variable.ttf") format("truetype");
+  font-weight: 100 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ---- App tokens ------------------------------------------------------ */
+:root {
+  --aio-font-ui: "Segoe UI Variable", "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  --aio-font-serif: "Literata", Georgia, "Times New Roman", serif;
+  --aio-font-mono: "JetBrains Mono", Consolas, "Cascadia Code", monospace;
+
+  --aio-radius-sm: 4px;
+  --aio-radius-md: 8px;
+  --aio-radius-lg: 12px;
+
+  --aio-shadow-2: 0 1px 2px rgba(0, 0, 0, .14), 0 0 2px rgba(0, 0, 0, .12);
+  --aio-shadow-8: 0 4px 8px rgba(0, 0, 0, .14), 0 0 2px rgba(0, 0, 0, .12);
+  --aio-shadow-16: 0 8px 16px rgba(0, 0, 0, .14), 0 0 2px rgba(0, 0, 0, .12);
+
+  --aio-header-height: 48px;
+  --aio-nav-width: 220px;
+  --aio-page-padding: 24px;
+
+  /* Spacing (4 px grid) */
+  --aio-space-1: 4px;
+  --aio-space-2: 8px;
+  --aio-space-3: 12px;
+  --aio-space-4: 16px;
+  --aio-space-5: 24px;
+  --aio-space-6: 32px;
+  --aio-space-7: 48px;
+
+  /* Density-dependent tokens (comfortable defaults; see .aio-density-compact) */
+  --aio-nav-item-height: 36px;
+  --aio-nav-padding: 8px;
+  --aio-card-padding: 20px;
+  --aio-row-padding: 12px;
+  --aio-gap: 16px;
+
+  --aio-motion-fast: 150ms;
+  --aio-motion-normal: 200ms;
+  --aio-ease: cubic-bezier(.1, .9, .2, 1);
+
+  --aio-default-accent: #0F6CBD;
+
+  --aio-scrollbar-thumb: rgba(127, 127, 127, .45);
+  --aio-scrollbar-thumb-hover: rgba(127, 127, 127, .7);
+
+  /* Reader palettes (easy on the eyes: low contrast, warm or cool neutrals) */
+  --aio-reader-paper-bg: #FBFAF7;
+  --aio-reader-paper-fg: #2B2B2B;
+  --aio-reader-paper-muted: #6E6A63;
+  --aio-reader-paper-accent: #0F6CBD;
+
+  --aio-reader-sepia-bg: #F4ECD8;
+  --aio-reader-sepia-fg: #4A3B2A;
+  --aio-reader-sepia-muted: #6F6250; /* 5.0:1 on the sepia background */
+  --aio-reader-sepia-accent: #8A5A1F;
+
+  --aio-reader-dusk-bg: #2B2E36;
+  --aio-reader-dusk-fg: #D3D6DD;
+  --aio-reader-dusk-muted: #9AA0AB;
+  --aio-reader-dusk-accent: #8FB8FF;
+
+  --aio-reader-night-bg: #121316;
+  --aio-reader-night-fg: #C8CBD1;
+  --aio-reader-night-muted: #80858F;
+  --aio-reader-night-accent: #7FB4FF;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: var(--aio-font-ui);
+  font-size: 14px;
+  line-height: 20px;
+  background: var(--neutral-layer-1, #F5F5F5);
+  color: var(--neutral-foreground-rest, #242424);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body { overflow: hidden; }
+
+* { box-sizing: border-box; }
+
+/* ---- Selection, focus, scrollbars ------------------------------------ */
+::selection {
+  background: rgba(15, 108, 189, .28);
+  background: color-mix(in srgb, var(--accent-fill-rest, #0F6CBD) 30%, transparent);
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-stroke-outer, var(--accent-fill-rest, #0F6CBD));
+  outline-offset: 2px;
+}
+
+/* Fluent web components draw their own focus ring. */
+fluent-button:focus-visible, fluent-switch:focus-visible, fluent-checkbox:focus-visible, fluent-radio:focus-visible,
+fluent-text-field:focus-visible, fluent-select:focus-visible, fluent-slider:focus-visible, fluent-menu-item:focus-visible,
+fluent-anchor:focus-visible, fluent-tab:focus-visible, fluent-number-field:focus-visible {
+  outline: none;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--aio-scrollbar-thumb) transparent;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: var(--aio-scrollbar-thumb);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background-color: var(--aio-scrollbar-thumb-hover); }
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---- Shell ------------------------------------------------------------ */
+.aio-shell {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--neutral-layer-1);
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-shell.aio-dark {
+  --aio-shadow-2: 0 1px 2px rgba(0, 0, 0, .28), 0 0 2px rgba(0, 0, 0, .24);
+  --aio-shadow-8: 0 4px 8px rgba(0, 0, 0, .28), 0 0 2px rgba(0, 0, 0, .24);
+  --aio-shadow-16: 0 8px 16px rgba(0, 0, 0, .28), 0 0 2px rgba(0, 0, 0, .24);
+  --aio-scrollbar-thumb: rgba(200, 200, 200, .28);
+  --aio-scrollbar-thumb-hover: rgba(200, 200, 200, .45);
+  color-scheme: dark;
+}
+
+.aio-shell.aio-light { color-scheme: light; }
+
+/* Compact density: tighter paddings everywhere; Fluent controls shrink via --density. */
+.aio-density-compact {
+  --aio-page-padding: 16px;
+  --aio-nav-item-height: 32px;
+  --aio-nav-padding: 4px;
+  --aio-card-padding: 14px;
+  --aio-row-padding: 8px;
+  --aio-gap: 12px;
+  --density: -1;
+}
+
+.aio-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  position: relative;
+}
+
+.aio-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--neutral-layer-1);
+}
+
+.aio-content:focus { outline: none; }
+
+/* A page fills the content area at every window size: no fixed cap (a maximized 2560 px window used to leave a third
+   of itself empty). Pages keep text readable with measures on paragraphs (≤ ~90ch) and by reflowing cards, lists and
+   tables into more columns, not by capping the page. */
+.aio-page {
+  padding: var(--aio-page-padding);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* A card surface for custom panels (Fluent-token based, works in dark mode). */
+.aio-surface {
+  background: var(--neutral-layer-floating, var(--neutral-layer-1));
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-md);
+  box-shadow: var(--aio-shadow-2);
+  padding: var(--aio-card-padding);
+}
+
+a { color: var(--accent-foreground-rest); }
+
+hr { border: 0; border-top: 1px solid var(--neutral-stroke-divider-rest); }
+
+code, kbd, pre, samp { font-family: var(--aio-font-mono); }
+
+kbd {
+  display: inline-block;
+  padding: 0 6px;
+  min-width: 20px;
+  border: 1px solid var(--neutral-stroke-rest);
+  border-bottom-width: 2px;
+  border-radius: var(--aio-radius-sm);
+  background: var(--neutral-layer-2);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* ---- Reader baseline (document rendered by DocumentHtmlRenderer) -----
+   Typography comes from the reader settings as CSS variables set inline on the reading surface (Reader) or the
+   preview (Settings): --aio-doc-font, --aio-doc-size, --aio-doc-leading, --aio-doc-measure. */
+.aio-doc {
+  font-family: var(--aio-doc-font, var(--aio-font-serif));
+  font-size: var(--aio-doc-size, 19px);
+  line-height: var(--aio-doc-leading, 1.7);
+  max-width: var(--aio-doc-measure, 68ch);
+  margin: 0 auto;
+  color: var(--aio-reader-fg, inherit);
+}
+/* Fluent's reboot.css gives p (and blockquote, table) the UI type ramp; document text must follow the reader
+   settings instead. :where keeps this at class specificity so the element rules below (figcaption, th) still win. */
+.aio-doc :where(p, blockquote, .aio-p, li, figcaption, td, th) { font: inherit; line-height: inherit; letter-spacing: inherit; }
+.aio-doc p { margin: 0 0 1em; }
+.aio-doc .aio-h { line-height: 1.25; margin: 1.6em 0 .5em; font-weight: 600; letter-spacing: -.01em; }
+.aio-doc .aio-h1 { font-size: 2em; margin-top: .4em; }
+.aio-doc .aio-h2 { font-size: 1.5em; }
+.aio-doc .aio-h3 { font-size: 1.2em; }
+.aio-doc .aio-h4, .aio-doc .aio-h5, .aio-doc .aio-h6 { font-size: 1em; }
+.aio-doc .aio-p { margin: 0 0 1em; }
+.aio-doc .aio-link { color: var(--aio-reader-accent, var(--accent-foreground-rest, #0F6CBD)); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.aio-doc .aio-code, .aio-doc .aio-codeblock pre, .aio-doc .aio-math, .aio-doc .aio-math-inline { font-family: var(--aio-font-mono); font-size: .85em; }
+.aio-doc .aio-code { padding: .1em .35em; border-radius: var(--aio-radius-sm); background: rgba(127, 127, 127, .14); }
+.aio-doc .aio-codeblock { margin: 0 0 1.2em; }
+.aio-doc .aio-codeblock pre { margin: 0; padding: 14px 16px; overflow-x: auto; border-radius: var(--aio-radius-md); background: rgba(127, 127, 127, .12); line-height: 1.5; }
+.aio-doc .aio-codeblock figcaption { font-family: var(--aio-font-ui); font-size: .75em; opacity: .7; margin-bottom: 4px; }
+
+/* Syntax highlighting (spans emitted by DocumentHtmlRenderer via ISyntaxHighlighter). Colours are tokens so each
+   reader palette can tune them; defaults suit light surfaces, the dark palettes override below. */
+.aio-doc {
+  --aio-hl-kw: #0F5FA8;
+  --aio-hl-type: #1F7A7A;
+  --aio-hl-str: #9A3B1F;
+  --aio-hl-num: #6A3DB8;
+  --aio-hl-cmt: #6B7280;
+  --aio-hl-attr: #7A5A00;
+  --aio-hl-fn: #2E4F9A;
+  --aio-hl-var: inherit;
+  --aio-hl-op: #4B5563;
+  --aio-hl-punct: #6B7280;
+  --aio-hl-ins-bg: rgba(46, 160, 67, .18);
+  --aio-hl-del-bg: rgba(248, 81, 73, .18);
+}
+.aio-reader-dusk, .aio-reader-night {
+  --aio-hl-kw: #8FB8FF;
+  --aio-hl-type: #7FD3CF;
+  --aio-hl-str: #E8A97C;
+  --aio-hl-num: #C9A7FF;
+  --aio-hl-cmt: #8B919C;
+  --aio-hl-attr: #E6C66E;
+  --aio-hl-fn: #A9C4FF;
+  --aio-hl-op: #B8BEC8;
+  --aio-hl-punct: #8B919C;
+}
+.aio-doc .hl-kw { color: var(--aio-hl-kw); font-weight: 600; }
+.aio-doc .hl-type { color: var(--aio-hl-type); }
+.aio-doc .hl-str { color: var(--aio-hl-str); }
+.aio-doc .hl-num { color: var(--aio-hl-num); }
+.aio-doc .hl-cmt { color: var(--aio-hl-cmt); font-style: italic; }
+.aio-doc .hl-attr { color: var(--aio-hl-attr); }
+.aio-doc .hl-fn { color: var(--aio-hl-fn); }
+.aio-doc .hl-var { color: var(--aio-hl-var); }
+.aio-doc .hl-op { color: var(--aio-hl-op); }
+.aio-doc .hl-punct { color: var(--aio-hl-punct); }
+.aio-doc .hl-ins { background: var(--aio-hl-ins-bg); }
+.aio-doc .hl-del { background: var(--aio-hl-del-bg); }
+.aio-doc .aio-quote { margin: 0 0 1.2em; padding: .2em 0 .2em 1.2em; border-left: 3px solid var(--aio-reader-accent, #0F6CBD); font-style: italic; }
+.aio-doc .aio-attribution { font-style: normal; opacity: .75; font-size: .9em; }
+.aio-doc .aio-callout { margin: 0 0 1.2em; padding: 12px 16px; border-left: 3px solid var(--aio-reader-accent, #0F6CBD); border-radius: var(--aio-radius-sm); background: rgba(127, 127, 127, .10); }
+.aio-doc .aio-callout-title { font-family: var(--aio-font-ui); font-weight: 600; font-size: .85em; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.aio-doc .aio-callout-tip { border-color: #1E8E3E; }
+.aio-doc .aio-callout-warning { border-color: #B45309; }
+.aio-doc .aio-callout-caution { border-color: #B91C1C; }
+.aio-doc .aio-callout-important { border-color: #7C3AED; }
+.aio-doc .aio-list { margin: 0 0 1em; padding-left: 1.4em; }
+.aio-doc .aio-list-tight li { margin: .15em 0; }
+.aio-doc .aio-tasklist { list-style: none; padding-left: .4em; }
+.aio-doc .aio-task-done { opacity: .65; text-decoration: line-through; }
+.aio-doc .aio-tablewrap { margin: 0 0 1.4em; overflow-x: auto; }
+.aio-doc .aio-table { border-collapse: collapse; width: 100%; font-size: .9em; font-family: var(--aio-font-ui); }
+.aio-doc .aio-table th, .aio-doc .aio-table td { padding: 8px 12px; border-bottom: 1px solid rgba(127, 127, 127, .3); text-align: left; vertical-align: top; }
+.aio-doc .aio-table th { font-weight: 600; border-bottom-width: 2px; }
+.aio-doc .aio-figure { margin: 0 0 1.4em; text-align: center; }
+.aio-doc .aio-figure img { max-width: 100%; height: auto; border-radius: var(--aio-radius-sm); }
+.aio-doc figcaption { font-family: var(--aio-font-ui); font-size: .8em; opacity: .7; margin-top: 6px; }
+.aio-doc .aio-hr { border: 0; border-top: 1px solid rgba(127, 127, 127, .35); margin: 2em auto; width: 40%; }
+.aio-doc .aio-pagebreak { border-top: 1px dashed rgba(127, 127, 127, .4); margin: 2em 0; }
+.aio-doc .aio-footnotes { margin-top: 3em; padding-top: 1em; border-top: 1px solid rgba(127, 127, 127, .3); font-size: .85em; }
+.aio-doc .aio-image-missing { padding: 24px; border: 1px dashed rgba(127, 127, 127, .4); border-radius: var(--aio-radius-md); opacity: .7; font-family: var(--aio-font-ui); font-size: .85em; }
+.aio-doc mark { background: rgba(255, 213, 79, .45); color: inherit; padding: 0 .15em; }
+
+/* Reader palettes: apply one of these classes to the reader surface */
+.aio-reader-paper { background: var(--aio-reader-paper-bg); --aio-reader-fg: var(--aio-reader-paper-fg); --aio-reader-muted: var(--aio-reader-paper-muted); --aio-reader-accent: var(--aio-reader-paper-accent); color: var(--aio-reader-fg); }
+.aio-reader-sepia { background: var(--aio-reader-sepia-bg); --aio-reader-fg: var(--aio-reader-sepia-fg); --aio-reader-muted: var(--aio-reader-sepia-muted); --aio-reader-accent: var(--aio-reader-sepia-accent); color: var(--aio-reader-fg); }
+.aio-reader-dusk  { background: var(--aio-reader-dusk-bg);  --aio-reader-fg: var(--aio-reader-dusk-fg);  --aio-reader-muted: var(--aio-reader-dusk-muted);  --aio-reader-accent: var(--aio-reader-dusk-accent);  color: var(--aio-reader-fg); }
+.aio-reader-night { background: var(--aio-reader-night-bg); --aio-reader-fg: var(--aio-reader-night-fg); --aio-reader-muted: var(--aio-reader-night-muted); --aio-reader-accent: var(--aio-reader-night-accent); color: var(--aio-reader-fg); }
+
+.aio-reader-sample { margin-top: 16px; padding: 32px; border-radius: var(--aio-radius-lg); }
+.aio-reader-sample { background: var(--aio-reader-paper-bg); color: var(--aio-reader-paper-fg); }
+
+/* ---- Utilities ---------------------------------------------------------- */
+.aio-muted { color: var(--neutral-foreground-hint, #616161); }
+.aio-mono { font-family: var(--aio-font-mono); }
+.aio-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aio-visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Skip link: off screen until it has keyboard focus, then shown over the header's top-left corner. */
+.aio-skip-link {
+  position: fixed; top: 8px; left: 8px; z-index: 10000;
+  padding: 8px 14px; border: 0; border-radius: var(--aio-radius-md, 6px);
+  background: var(--accent-fill-rest); color: var(--foreground-on-accent-rest, #fff);
+  font: inherit; font-weight: 600; cursor: pointer;
+  transform: translateY(-200%);
+}
+.aio-skip-link:focus { transform: none; outline: 2px solid var(--neutral-foreground-rest); outline-offset: 2px; }
+.aio-skip-link:not(:focus-visible):focus { transform: translateY(-200%); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+@media (forced-colors: active) {
+  .aio-nav-indicator { background: Highlight !important; }
+}
+
+/* ---- Print: only the page content, on white, without app chrome ------- */
+@media print {
+  html, body { height: auto; overflow: visible; background: #fff; color: #000; }
+  .aio-shell { height: auto; display: block; background: #fff; color: #000; }
+  .aio-header, .aio-nav, .aio-nav-scrim, .aio-page-actions, fluent-toast, .fluent-toast-provider { display: none !important; }
+  .aio-body { display: block; }
+  .aio-content { height: auto; overflow: visible; background: #fff; }
+  .aio-page { padding: 0; max-width: none; }
+  .aio-doc { max-width: none; color: #000; }
+  .aio-reader-paper, .aio-reader-sepia, .aio-reader-dusk, .aio-reader-night { background: #fff !important; --aio-reader-fg: #000; color: #000; }
+  .aio-doc .aio-link { color: #000; text-decoration: underline; }
+  .aio-doc .aio-codeblock pre { white-space: pre-wrap; }
+  .aio-doc .aio-h { break-after: avoid; }
+  .aio-doc .aio-figure, .aio-doc .aio-table tr, .aio-doc .aio-codeblock { break-inside: avoid; }
+}

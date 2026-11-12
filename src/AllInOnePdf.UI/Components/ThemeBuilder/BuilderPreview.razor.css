@@ -1,0 +1,79 @@
+.tb-canvas {
+    position: relative;
+    height: 100%;
+    overflow: auto;
+    padding: 24px;
+    background: var(--neutral-layer-3, #EDEDED);
+    outline: none;
+}
+
+.tb-canvas:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent-fill-rest);
+}
+
+.tb-stage {
+    position: relative;
+    width: max-content;
+    margin: 0 auto;
+}
+
+.tb-canvas ::deep .tb-pages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding-bottom: 24px;
+}
+
+.tb-canvas ::deep .tb-sheet {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .18), 0 0 1px rgba(0, 0, 0, .25);
+    cursor: default;
+}
+
+/* Hover and selection (click-to-select). Outlines never change layout. */
+.tb-canvas ::deep .tb-hover {
+    outline: 1px dashed var(--accent-fill-rest, #0F6CBD);
+    outline-offset: 2px;
+    cursor: pointer;
+}
+
+.tb-canvas ::deep .tb-sheet.tb-hover {
+    outline-offset: -1px;
+}
+
+.tb-canvas ::deep .tb-selected,
+.tb-canvas ::deep .tb-selected.tb-hover {
+    outline: 2px solid var(--accent-fill-rest, #0F6CBD);
+    outline-offset: 2px;
+}
+
+.tb-canvas ::deep .tb-sheet.tb-selected {
+    outline-offset: -2px;
+}
+
+.tb-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.tb-overlay ::deep .tb-sel-label {
+    position: absolute;
+    padding: 2px 8px;
+    border-radius: 4px 4px 0 0;
+    background: var(--accent-fill-rest, #0F6CBD);
+    color: var(--foreground-on-accent-rest, #FFFFFF);
+    font-family: var(--aio-font-ui);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    white-space: nowrap;
+    letter-spacing: 0;
+    z-index: 2;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .tb-canvas {
+        scroll-behavior: smooth;
+    }
+}

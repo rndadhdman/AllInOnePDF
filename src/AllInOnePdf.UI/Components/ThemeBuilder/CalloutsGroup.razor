@@ -1,0 +1,60 @@
+@inherits SettingsGroupBase
+
+<SwitchSetting Label="Show label" Get="() => T.Callouts.ShowLabel" Set="v => T.Callouts.ShowLabel = v" />
+<SwitchSetting Label="Show icon" Get="() => T.Callouts.ShowIcon" Set="v => T.Callouts.ShowIcon = v" />
+<ColorField Label="Background" AllowNull="true" InheritLabel="Surface colour" Inherited="() => T.Colors.Surface"
+            Get="() => T.Callouts.Background" Set="v => T.Callouts.Background = v" />
+<NumberSetting Label="Bar width" Unit="pt" Min="0" Max="10" Step="0.25" Key="co-bw" Get="() => T.Callouts.BorderWidthPt" Set="v => T.Callouts.BorderWidthPt = v" />
+<NumberSetting Label="Padding" Unit="pt" Min="0" Max="30" Step="0.5" Key="co-pad" Get="() => T.Callouts.PaddingPt" Set="v => T.Callouts.PaddingPt = v" />
+<NumberSetting Label="Corner radius" Unit="pt" Min="0" Max="20" Step="0.5" Key="co-r" Get="() => T.Callouts.CornerRadiusPt" Set="v => T.Callouts.CornerRadiusPt = v" />
+
+<div class="tb-tabs tb-tabs-tight" role="tablist" aria-label="Callout kind">
+    @foreach (var kind in Kinds)
+    {
+        var key = KeyOf(kind);
+        var on = kind == Current;
+        <button type="button" role="tab" id="@($"tb-cotab-{key}")" aria-selected="@(on ? "true" : "false")" aria-controls="tb-copanel"
+                tabindex="@(on ? 0 : -1)" class="tb-tab @(on ? "is-on" : null)" @onclick="() => SelectSub(key)" @onkeydown="e => OnTabKey(e, kind)">
+            @kind
+        </button>
+    }
+</div>
+<div id="tb-copanel" role="tabpanel" aria-labelledby="@($"tb-cotab-{KeyOf(Current)}")" class="tb-tabpanel">
+    @{
+        var k = KeyOf(Current);
+    }
+    <ColorField @key="@(k + "-accent")" Label="Accent" AllowNull="true" InheritLabel="Accent colour" Inherited="() => T.Colors.Accent"
+                Get="() => Style.Accent" Set="v => Style.Accent = v" />
+    <ColorField @key="@(k + "-bg")" Label="Background" AllowNull="true" InheritLabel="@(T.Callouts.Background is null ? "Surface colour" : "Callout background")"
+                Inherited="() => T.Callouts.Background ?? T.Colors.Surface" Get="() => Style.Background" Set="v => Style.Background = v"
+                Warning="@ThemeBuilderValidation.CalloutContrast(T, Current)" />
+    <TextSetting @key="@(k + "-label")" Label="Label" Placeholder="@Current.ToString()" Hint="Used when a callout has no title of its own."
+                 Get="() => Style.Label" Set="v => Style.Label = string.IsNullOrWhiteSpace(v) ? null : v.Trim()" />
+</div>
+
+@code {
+    private static readonly CalloutKind[] Kinds = [CalloutKind.Note, CalloutKind.Tip, CalloutKind.Important, CalloutKind.Warning, CalloutKind.Caution];
+
+    private CalloutKind Current => Kinds.FirstOrDefault(kind => string.Equals(KeyOf(kind), Sub, StringComparison.Ordinal), CalloutKind.Note);
+
+    private CalloutKindStyle Style => T.Callouts.Kind(Current);
+
+    private static string KeyOf(CalloutKind kind) => kind.ToString().ToLowerInvariant();
+
+    private async Task OnTabKey(KeyboardEventArgs e, CalloutKind kind)
+    {
+        var i = Array.IndexOf(Kinds, kind);
+        var next = e.Key switch
+        {
+            "ArrowRight" => (i + 1) % Kinds.Length,
+            "ArrowLeft" => (i + Kinds.Length - 1) % Kinds.Length,
+            "Home" => 0,
+            "End" => Kinds.Length - 1,
+            _ => -1,
+        };
+        if (next >= 0)
+        {
+            await SelectSub(KeyOf(Kinds[next]));
+        }
+    }
+}

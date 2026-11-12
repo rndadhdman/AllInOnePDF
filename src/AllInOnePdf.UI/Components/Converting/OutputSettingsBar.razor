@@ -1,0 +1,101 @@
+@* Where converted files go. Desktop: folder, next-to-source, overwrite policy, after-convert actions.
+   Web: outputs stay in memory and are downloaded. *@
+@inject ConvertWorkspace Workspace
+@inject IHostServices Host
+@inject IToastService Toasts
+
+<section class="aio-output" aria-label="Output settings">
+    @if (Workspace.WritesToDisk)
+    {
+        <div class="aio-output-field aio-output-folder">
+            <span class="aio-output-label" id="aio-output-folder-label">Save to</span>
+            <div class="aio-output-folder-row">
+                <FluentIcon Value="@(new Icons.Regular.Size20.Folder())" Color="Color.Neutral" aria-hidden="true" />
+                <span class="aio-output-path" title="@Workspace.OutputDirectory" aria-labelledby="aio-output-folder-label">
+                    @(Workspace.SaveNextToSource ? "Next to each source file" : Workspace.OutputDirectory)
+                </span>
+                <FluentButton Appearance="Appearance.Outline" OnClick="ChooseFolderAsync">Choose…</FluentButton>
+                @if (Host.SupportsShellOpen && !string.IsNullOrEmpty(Workspace.OutputDirectory) && !Workspace.SaveNextToSource)
+                {
+                    <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.FolderOpen())"
+                                  Title="Open the output folder" aria-label="Open the output folder" OnClick="OpenFolderAsync" />
+                }
+            </div>
+            <FluentSwitch Value="@Workspace.SaveNextToSource" ValueChanged="@((bool v) => Workspace.SetSaveNextToSourceAsync(v))"
+                          Label="Save next to the source file when possible" />
+        </div>
+
+        <div class="aio-output-field">
+            <label class="aio-output-label" for="aio-overwrite">If a file already exists</label>
+            <FluentSelect TOption="string" Id="aio-overwrite" Value="@Workspace.Overwrite.ToString()"
+                          ValueChanged="@((string? v) => SetOverwriteAsync(v))" Width="200px" Position="SelectPosition.Below">
+                <FluentOption TOption="string" Value="@nameof(OverwritePolicy.Ask)">Ask me</FluentOption>
+                <FluentOption TOption="string" Value="@nameof(OverwritePolicy.KeepBoth)">Keep both</FluentOption>
+                <FluentOption TOption="string" Value="@nameof(OverwritePolicy.Replace)">Replace</FluentOption>
+            </FluentSelect>
+        </div>
+
+        @if (Host.SupportsShellOpen)
+        {
+            <div class="aio-output-field">
+                <span class="aio-output-label">After converting</span>
+                <FluentSwitch Value="@Workspace.OpenAfterConvert" ValueChanged="@((bool v) => Workspace.SetOpenAfterConvertAsync(v))"
+                              Label="Open the file" />
+                <FluentSwitch Value="@Workspace.RevealAfterConvert" ValueChanged="@((bool v) => Workspace.SetRevealAfterConvertAsync(v))"
+                              Label="Show in folder" Disabled="@Workspace.OpenAfterConvert" />
+            </div>
+        }
+    }
+    else
+    {
+        <div class="aio-output-field aio-output-web">
+            <FluentIcon Value="@(new Icons.Regular.Size20.ArrowDownload())" Color="Color.Neutral" aria-hidden="true" />
+            <span>Converted files are kept until you download them. Use Download on a file, or Download all above the list.</span>
+        </div>
+    }
+</section>
+
+@code {
+    /// <summary>Bump to re-render when the workspace changed (this component has no other parameters).</summary>
+    [Parameter] public int Revision { get; set; }
+
+    private async Task ChooseFolderAsync()
+    {
+        var folder = await Host.PickFolderAsync("Choose where converted files go", Workspace.OutputDirectory);
+        if (string.IsNullOrEmpty(folder))
+        {
+            return;
+        }
+
+        await Workspace.SetOutputDirectoryAsync(folder);
+        if (Workspace.SaveNextToSource)
+        {
+            await Workspace.SetSaveNextToSourceAsync(false);
+        }
+    }
+
+    private async Task OpenFolderAsync()
+    {
+        var dir = Workspace.OutputDirectory;
+        if (string.IsNullOrEmpty(dir))
+        {
+            return;
+        }
+
+        if (!Directory.Exists(dir))
+        {
+            Toasts.ShowInfo("The folder does not exist yet. It is created with the first conversion.");
+            return;
+        }
+
+        await Host.OpenWithDefaultAppAsync(dir);
+    }
+
+    private async Task SetOverwriteAsync(string? value)
+    {
+        if (Enum.TryParse<OverwritePolicy>(value, out var policy))
+        {
+            await Workspace.SetOverwriteAsync(policy);
+        }
+    }
+}

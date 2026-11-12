@@ -1,0 +1,62 @@
+@* Section content: Layout (Structure | Free flow; switching converts the section and keeps its modules) and, for free
+   flow, the canvas height (one full page, or a custom height in points). *@
+@using AllInOnePdf.Publishing.Validation
+@inject CreatorState State
+
+@{
+    var theme = State.Working?.Theme;
+    var full = theme is null ? 700 : CreatorFreeFlow.FullPageHeightPt(theme, Section);
+    var custom = Section.CanvasHeightPt is not null;
+}
+<div class="cr-field">
+    <div class="cr-field-head"><span class="cr-label" id="@($"{_id}-layout")">Layout</span></div>
+    <div class="cr-seg" role="radiogroup" aria-labelledby="@($"{_id}-layout")">
+        @foreach (var (layout, text) in Layouts)
+        {
+            var on = Section.Layout == layout;
+            <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="cr-seg-btn @(on ? "is-on" : null)"
+                    @onclick="() => State.SetSectionLayout(Section.Id, layout)">@text</button>
+        }
+    </div>
+    <div class="cr-hint">
+        @(Section.Layout == SectionLayout.FreeFlow
+            ? "Modules sit where you drag them on the canvas. Switching back to Structure turns them into rows."
+            : "Rows and columns that flow onto the next page. Switching to Free flow keeps the modules where they are.")
+    </div>
+</div>
+
+@if (Section.Layout == SectionLayout.FreeFlow)
+{
+    <div class="cr-field">
+        <div class="cr-field-head"><span class="cr-label" id="@($"{_id}-height")">Canvas height</span></div>
+        <div class="cr-seg" role="radiogroup" aria-labelledby="@($"{_id}-height")">
+            <button type="button" role="radio" aria-checked="@(custom ? "false" : "true")" class="cr-seg-btn @(custom ? null : "is-on")" @onclick="() => SetCustom(false, full)">Full page</button>
+            <button type="button" role="radio" aria-checked="@(custom ? "true" : "false")" class="cr-seg-btn @(custom ? "is-on" : null)" @onclick="() => SetCustom(true, full)">Custom</button>
+        </div>
+    </div>
+    @if (custom)
+    {
+        <NumberField Label="Height" Key="canvas-height" Unit="pt" Min="@PublicationValidator.MinCanvasHeightPt" Max="@Math.Round(full)" Step="1"
+                     Hint="@($"A full page is {Math.Round(full)} pt")" Get="() => Section.CanvasHeightPt ?? full" Set="v => Section.CanvasHeightPt = v" />
+    }
+}
+
+@code {
+    /// <summary>The section being edited.</summary>
+    [Parameter, EditorRequired] public Section Section { get; set; } = default!;
+
+    private static readonly (SectionLayout Layout, string Text)[] Layouts = [(SectionLayout.Structure, "Structure"), (SectionLayout.FreeFlow, "Free flow")];
+
+    private readonly string _id = "crs-" + Guid.NewGuid().ToString("N")[..8];
+
+    private void SetCustom(bool custom, double full)
+    {
+        if (custom == Section.CanvasHeightPt is not null)
+        {
+            return;
+        }
+
+        Section.CanvasHeightPt = custom ? Math.Round(full) : null;
+        State.Commit();
+    }
+}

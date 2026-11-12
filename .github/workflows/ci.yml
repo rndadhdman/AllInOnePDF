@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-test:
+    name: Build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Linux native dependencies (Skia / pdfium)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1 libfreetype6
+
+      - name: Restore
+        run: dotnet restore AllInOnePdf.slnx
+
+      - name: Build
+        run: dotnet build AllInOnePdf.slnx -c Release --no-restore
+
+      # One project at a time: the queue timing tests are sensitive to a second test host competing for the CPU.
+      - name: Test Core
+        run: dotnet test tests/AllInOnePdf.Core.Tests/AllInOnePdf.Core.Tests.csproj -c Release --no-build --logger "trx;LogFileName=core.trx"
+
+      - name: Test Publishing
+        run: dotnet test tests/AllInOnePdf.Publishing.Tests/AllInOnePdf.Publishing.Tests.csproj -c Release --no-build --logger "trx;LogFileName=publishing.trx"
+
+      - name: Test Layout
+        run: dotnet test tests/AllInOnePdf.Layout.Tests/AllInOnePdf.Layout.Tests.csproj -c Release --no-build --logger "trx;LogFileName=layout.trx"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: "**/TestResults/*.trx"
+
+  publish:
+    name: Publish desktop (${{ matrix.rid }})
+    needs: build-test
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            rid: win-x64
+          - os: ubuntu-latest
+            rid: linux-x64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Publish portable package
+        shell: pwsh
+        run: ./build/publish.ps1 -Rid ${{ matrix.rid }}
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: AllInOnePdf-${{ matrix.rid }}-portable
+          path: |
+            publish/*.zip
+            publish/*.tar.gz
+          retention-days: 14

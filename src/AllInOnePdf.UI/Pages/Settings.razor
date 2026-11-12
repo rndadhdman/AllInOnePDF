@@ -1,0 +1,328 @@
+@page "/settings"
+@using System.Globalization
+@using AllInOnePdf.UI.Components.Shell
+@using AllInOnePdf.UI.Services.Shared
+@implements IAsyncDisposable
+
+<PageTitle>Settings · AllInOne PDF</PageTitle>
+
+<div class="aio-page aio-settings">
+    <PageHeader Title="Settings" Description="Changes are saved as you make them. Reset to defaults puts every setting on this page back.">
+        <Actions>
+            <span class="aio-save-status @SaveStatusClass" role="status" aria-live="polite">
+                @switch (_saveState)
+                {
+                    case SaveState.Saving:
+                        <FluentProgressRing Width="14px" />
+                        <span>Saving…</span>
+                        break;
+                    case SaveState.Saved:
+                        <FluentIcon Value="@(new Icons.Regular.Size16.CheckmarkCircle())" Color="Color.Success" />
+                        <span>Saved</span>
+                        break;
+                    case SaveState.Failed:
+                        <FluentIcon Value="@(new Icons.Regular.Size16.ErrorCircle())" Color="Color.Error" />
+                        <span>Not saved</span>
+                        break;
+                }
+            </span>
+            <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.ArrowReset())" OnClick="ResetAsync">Reset to defaults</FluentButton>
+        </Actions>
+    </PageHeader>
+
+    <div class="aio-settings-layout">
+        <nav class="aio-settings-toc" aria-label="Settings sections">
+            @foreach (var section in Sections)
+            {
+                var current = section;
+                <button type="button"
+                        class="aio-settings-toc-item @(_activeSection == current.Id ? "is-active" : null)"
+                        aria-current="@(_activeSection == current.Id ? "true" : null)"
+                        @onclick="@(() => JumpToAsync(current.Id))">
+                    <FluentIcon Value="@current.Icon" Color="Color.Custom" CustomColor="currentColor" />
+                    <span>@current.Title</span>
+                </button>
+            }
+        </nav>
+
+        @* Two columns of cards when the area is wide enough (container query in Settings.razor.css); one column, in
+           the same order, otherwise. *@
+        <div class="aio-settings-sections">
+            <div class="aio-settings-column">
+                @* ---------------- Appearance ---------------- *@
+                <SettingsCard Id="appearance" Title="Appearance" Description="Colours and spacing of the app window. How PDFs look is set in Themes." Icon="@(new Icons.Regular.Size20.DarkTheme())">
+                    <SettingRow Label="Colour mode" Description="Light or dark app window. System follows the setting of your operating system.">
+                        <div class="aio-segmented" role="radiogroup" aria-label="Colour mode">
+                            @foreach (var mode in ThemeModes)
+                            {
+                                var current = mode;
+                                <button type="button" role="radio"
+                                        class="aio-segment @(_draft.ThemeMode == current.Mode ? "is-selected" : null)"
+                                        aria-checked="@(_draft.ThemeMode == current.Mode ? "true" : "false")"
+                                        @onclick="@(() => SetThemeModeAsync(current.Mode))">
+                                    <FluentIcon Value="@current.Icon" Color="Color.Custom" CustomColor="currentColor" />
+                                    <span>@current.Label</span>
+                                </button>
+                            }
+                        </div>
+                    </SettingRow>
+
+                    <SettingRow Label="Accent colour" Description="Colour of primary buttons, links, switches and the selected navigation item." Stacked="true">
+                        <div class="aio-swatches" role="radiogroup" aria-label="Accent colour">
+                            @foreach (var swatch in ThemeService.Swatches)
+                            {
+                                var current = swatch;
+                                var selected = string.Equals(_draft.AccentColor, current.Hex, StringComparison.OrdinalIgnoreCase);
+                                <button type="button" role="radio"
+                                        class="aio-swatch @(selected ? "is-selected" : null) @(current.Hex is null ? "is-default" : null)"
+                                        style="@SwatchStyle(current.Hex)"
+                                        title="@current.Name"
+                                        aria-label="@current.Name"
+                                        aria-checked="@(selected ? "true" : "false")"
+                                        @onclick="@(() => SetAccentAsync(current.Hex))">
+                                    @if (selected)
+                                    {
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Checkmark())" Color="Color.Custom" CustomColor="#FFFFFF" />
+                                    }
+                                </button>
+                            }
+                        </div>
+                        <div class="aio-custom-accent">
+                            <label class="aio-color-input" title="Pick a custom colour">
+                                <input type="color" value="@(_draft.AccentColor ?? DefaultAccentHex)" aria-label="Custom accent colour" @onchange="OnColorPicked" />
+                            </label>
+                            <FluentTextField @bind-Value="_hexInput" @bind-Value:after="OnHexEnteredAsync"
+                                             Placeholder="#0F6CBD" aria-label="Custom accent hex value" Style="width: 140px;" Maxlength="7" />
+                            @if (_hexError is not null)
+                            {
+                                <span class="aio-field-error" role="alert">@_hexError</span>
+                            }
+                            else if (IsCustomAccent)
+                            {
+                                <span class="aio-muted">Custom colour</span>
+                            }
+                        </div>
+                    </SettingRow>
+
+                    <SettingRow Label="Compact density" Description="Less padding in the navigation, cards and lists, so more fits in the window.">
+                        <FluentSwitch @bind-Value="_draft.CompactDensity" @bind-Value:after="CommitAsync" AriaLabel="Compact density" />
+                    </SettingRow>
+
+                    @if (ShowTitleBarSetting)
+                    {
+                        <SettingRow Label="Use the system title bar" Description="Uses the Windows title bar and window frame instead of the app's own bar. The change applies straight away.">
+                            <FluentSwitch @bind-Value="_draft.UseSystemTitleBar" @bind-Value:after="CommitAsync" AriaLabel="Use the system title bar" />
+                        </SettingRow>
+                    }
+                </SettingsCard>
+
+                @* ---------------- Reading ---------------- *@
+                <SettingsCard Id="reading" Title="Reading" Description="What the Reader starts with. Changes made in the Reader's toolbar last until you close the app." Icon="@(new Icons.Regular.Size20.BookOpen())">
+                    <SettingRow Label="Palette" Description="Colours of the reading page. Automatic uses Paper while the app is light and Dusk while it is dark; the other palettes stay the same in both modes." Stacked="true">
+                        <div class="aio-palettes" role="radiogroup" aria-label="Reader palette">
+                            @{
+                                var automatic = !_draft.ReaderPaletteChosen;
+                            }
+                            <button type="button" role="radio"
+                                    class="aio-palette aio-palette-auto @(automatic ? "is-selected" : null)"
+                                    aria-checked="@(automatic ? "true" : "false")"
+                                    title="Paper in light mode, Dusk in dark mode"
+                                    @onclick="SetAutomaticPaletteAsync">
+                                <span class="aio-palette-sample" aria-hidden="true">
+                                    <span class="aio-palette-half aio-reader-paper" style="@SampleFontStyle">A</span><span class="aio-palette-half aio-reader-dusk" style="@SampleFontStyle">a</span>
+                                </span>
+                                <span class="aio-palette-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+                                <span class="aio-palette-name">Automatic</span>
+                            </button>
+                            @foreach (var palette in Palettes)
+                            {
+                                var current = palette;
+                                var selected = _draft.ReaderPaletteChosen && _draft.ReaderTheme == current.Theme;
+                                <button type="button" role="radio"
+                                        class="aio-palette @current.CssClass @(selected ? "is-selected" : null)"
+                                        aria-checked="@(selected ? "true" : "false")"
+                                        @onclick="@(() => SetPaletteAsync(current.Theme))">
+                                    <span class="aio-palette-sample" style="@SampleFontStyle">Aa</span>
+                                    <span class="aio-palette-lines" aria-hidden="true"><i></i><i></i><i></i></span>
+                                    <span class="aio-palette-name">@current.Label</span>
+                                </button>
+                            }
+                        </div>
+                    </SettingRow>
+
+                    <SettingRow Label="Font" Description="Typeface of the document text. The bundled fonts look the same on every computer; System uses your operating system's default.">
+                        <FluentSelect TOption="string" Items="ReaderViewSettings.FontFamilies" @bind-Value="_draft.ReaderFont" @bind-Value:after="CommitAsync"
+                                      AriaLabel="Reader font" Width="200px" />
+                    </SettingRow>
+
+                    <SettingRow Label="Text size" Description="Size of the document text. 18 to 20 px suits long reading.">
+                        <div class="aio-slider">
+                            <FluentSlider TValue="double" Min="ReaderViewSettings.MinFontSize" Max="ReaderViewSettings.MaxFontSize" Step="1" @bind-Value="_draft.ReaderFontSizePx" @bind-Value:after="QueueCommit" AriaLabel="Text size" />
+                            <output class="aio-slider-value">@($"{_draft.ReaderFontSizePx:0} px")</output>
+                        </div>
+                    </SettingRow>
+
+                    <SettingRow Label="Line height" Description="Space between lines, as a multiple of the text size. 1.6 to 1.8 suits most text.">
+                        <div class="aio-slider">
+                            <FluentSlider TValue="double" Min="ReaderViewSettings.MinLineHeight" Max="ReaderViewSettings.MaxLineHeight" Step="0.05" @bind-Value="_draft.ReaderLineHeight" @bind-Value:after="QueueCommit" AriaLabel="Line height" />
+                            <output class="aio-slider-value">@_draft.ReaderLineHeight.ToString("0.00", CultureInfo.InvariantCulture)</output>
+                        </div>
+                    </SettingRow>
+
+                    <SettingRow Label="Line width" Description="Longest line, in characters. Lines of 60 to 75 characters are the easiest to follow back to the start.">
+                        <div class="aio-slider">
+                            <FluentSlider TValue="int" Min="ReaderViewSettings.MinMeasure" Max="ReaderViewSettings.MaxMeasure" Step="1" @bind-Value="_draft.ReaderMeasureCh" @bind-Value:after="QueueCommit" AriaLabel="Line width" />
+                            <output class="aio-slider-value">@($"{_draft.ReaderMeasureCh} ch")</output>
+                        </div>
+                    </SettingRow>
+
+                    <SettingRow Label="Justify text" Description="Paragraph lines reach both edges of the column, with wider gaps between words.">
+                        <FluentSwitch @bind-Value="_draft.ReaderJustify" @bind-Value:after="CommitAsync" AriaLabel="Justify text" />
+                    </SettingRow>
+
+                    <SettingRow Label="Show outline" Description="The Reader opens with the document's headings listed beside the text, in the Reflow view.">
+                        <FluentSwitch @bind-Value="_draft.ReaderShowOutline" @bind-Value:after="CommitAsync" AriaLabel="Show outline" />
+                    </SettingRow>
+
+                    <div class="aio-reading-preview @PreviewPaletteClass" style="@ReaderPreviewStyle" aria-label="Reading preview">
+                        <div class="aio-doc @(_draft.ReaderJustify ? "is-justified" : null)">
+                            <h3 class="aio-h aio-h3">Preview</h3>
+                            <p class="aio-p">
+                                This paragraph uses the palette, font, text size, line height and line width set above, the way
+                                the Reader shows a document. Change a setting and the preview follows.
+                            </p>
+                        </div>
+                    </div>
+                </SettingsCard>
+            </div>
+
+            <div class="aio-settings-column">
+                @* ---------------- Output ---------------- *@
+                <SettingsCard Id="output" Title="Output" Description="Where converted files go and what happens afterwards." Icon="@(new Icons.Regular.Size20.Folder())">
+                    @if (Host.SupportsNativeDialogs)
+                    {
+                        <SettingRow Label="Default output folder" Description="Where Convert saves files, unless Save next to source is on and the source file is in a folder." Stacked="true">
+                            <div class="aio-folder-field">
+                                <FluentTextField @bind-Value="_draft.DefaultOutputDirectory" @bind-Value:after="CommitAsync"
+                                                 aria-label="Default output folder" Placeholder="@Paths.DefaultOutputDirectory" Class="aio-folder-input" />
+                                <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.FolderOpen())" OnClick="ChooseFolderAsync">Choose…</FluentButton>
+                            </div>
+                        </SettingRow>
+
+                        <SettingRow Label="Save next to source" Description="Convert saves each file in the folder of its source file. Files without a folder go to the default output folder.">
+                            <FluentSwitch @bind-Value="_draft.SaveNextToSource" @bind-Value:after="CommitAsync" AriaLabel="Save next to source" />
+                        </SettingRow>
+                    }
+                    else
+                    {
+                        @* Web host: outputs never touch the server's disk, so the folder, "next to source" and the
+                           open/reveal switches do not apply. Say where files go instead of showing dead controls. *@
+                        <SettingRow Label="Where files go" Description="In the browser, each converted file is a download. Your browser saves it to its downloads folder or asks where to put it. The desktop app adds an output folder and can save next to the source file." />
+                    }
+
+                    @if (Host.SupportsShellOpen)
+                    {
+                        <SettingRow Label="Reveal in folder after convert" Description="When a conversion finishes, show the new file in File Explorer or your file manager.">
+                            <FluentSwitch @bind-Value="_draft.RevealAfterConvert" @bind-Value:after="CommitAsync" AriaLabel="Reveal in folder after convert" />
+                        </SettingRow>
+
+                        <SettingRow Label="Open after convert" Description="When a conversion finishes, open the new file in the app your system uses for that file type.">
+                            <FluentSwitch @bind-Value="_draft.OpenAfterConvert" @bind-Value:after="CommitAsync" AriaLabel="Open after convert" />
+                        </SettingRow>
+                    }
+
+                    <SettingRow Label="Default PDF theme" Description="The theme Convert and the Reader's print preview use for PDFs. A file's options in Convert can pick another.">
+                        @if (_themes.Count == 0)
+                        {
+                            <FluentSkeleton Width="220px" Height="32px" />
+                        }
+                        else
+                        {
+                            <FluentSelect TOption="PdfTheme" Items="_themes" OptionValue="@(t => t.Id)" OptionText="@ThemeLabel"
+                                          @bind-Value="_defaultThemeId" @bind-Value:after="OnDefaultThemeChangedAsync"
+                                          AriaLabel="Default PDF theme" Width="220px" />
+                        }
+                    </SettingRow>
+
+                    <SettingRow Label="Parallel conversions" Description="How many files convert at the same time. Lower uses less memory.">
+                        <div class="aio-segmented" role="radiogroup" aria-label="Parallel conversions">
+                            @for (var i = 1; i <= 4; i++)
+                            {
+                                var value = i;
+                                <button type="button" role="radio"
+                                        class="aio-segment is-narrow @(_draft.MaxParallelConversions == value ? "is-selected" : null)"
+                                        aria-checked="@(_draft.MaxParallelConversions == value ? "true" : "false")"
+                                        @onclick="@(() => SetParallelAsync(value))">@value</button>
+                            }
+                        </div>
+                    </SettingRow>
+                </SettingsCard>
+
+                @* ---------------- Behaviour ---------------- *@
+                <SettingsCard Id="behaviour" Title="Behaviour" Description="Confirmations and what the app remembers." Icon="@(new Icons.Regular.Size20.Options())">
+                    <SettingRow Label="If a file already exists" Description="@(Host.SupportsNativeDialogs ? "What Convert does when an output file with the same name is already in the folder." : "Only applies in the desktop app; in the browser converted files are downloaded.")">
+                        <FluentSelect TOption="string" Value="@_draft.OverwritePolicy.ToString()" ValueChanged="@((string? v) => SetOverwritePolicyAsync(v))"
+                                      AriaLabel="If a file already exists" Width="200px" Position="SelectPosition.Below">
+                            <FluentOption TOption="string" Value="@nameof(OverwritePolicy.Ask)">Ask me</FluentOption>
+                            <FluentOption TOption="string" Value="@nameof(OverwritePolicy.KeepBoth)">Keep both</FluentOption>
+                            <FluentOption TOption="string" Value="@nameof(OverwritePolicy.Replace)">Replace</FluentOption>
+                        </FluentSelect>
+                    </SettingRow>
+                    <SettingRow Label="Keep history" Description="Adds each finished conversion to History, where you can find it or convert again with the same options.">
+                        <FluentSwitch @bind-Value="_draft.KeepHistory" @bind-Value:after="CommitAsync" AriaLabel="Keep history" />
+                    </SettingRow>
+                    <SettingRow Label="Show welcome sample" Description="Shows a sample document to try on the Convert page while no files are added.">
+                        <FluentSwitch @bind-Value="_draft.ShowWelcomeSample" @bind-Value:after="CommitAsync" AriaLabel="Show welcome sample" />
+                    </SettingRow>
+                </SettingsCard>
+
+                @* ---------------- About ---------------- *@
+                <SettingsCard Id="about" Title="About" Description="Version, data location and licences." Icon="@(new Icons.Regular.Size20.Info())">
+                    <dl class="aio-about">
+                        <dt>App</dt>
+                        <dd>@BuildInfo.ProductName</dd>
+                        <dt>Version</dt>
+                        <dd class="aio-mono" title="@BuildInfo.InformationalVersion">@BuildInfo.DisplayVersion</dd>
+                        <dt>Runtime</dt>
+                        <dd>@BuildInfo.Runtime</dd>
+                        <dt>Operating system</dt>
+                        <dd>@BuildInfo.OperatingSystem</dd>
+                        <dt>Running as</dt>
+                        <dd>@DiagnosticsReport.HostLabel(Host.Kind)</dd>
+                        <dt>Portable mode</dt>
+                        <dd>@(Paths.IsPortable ? "Yes, data is kept next to the app" : "No")</dd>
+                        <dt>Data folder</dt>
+                        <dd>
+                            <div class="aio-about-path">
+                                <code class="aio-truncate" title="@Paths.DataDirectory">@Paths.DataDirectory</code>
+                                <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Copy())" OnClick="CopyDataPathAsync" Title="Copy path" aria-label="Copy data folder path" />
+                            </div>
+                        </dd>
+                    </dl>
+
+                    <div class="aio-about-actions" role="group" aria-label="About actions">
+                        @if (Host.Kind == HostKind.Desktop)
+                        {
+                            <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.FolderOpen())" OnClick="OpenDataFolderAsync">Open data folder</FluentButton>
+                        }
+                        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Clipboard())" OnClick="CopyDiagnosticsAsync"
+                                      Title="Copy version, system and data folder details to paste into a problem report" aria-label="Copy diagnostics">Copy diagnostics</FluentButton>
+                        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.DocumentText())" OnClick="ShowNoticesAsync">Third-party notices</FluentButton>
+                        @* FluentButton turns Title into the accessible name; keep the visible text as the name (WCAG 2.5.3). *@
+                        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Open())" OnClick="OpenReleasesAsync"
+                                      Title="@BuildInfo.ReleasesUrl" aria-label="Releases">Releases</FluentButton>
+                        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Code())" OnClick="OpenRepositoryAsync"
+                                      Title="@BuildInfo.RepositoryUrl" aria-label="GitHub">GitHub</FluentButton>
+                        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Globe())" OnClick="OpenWebsiteAsync"
+                                      Title="@BuildInfo.WebsiteUrl" aria-label="therandomadmin.com">therandomadmin.com</FluentButton>
+                    </div>
+
+                    <p class="aio-muted aio-licence-note">
+                        AllInOne PDF is released under the MIT licence. Third-party notices lists the open-source components
+                        it includes, with their versions and licences.
+                    </p>
+                </SettingsCard>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,177 @@
+@* One option control, chosen from OptionDefinition.Type. Used by OptionsPanel; reusable on its own. Numbers use the
+   shared native RangeInput/NumberInput: the Fluent slider and number field echo every value the circuit sets back as
+   an edit, which made a held arrow key or a drag oscillate for ever. *@
+@using AllInOnePdf.UI.Components.Shared
+
+<div class="aio-opt @(Error is null ? null : "aio-opt-invalid")" data-option="@Definition.Key">
+    @switch (Definition.Type)
+    {
+        case OptionType.Boolean:
+            <div class="aio-opt-switch">
+                <FluentSwitch Value="@BoolValue" ValueChanged="@((bool v) => SetAsync(v))" Disabled="@Disabled"
+                              Label="@Definition.Label" aria-describedby="@HelpId" />
+            </div>
+            break;
+
+        case OptionType.Integer:
+            @if (HasRange)
+            {
+                <label class="aio-opt-label" for="@InputId">@Definition.Label</label>
+                <div class="aio-opt-range">
+                    <RangeInput Value="@IntValue" ValueChanged="SetIntAsync"
+                                Min="@Definition.Min!.Value" Max="@Definition.Max!.Value" Step="@IntStep"
+                                Disabled="@Disabled" AriaLabel="@($"{Definition.Label} slider")" Class="aio-opt-slider" />
+                    <NumberInput Id="@InputId" Value="@IntValue" ValueChanged="SetIntAsync" Min="@Definition.Min" Max="@Definition.Max"
+                                 Step="@IntStep" Disabled="@Disabled" aria-describedby="@HelpId" aria-invalid="@InvalidText" Class="aio-opt-number" />
+                    @if (Definition.Unit is not null)
+                    {
+                        <span class="aio-opt-unit">@Definition.Unit</span>
+                    }
+                </div>
+            }
+            else
+            {
+                <label class="aio-opt-label" for="@InputId">@Definition.Label</label>
+                <div class="aio-opt-range">
+                    <NumberInput Id="@InputId" Value="@IntValue" ValueChanged="SetIntAsync" Min="@Definition.Min" Max="@Definition.Max"
+                                 Step="1" Disabled="@Disabled" aria-describedby="@HelpId" aria-invalid="@InvalidText" Class="aio-opt-number" />
+                    @if (Definition.Unit is not null)
+                    {
+                        <span class="aio-opt-unit">@Definition.Unit</span>
+                    }
+                </div>
+            }
+            break;
+
+        case OptionType.Number:
+            <label class="aio-opt-label" for="@InputId">@Definition.Label</label>
+            <div class="aio-opt-range">
+                @if (HasRange)
+                {
+                    <RangeInput Value="@DoubleValue" ValueChanged="SetDoubleAsync"
+                                Min="@Definition.Min!.Value" Max="@Definition.Max!.Value" Step="@DoubleStep"
+                                Disabled="@Disabled" AriaLabel="@($"{Definition.Label} slider")" Class="aio-opt-slider" />
+                }
+                <NumberInput Id="@InputId" Value="@DoubleValue" ValueChanged="SetDoubleAsync" Min="@Definition.Min" Max="@Definition.Max"
+                             Step="@DoubleStep" Disabled="@Disabled" aria-describedby="@HelpId" aria-invalid="@InvalidText" Class="aio-opt-number" />
+                @if (Definition.Unit is not null)
+                {
+                    <span class="aio-opt-unit">@Definition.Unit</span>
+                }
+            </div>
+            break;
+
+        case OptionType.MultilineText:
+            <FluentTextArea Value="@StringValue" ValueChanged="@((string? v) => SetAsync(v))" Label="@Definition.Label"
+                            Rows="4" Resize="TextAreaResize.Vertical" Disabled="@Disabled" aria-describedby="@HelpId" Class="aio-opt-wide" />
+            break;
+
+        case OptionType.Choice:
+            var choices = Definition.Choices ?? [];
+            @if (choices.Count is > 0 and <= 3)
+            {
+                <FluentRadioGroup TValue="string" Value="@StringValue" ValueChanged="@((string? v) => SetAsync(v))"
+                                  Label="@Definition.Label" Orientation="Orientation.Vertical" Disabled="@Disabled" aria-describedby="@HelpId">
+                    @foreach (var choice in choices)
+                    {
+                        <FluentRadio TValue="string" Value="@choice.Value" Label="@choice.Label" title="@choice.Description" />
+                    }
+                </FluentRadioGroup>
+            }
+            else
+            {
+                <label class="aio-opt-label" for="@InputId">@Definition.Label</label>
+                <FluentSelect TOption="string" Id="@InputId" Value="@StringValue" ValueChanged="@((string? v) => SetAsync(v))"
+                              Disabled="@Disabled" aria-describedby="@HelpId" Class="aio-opt-wide" Position="SelectPosition.Below">
+                    @foreach (var choice in choices)
+                    {
+                        <FluentOption TOption="string" Value="@choice.Value" Title="@choice.Description">@choice.Label</FluentOption>
+                    }
+                </FluentSelect>
+            }
+            break;
+
+        case OptionType.Color:
+            <label class="aio-opt-label" for="@InputId">@Definition.Label</label>
+            <div class="aio-opt-color">
+                <input type="color" class="aio-opt-swatch" value="@SwatchValue" disabled="@Disabled"
+                       aria-label="@($"{Definition.Label} colour picker")"
+                       @onchange="@(e => SetAsync(e.Value?.ToString()?.ToUpperInvariant()))" />
+                <FluentTextField Id="@InputId" Value="@StringValue" ValueChanged="@((string? v) => SetAsync(v?.Trim()))"
+                                 Placeholder="#RRGGBB" Maxlength="7" Disabled="@Disabled" aria-describedby="@HelpId" Class="aio-opt-hex" />
+            </div>
+            break;
+
+        case OptionType.Font:
+            <label class="aio-opt-label" for="@InputId">@Definition.Label</label>
+            <FluentSelect TOption="string" Id="@InputId" Value="@StringValue" ValueChanged="@((string? v) => SetAsync(v))"
+                          Disabled="@Disabled" aria-describedby="@HelpId" Class="aio-opt-wide" Position="SelectPosition.Below">
+                @foreach (var family in FontChoices)
+                {
+                    <FluentOption TOption="string" Value="@family.Name" Title="@family.Description">
+                        <span style="@(BundledFonts.IsBundled(family.Name) ? $"font-family: '{family.Name}', var(--aio-font-ui)" : null)">@family.Name</span>
+                    </FluentOption>
+                }
+            </FluentSelect>
+            @if (SelectedFont is { } font)
+            {
+                <div class="aio-opt-help">@font.Description</div>
+            }
+            break;
+
+        case OptionType.Theme:
+            <label class="aio-opt-label" for="@InputId">@Definition.Label</label>
+            @if (_themes is null)
+            {
+                <FluentSkeleton Width="100%" Height="32px" Shape="SkeletonShape.Rect" />
+            }
+            else
+            {
+                <FluentSelect TOption="string" Id="@InputId" Value="@ThemeValue" ValueChanged="@((string? v) => SetThemeAsync(v))"
+                              Disabled="@Disabled" aria-describedby="@HelpId" Class="aio-opt-wide" Position="SelectPosition.Below">
+                    <FluentOption TOption="string" Value="@string.Empty" Title="Use the default PDF theme at the time of converting (Settings or Themes)">
+                        Default theme@(DefaultTheme is { } d ? $" ({d.Name})" : "")
+                    </FluentOption>
+                    @foreach (var theme in _themes)
+                    {
+                        <FluentOption TOption="string" Value="@theme.Id" Title="@theme.Description">
+                            @theme.Name@(theme.IsBuiltIn ? "" : " (custom)")
+                        </FluentOption>
+                    }
+                </FluentSelect>
+                @if (SelectedTheme is { } selected)
+                {
+                    <div class="aio-opt-theme">
+                        <span class="aio-opt-theme-chip" aria-hidden="true"
+                              style="@ThemeChipStyle(selected)">Aa</span>
+                        <span class="aio-opt-help">@(selected.Description ?? (selected.IsBuiltIn ? "Built-in theme" : "Custom theme"))</span>
+                    </div>
+                }
+            }
+            break;
+
+        case OptionType.PageRange:
+            <FluentTextField Value="@StringValue" ValueChanged="@((string? v) => SetAsync(v))" Label="@Definition.Label"
+                             Placeholder="All pages, or for example 1-3, 7" Disabled="@Disabled" aria-describedby="@HelpId"
+                             aria-invalid="@(Error is null ? "false" : "true")" Immediate="true" ImmediateDelay="300" Class="aio-opt-wide" />
+            break;
+
+        default:
+            <FluentTextField Value="@StringValue" ValueChanged="@((string? v) => SetAsync(v))" Label="@Definition.Label"
+                             TextFieldType="@(ConvertOptionRules.IsPassword(Definition) ? TextFieldType.Password : TextFieldType.Text)"
+                             Disabled="@Disabled" aria-describedby="@HelpId" Class="aio-opt-wide" />
+            break;
+    }
+
+    @if (Error is not null)
+    {
+        <div class="aio-opt-error" role="alert">
+            <FluentIcon Value="@(new Icons.Regular.Size16.ErrorCircle())" Color="Color.Error" />
+            <span>@Error</span>
+        </div>
+    }
+    @if (ConvertOptionRules.HelpText(Definition) is { } help)
+    {
+        <div class="aio-opt-help @(Definition.Type is OptionType.Font or OptionType.Theme ? "aio-opt-help-secondary" : null)" id="@HelpId">@help</div>
+    }
+</div>

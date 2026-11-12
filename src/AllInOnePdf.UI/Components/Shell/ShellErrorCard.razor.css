@@ -1,0 +1,80 @@
+.aio-error {
+  padding: var(--aio-page-padding);
+  display: flex;
+  justify-content: center;
+}
+
+.aio-error-card {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 720px;
+  margin-top: 48px;
+  padding: 24px;
+  border-radius: var(--aio-radius-md);
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-left: 4px solid var(--error, #C50F1F);
+  background: var(--neutral-layer-floating, var(--neutral-layer-1));
+  box-shadow: var(--aio-shadow-8);
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-error-icon {
+  flex: 0 0 auto;
+  padding-top: 4px;
+}
+
+.aio-error-body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.aio-error-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.aio-error-text {
+  margin: 4px 0 12px;
+  line-height: 20px;
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-error-details {
+  margin: 0 0 16px;
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-sm);
+  background: var(--neutral-layer-2);
+}
+
+.aio-error-details summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.aio-error-details summary:focus-visible {
+  outline: 2px solid var(--focus-stroke-outer, var(--accent-fill-rest));
+  outline-offset: -2px;
+}
+
+.aio-error-trace {
+  margin: 0;
+  padding: 8px 12px 12px;
+  max-height: 280px;
+  overflow: auto;
+  font-family: var(--aio-font-mono);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aio-error-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

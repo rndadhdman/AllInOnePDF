@@ -1,0 +1,304 @@
+.cr-root {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--aio-header-height, 48px));
+    min-height: 420px;
+    background: var(--neutral-layer-1);
+}
+
+.cr-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: calc(100vh - var(--aio-header-height, 48px));
+    color: var(--neutral-foreground-hint);
+}
+
+/* ---- top bar (same structure and tokens as the theme builder) ---------- */
+.cr-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 52px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-layer-1);
+}
+
+.cr-name {
+    flex: 0 1 300px;
+    min-width: 120px;
+}
+
+.cr-dirty {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+    white-space: nowrap;
+}
+
+.cr-dirty-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--neutral-stroke-rest);
+}
+
+.cr-dirty.is-dirty .cr-dirty-dot {
+    background: var(--accent-fill-rest);
+}
+
+.cr-dirty.is-dirty {
+    color: var(--neutral-foreground-rest);
+}
+
+.cr-spacer {
+    flex: 1 1 auto;
+}
+
+.cr-sep {
+    width: 1px;
+    height: 24px;
+    margin: 0 4px;
+    background: var(--neutral-stroke-divider-rest);
+}
+
+.cr-modes {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 6px;
+    background: var(--neutral-fill-secondary-rest);
+}
+
+.cr-mode {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 12px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.cr-mode:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-mode.is-on {
+    background: var(--neutral-layer-1);
+    color: var(--accent-foreground-rest);
+    font-weight: 600;
+    box-shadow: var(--aio-shadow-2);
+}
+
+.cr-mode:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: 1px;
+}
+
+.cr-pick {
+    display: inline-flex;
+}
+
+/* ---- main area ---------------------------------------------------------- */
+.cr-main {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+    /* The closed drawers below 1100 px wait off to the side; clip them so they never widen the page. */
+    overflow: hidden;
+    overflow: clip;
+}
+
+.cr-left {
+    flex: 0 0 280px;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-right: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-layer-1);
+}
+
+.cr-right {
+    flex: 0 0 360px;
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-layer-1);
+}
+
+.cr-left.is-collapsed,
+.cr-right.is-collapsed {
+    display: none;
+}
+
+.cr-right ::deep .cr-insp-close {
+    display: none;
+}
+
+.cr-center {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.cr-canvas-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-layer-2);
+}
+
+.cr-canvas-sel {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-canvas-bar ::deep .cr-toggle-narrow {
+    display: none;
+}
+
+.cr-center-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.cr-scrim {
+    display: none;
+}
+
+/* ---- narrow screens: both side panels become drawers -------------------- */
+@media (max-width: 1100px) {
+    .cr-left,
+    .cr-left.is-collapsed,
+    .cr-right,
+    .cr-right.is-collapsed {
+        display: flex;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        z-index: 6;
+        box-shadow: var(--aio-shadow-16);
+        visibility: hidden;
+        transition: transform .18s ease, visibility .18s;
+    }
+
+    .cr-left,
+    .cr-left.is-collapsed {
+        left: 0;
+        width: min(300px, 100%);
+        transform: translateX(-100%);
+    }
+
+    .cr-right,
+    .cr-right.is-collapsed {
+        right: 0;
+        width: min(380px, 100%);
+        transform: translateX(100%);
+    }
+
+    .cr-left.is-open,
+    .cr-right.is-open {
+        transform: none;
+        visibility: visible;
+    }
+
+    .cr-right ::deep .cr-insp-close {
+        display: inline-flex;
+    }
+
+    .cr-canvas-bar ::deep .cr-toggle-narrow {
+        display: inline-flex;
+    }
+
+    .cr-canvas-bar ::deep .cr-toggle-wide {
+        display: none;
+    }
+
+    .cr-scrim {
+        display: block;
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        background: rgba(0, 0, 0, .18);
+    }
+
+    .cr-dirty-text,
+    .cr-mode-text,
+    .cr-sep {
+        display: none;
+    }
+
+    .cr-mode {
+        padding: 4px 8px;
+    }
+
+    .cr-name {
+        flex: 0 1 200px;
+        min-width: 90px;
+    }
+
+    .cr-topbar {
+        gap: 4px;
+        padding: 6px 8px;
+    }
+}
+
+@media (max-width: 760px) {
+    .cr-topbar {
+        flex-wrap: wrap;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cr-left,
+    .cr-right {
+        transition: none !important;
+    }
+}
+
+/* "Structure | Free flow": what new sections get (the canvas bar has room for both labels). */
+.cr-layout-switch {
+    flex: 0 0 auto;
+}
+
+.cr-layout-label {
+    flex: 0 0 auto;
+    margin-left: 8px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+    white-space: nowrap;
+}
+
+.cr-layout-opt {
+    min-height: 28px;
+    padding: 2px 10px;
+    white-space: nowrap;
+    font-size: 12px;
+}

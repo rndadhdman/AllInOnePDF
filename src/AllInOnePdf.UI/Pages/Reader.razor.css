@@ -1,0 +1,108 @@
+.rd-root {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+/* Focus mode hides the app chrome by covering it; the palette class on the root paints the background. */
+.rd-root.rd-focus {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+.rd-root.rd-focus ::deep .rd-toolbar {
+    transition: opacity .3s ease;
+}
+
+.rd-root.rd-focus[data-idle="true"] ::deep .rd-toolbar {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rd-root.rd-focus[data-idle="true"] {
+    cursor: none;
+}
+
+.rd-start-page {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.rd-body {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    transition: opacity .15s ease, background-color .2s ease, color .2s ease;
+}
+
+.rd-body.rd-pending {
+    opacity: 0;
+}
+
+.rd-preparing,
+.rd-overlay,
+.rd-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-family: var(--aio-font-ui);
+}
+
+.rd-preparing {
+    flex: 1 1 auto;
+    color: var(--aio-reader-muted);
+}
+
+.rd-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--neutral-layer-1, #FFFFFF) 70%, transparent);
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+.rd-loading {
+    justify-content: flex-start;
+    margin: 8px 0 0;
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+.rd-error {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 12px;
+    background: var(--neutral-layer-1, #FFFFFF);
+}
+
+.rd-start-page .rd-error {
+    padding: 0 0 12px;
+    background: transparent;
+}
+
+/* Narrow windows: the outline floats over the text instead of squeezing it. */
+@media (max-width: 760px) {
+    .rd-body ::deep .rd-outline {
+        position: absolute;
+        inset: 0 auto 0 0;
+        z-index: 4;
+        width: min(300px, 85vw);
+        background: inherit;
+        box-shadow: var(--aio-shadow-16);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rd-body,
+    .rd-root.rd-focus ::deep .rd-toolbar {
+        transition: none;
+    }
+}

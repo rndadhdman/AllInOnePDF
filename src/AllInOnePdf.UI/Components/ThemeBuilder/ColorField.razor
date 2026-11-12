@@ -1,0 +1,163 @@
+@* Colour control: native swatch picker, hex field, palette of the theme's own colours and an optional "use default". *@
+@inject ThemeBuilderState State
+
+<div class="tb-field tb-color-field">
+    <div class="tb-field-head">
+        <span class="tb-label" id="@($"{_id}-l")">@Label</span>
+        @if (Get() is null && AllowNull)
+        {
+            <span class="tb-hint">@(InheritLabel ?? "Default")</span>
+        }
+    </div>
+    <div class="tb-color">
+        <input type="color" class="tb-swatch" value="@ThemeBuilderColor.ToRgb6(Effective, "#000000")"
+               @oninput="OnPicked" aria-label="@($"{Label}: pick a colour")" />
+        <FluentTextField Class="tb-hex" Value="@_text" ValueChanged="@((string? v) => OnTyped(v))" Immediate="true" ImmediateDelay="400"
+                         Placeholder="@(Get() is null ? ThemeBuilderColor.ToRgb6(Effective, "#000000") : "#RRGGBB")" Maxlength="9"
+                         AriaLabel="@($"{Label} hex value")" Spellcheck="false" />
+        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size16.Color())" Title="Pick from theme"
+                      aria-label="@($"{Label}: pick from the theme colours")" aria-expanded="@(_paletteOpen ? "true" : "false")" OnClick="() => _paletteOpen = !_paletteOpen" />
+        @if (AllowNull && Get() is not null)
+        {
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size16.ArrowUndo())" Title="Use default"
+                          aria-label="@($"{Label}: use default")" OnClick="Clear" />
+        }
+    </div>
+    @if (_paletteOpen)
+    {
+        <div class="tb-palette" role="group" aria-label="Theme colours">
+            @foreach (var (name, hex) in Palette())
+            {
+                <button type="button" class="tb-palette-chip" title="@($"{name} {hex}")" aria-label="@($"Use {name} ({hex})")"
+                        style="@($"background:{ThemeBuilderColor.ToCss(hex, "#000000")}")" @onclick="() => Pick(hex)"></button>
+            }
+        </div>
+    }
+    @if (_invalid)
+    {
+        <div class="tb-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" /><span>Use a hex colour such as #1F2937.</span></div>
+    }
+    @if (!string.IsNullOrEmpty(Warning))
+    {
+        <div class="tb-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" /><span>@Warning</span></div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+    [Parameter, EditorRequired] public Action<string?> Set { get; set; } = _ => { };
+    /// <summary>Allows clearing the value so the theme falls back to <see cref="Inherited"/>.</summary>
+    [Parameter] public bool AllowNull { get; set; }
+    /// <summary>The colour used when the value is null (shown in the swatch).</summary>
+    [Parameter] public Func<string?>? Inherited { get; set; }
+    [Parameter] public string? InheritLabel { get; set; }
+    [Parameter] public string? Warning { get; set; }
+
+    private readonly string _id = "tbc-" + Guid.NewGuid().ToString("N")[..8];
+    private string? _text;
+    private string? _lastValue;
+    private bool _paletteOpen;
+    private bool _invalid;
+
+    private string? Effective => Get() ?? Inherited?.Invoke();
+
+    protected override void OnParametersSet()
+    {
+        var value = Get();
+        if (!string.Equals(value, _lastValue, StringComparison.Ordinal))
+        {
+            _text = value;
+            _lastValue = value;
+            _invalid = false;
+        }
+    }
+
+    private void OnPicked(ChangeEventArgs e) => Apply(e.Value?.ToString(), "pick");
+
+    private void OnTyped(string? text)
+    {
+        text = text?.Trim();
+        _text = text;
+        if (string.IsNullOrEmpty(text))
+        {
+            _invalid = !AllowNull;
+            if (AllowNull)
+            {
+                Apply(null, "type");
+            }
+
+            return;
+        }
+
+        if (!text.StartsWith('#'))
+        {
+            text = "#" + text;
+        }
+
+        _invalid = !ThemeBuilderColor.IsValid(text);
+        if (!_invalid)
+        {
+            Apply(text.ToUpperInvariant(), "type");
+        }
+    }
+
+    private void Pick(string hex)
+    {
+        _paletteOpen = false;
+        Apply(hex, "palette");
+    }
+
+    private void Clear() => Apply(null, "clear");
+
+    private void Apply(string? value, string how)
+    {
+        if (value is not null && !ThemeBuilderColor.IsValid(value))
+        {
+            return;
+        }
+
+        if (value is null && !AllowNull)
+        {
+            return;
+        }
+
+        if (string.Equals(value, Get(), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        Set(value);
+        _lastValue = value;
+        if (how != "type")
+        {
+            _text = value;
+        }
+
+        _invalid = false;
+        State.Commit("color:" + Label + ":" + how);
+    }
+
+    private IEnumerable<(string Name, string Hex)> Palette()
+    {
+        var t = State.Working;
+        if (t is null)
+        {
+            yield break;
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, hex) in new[]
+                 {
+                     ("Accent", t.Colors.Accent), ("Text", t.Colors.Text), ("Muted", t.Colors.Muted), ("Surface", t.Colors.Surface),
+                     ("Border", t.Colors.Border), ("Page", t.Page.Background), ("Headings", t.Headings.Color),
+                     ("White", "#FFFFFF"), ("Black", "#000000"),
+                 })
+        {
+            if (ThemeBuilderColor.IsValid(hex) && seen.Add(hex))
+            {
+                yield return (name, hex);
+            }
+        }
+    }
+}

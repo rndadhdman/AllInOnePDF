@@ -1,0 +1,164 @@
+@page "/create"
+@using AllInOnePdf.Publishing.Templates
+@using AllInOnePdf.Publishing.Serialization
+@implements IDisposable
+
+<PageTitle>Create · AllInOne PDF</PageTitle>
+
+<div class="aio-page cg-page">
+    <PageHeader Title="Create" Description="Start a publication from a template, lay it out with sections, rows and modules, and export it as a PDF.">
+        <Actions>
+            <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Add())" OnClick="NewPublicationAsync">New publication</FluentButton>
+            <FluentButton Id="cg-import" Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.ArrowImport())" Disabled="@_importing"
+                          Title="Import publication packages (.aiopub)">Import…</FluentButton>
+        </Actions>
+    </PageHeader>
+
+    <FluentInputFile AnchorId="cg-import" DragDropZoneVisible="false" Accept="@($"{PublicationPackage.Extension},{PublicationPackage.MediaType}")" Multiple="true" MaximumFileCount="10"
+                     MaximumFileSize="@((int)Math.Min(int.MaxValue, PublicationPackage.MaxPackageBytes))" OnCompleted="OnImportCompletedAsync" OnFileCountExceeded="OnTooManyFiles" />
+
+    @if (_drafts is { Unsaved.Count: > 0 } drafts)
+    {
+        <h2 class="cg-head">Continue where you left off</h2>
+        <div class="cg-drafts" role="list">
+            @foreach (var draft in drafts.Unsaved)
+            {
+                <article role="listitem" class="cg-draft" @key="draft.Key" aria-labelledby="@($"cg-d-{draft.Key.GetHashCode():x8}")">
+                    <button type="button" class="cg-draft-thumb" title="Continue editing" aria-label="@($"Continue {draft.Name}")" @onclick="() => Continue(draft)">
+                        @if (_draftThumbs.TryGetValue(draft.Key, out var url) && url is not null)
+                        {
+                            <img src="@url" alt="" />
+                        }
+                        else if (_draftThumbs.ContainsKey(draft.Key))
+                        {
+                            <span class="cg-thumb-fail"><FluentIcon Value="@(new Icons.Regular.Size24.DocumentOnePage())" Color="Color.Neutral" /></span>
+                        }
+                        else
+                        {
+                            <FluentSkeleton Shape="SkeletonShape.Rect" Shimmer="true" Width="100%" Height="100%" />
+                        }
+                    </button>
+                    <div class="cg-draft-body">
+                        <h3 class="cg-name" id="@($"cg-d-{draft.Key.GetHashCode():x8}")">@draft.Name</h3>
+                        <p class="cg-meta">New publication from the @draft.TemplateName template</p>
+                        <p class="cg-unsaved">Unsaved changes from @Age(draft)</p>
+                        <div class="cg-draft-actions">
+                            <FluentButton Appearance="Appearance.Accent" OnClick="() => Continue(draft)">Continue</FluentButton>
+                            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Delete())" aria-label="@($"Discard the unsaved changes to {draft.Name}")"
+                                          OnClick="() => DiscardAsync(draft)">Discard</FluentButton>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+
+    <h2 class="cg-head">Start from a template</h2>
+    <div class="cg-strip" role="list">
+        @foreach (var template in BuiltInTemplates.All())
+        {
+            <div role="listitem" class="cg-tpl-item" @key="template.Id">
+                <button type="button" class="cg-tpl" title="@template.Description" aria-label="@($"New publication from the {template.Name} template: {template.Description}")"
+                        @onclick="() => StartFrom(template.Id)">
+                    <span class="cg-tpl-thumb">
+                        @if (_templateThumbs.TryGetValue(template.Id, out var url) && url is not null)
+                        {
+                            <img src="@url" alt="" />
+                        }
+                        else if (_templateFailed.Contains(template.Id))
+                        {
+                            <span class="cg-thumb-fail"><FluentIcon Value="@(new Icons.Regular.Size24.DocumentOnePage())" Color="Color.Neutral" /></span>
+                        }
+                        else
+                        {
+                            <FluentSkeleton Shape="SkeletonShape.Rect" Shimmer="true" Width="100%" Height="100%" />
+                        }
+                    </span>
+                    <span class="cg-tpl-name">@template.Name</span>
+                </button>
+            </div>
+        }
+    </div>
+
+    <h2 class="cg-head">Your publications</h2>
+    @if (_items is null)
+    {
+        <div class="cg-grid" aria-busy="true">
+            @for (var i = 0; i < 3; i++)
+            {
+                <div class="cg-card cg-card-ghost"><FluentSkeleton Shape="SkeletonShape.Rect" Shimmer="true" Width="100%" Height="300px" /></div>
+            }
+        </div>
+    }
+    else if (_items.Count == 0)
+    {
+        <EmptyState Icon="@(new Icons.Regular.Size48.DesignIdeas())" Title="No publications yet" Description="Start from a template above or import an .aiopub package.">
+            <FluentButton Appearance="Appearance.Accent" OnClick="NewPublicationAsync">New publication</FluentButton>
+        </EmptyState>
+    }
+    else
+    {
+        <p class="aio-visually-hidden" role="status" aria-live="polite">@_items.Count @(_items.Count == 1 ? "publication" : "publications")</p>
+        <div class="cg-grid">
+            @foreach (var item in _items)
+            {
+                var ratio = Ratio(item);
+                var unsaved = _drafts?.BySavedPublication.GetValueOrDefault(item.Id);
+                <article @key="item.Id" class="cg-card" aria-labelledby="@($"cg-n-{item.Id}")">
+                    <button type="button" class="cg-thumb" title="Open in the Creator" aria-label="@($"Open {item.Name}")" @onclick="() => Open(item.Id)">
+                        @if (_thumbs.TryGetValue(item.Id, out var url) && url is not null)
+                        {
+                            <img class="cg-thumb-img" src="@url" alt="" style="@ratio" />
+                        }
+                        else if (_thumbs.ContainsKey(item.Id))
+                        {
+                            <span class="cg-thumb-fail" style="@ratio">
+                                <FluentIcon Value="@(new Icons.Regular.Size24.DocumentOnePage())" Color="Color.Neutral" />
+                                <span>No preview yet</span>
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="cg-thumb-skel" style="@ratio"><FluentSkeleton Shape="SkeletonShape.Rect" Shimmer="true" Width="100%" Height="100%" /></span>
+                        }
+                    </button>
+                    <div class="cg-body">
+                        <h3 class="cg-name" id="@($"cg-n-{item.Id}")">@item.Name</h3>
+                        <p class="cg-meta">@item.ThemeName · @item.PageSize · modified @item.Modified.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture)</p>
+                        @if (!string.IsNullOrWhiteSpace(item.Description))
+                        {
+                            <p class="cg-desc">@item.Description</p>
+                        }
+                        @if (unsaved is not null)
+                        {
+                            <p class="cg-unsaved">Unsaved changes from @Age(unsaved)</p>
+                        }
+                    </div>
+                    <div class="cg-actions">
+                        @if (unsaved is not null)
+                        {
+                            <FluentButton Appearance="Appearance.Accent" Title="Open with the unsaved changes restored" OnClick="() => Continue(unsaved)">Continue</FluentButton>
+                        }
+                        else
+                        {
+                            <FluentButton Appearance="Appearance.Outline" OnClick="() => Open(item.Id)">Open</FluentButton>
+                        }
+                        <span class="cg-icons">
+                            @if (unsaved is not null)
+                            {
+                                <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowUndo())" Title="@($"Discard the unsaved changes to {item.Name}")"
+                                              aria-label="@($"Discard the unsaved changes to {item.Name}")" OnClick="() => DiscardAsync(unsaved, item.Name)" />
+                            }
+                            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Copy())" Title="@($"Duplicate {item.Name}")"
+                                          aria-label="@($"Duplicate {item.Name}")" OnClick="() => DuplicateAsync(item)" />
+                            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowDownload())" Title="@($"Export the package of {item.Name}")"
+                                          aria-label="@($"Export the package of {item.Name}")" OnClick="() => ExportPackageAsync(item)" />
+                            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Delete())" Title="@($"Delete {item.Name}")"
+                                          aria-label="@($"Delete {item.Name}")" OnClick="() => DeleteAsync(item)" />
+                        </span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>

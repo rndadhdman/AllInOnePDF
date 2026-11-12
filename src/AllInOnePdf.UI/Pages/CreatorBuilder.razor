@@ -1,0 +1,159 @@
+@page "/create/{Id}"
+@using AllInOnePdf.UI.Components.Creator
+@using AllInOnePdf.UI.Components.ThemeBuilder
+@using AllInOnePdf.UI.Components.Shared
+@implements IAsyncDisposable
+
+<PageTitle>@(State.Working?.Name ?? "Creator") · Create · AllInOne PDF</PageTitle>
+
+@if (_notFound)
+{
+    <div class="aio-page">
+        <EmptyState Icon="@(new Icons.Regular.Size48.DocumentAdd())" Title="Publication not found" Description="It may have been deleted or the link is wrong. Pick a publication or a template in the gallery.">
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Nav.NavigateTo("/create"))">Back to the gallery</FluentButton>
+        </EmptyState>
+    </div>
+}
+else if (State.Working is null)
+{
+    <div class="cr-loading" role="status">
+        <FluentProgressRing />
+        <span>Opening the Creator…</span>
+    </div>
+}
+else
+{
+    var p = State.Working;
+    <div class="cr-root">
+        <h1 class="aio-visually-hidden">Creator: @p.Name</h1>
+
+        @* ---------------------------------------------------------------- top bar *@
+        <header class="cr-topbar" role="toolbar" aria-label="Publication">
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowLeft())" Title="Back to the gallery" aria-label="Back to the gallery"
+                          OnClick="@(() => Nav.NavigateTo("/create"))" />
+            <div class="cr-name">
+                <FluentTextField Value="@p.Name" ValueChanged="@((string? v) => State.Rename(v ?? string.Empty))" Immediate="true" ImmediateDelay="300"
+                                 AriaLabel="Publication name" Appearance="FluentInputAppearance.Filled" Style="width:100%" />
+            </div>
+            <span class="cr-dirty @(State.IsDirty ? "is-dirty" : null)" role="status" aria-live="polite" title="@(State.IsDirty ? "Unsaved changes" : "All changes saved")">
+                <span class="cr-dirty-dot" aria-hidden="true"></span>
+                <span class="cr-dirty-text">@(State.IsDirty ? "Unsaved" : "Saved")</span>
+            </span>
+            <span class="cr-spacer"></span>
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowUndo())" Title="Undo (Ctrl+Z)" aria-label="Undo"
+                          aria-keyshortcuts="Control+Z" Disabled="@(!State.CanUndo)" OnClick="State.Undo" />
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowRedo())" Title="Redo (Ctrl+Y)" aria-label="Redo"
+                          aria-keyshortcuts="Control+Y" Disabled="@(!State.CanRedo)" OnClick="State.Redo" />
+            <span class="cr-sep" aria-hidden="true"></span>
+            <div class="cr-modes" role="radiogroup" aria-label="View">
+                <button type="button" role="radio" aria-checked="@(_mode == "design" ? "true" : "false")" class="cr-mode @(_mode == "design" ? "is-on" : null)"
+                        title="Design: edit on the canvas" aria-label="Design" @onclick="@(() => _mode = "design")">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Edit())" Color="Color.Neutral" /><span class="cr-mode-text">Design</span>
+                </button>
+                <button type="button" role="radio" aria-checked="@(_mode == "preview" ? "true" : "false")" class="cr-mode @(_mode == "preview" ? "is-on" : null)"
+                        title="Preview: the real PDF, page by page" aria-label="Preview" @onclick="@(() => _mode = "preview")">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.DocumentPdf())" Color="Color.Neutral" /><span class="cr-mode-text">Preview</span>
+                </button>
+            </div>
+            @if (!_narrow)
+            {
+                <div class="cr-pick">
+                    <FluentSelect TOption="string" @bind-Value="_zoom" AriaLabel="Zoom" Width="104px">
+                        @foreach (var (value, label) in ZoomLevels)
+                        {
+                            <FluentOption TOption="string" Value="@value">@label</FluentOption>
+                        }
+                    </FluentSelect>
+                </div>
+                <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.PaintBrush())" OnClick="ChangeThemeAsync" Title="Choose a theme for this publication">Theme…</FluentButton>
+            }
+            <FluentButton Id="cr-more" Appearance="Appearance.Stealth" IconEnd="@(new Icons.Regular.Size16.ChevronDown())" aria-haspopup="menu" aria-expanded="@(_moreOpen ? "true" : "false")"
+                          Title="More actions" OnClick="@(() => _moreOpen = !_moreOpen)">More</FluentButton>
+            <FluentMenu Anchor="cr-more" @bind-Open="_moreOpen" HorizontalPosition="HorizontalPosition.End" Width="240px">
+                @if (_narrow)
+                {
+                    @* Below 1100 px the zoom list and Theme… move here so the bar fits. *@
+                    @foreach (var (value, label) in ZoomLevels)
+                    {
+                        <FluentMenuItem Role="MenuItemRole.MenuItemRadio" Checked="@(_zoom == value)" OnClick="@(_ => _zoom = value)">Zoom: @label</FluentMenuItem>
+                    }
+                    <FluentDivider />
+                    <FluentMenuItem OnClick="@(_ => ChangeThemeAsync())">Theme…</FluentMenuItem>
+                    <FluentDivider />
+                }
+                @foreach (var (formatId, label) in ExportFormats)
+                {
+                    <FluentMenuItem Disabled="@_exporting" OnClick="@(_ => ExportAsAsync(formatId))">@label</FluentMenuItem>
+                }
+                <FluentDivider />
+                <FluentMenuItem OnClick="@(_ => ReadInReader())">Read in Reader</FluentMenuItem>
+                <FluentMenuItem Disabled="@_exporting" OnClick="@(_ => SavePackageAsync())">Save package (.aiopub)</FluentMenuItem>
+                <FluentMenuItem Disabled="@_saving" OnClick="@(_ => SaveAsAsync())">Save as…</FluentMenuItem>
+                <FluentMenuItem Disabled="@(!CanReset)" OnClick="@(_ => ResetToSavedAsync())">Reset to saved…</FluentMenuItem>
+            </FluentMenu>
+            <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Save())" OnClick="SaveAsync" Disabled="@(_saving || !State.IsDirty)" Title="Save (Ctrl+S)" aria-label="Save">@(_narrow ? null : "Save")</FluentButton>
+            <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.DocumentPdf())" OnClick="ExportPdfAsync" Disabled="@_exporting" Title="Save the publication as a PDF">
+                @(_exporting ? "Exporting…" : "Export PDF")
+            </FluentButton>
+        </header>
+
+        <DraftRecoveryBar Written="State.PendingDraft" OnRestore="State.RestoreDraft" OnDiscard="State.DiscardDraftAsync" />
+
+        <div class="cr-main">
+            @* ------------------------------------------------------------ left panel *@
+            <aside class="cr-left @(_leftCollapsed ? "is-collapsed" : null) @(_leftDrawer ? "is-open" : null)" aria-label="Structure and insert">
+                <StructurePanel Tab="@_leftTab" TabChanged="@((string t) => _leftTab = t)" Version="State.Version" OnPicked="OnTreePickedAsync" />
+            </aside>
+
+            @* ------------------------------------------------------------ canvas *@
+            <section class="cr-center" aria-label="@(_mode == "design" ? "Design canvas" : "PDF preview")">
+                <div class="cr-canvas-bar" role="toolbar" aria-label="Panels">
+                    <FluentButton Appearance="Appearance.Stealth" Class="cr-toggle-wide" IconStart="@(new Icons.Regular.Size20.PanelLeft())"
+                                  Title="@(_leftCollapsed ? "Show structure" : "Hide structure")" aria-label="Structure panel" aria-pressed="@(_leftCollapsed ? "false" : "true")"
+                                  OnClick="@(() => _leftCollapsed = !_leftCollapsed)" />
+                    <FluentButton Appearance="Appearance.Outline" Class="cr-toggle-narrow" IconStart="@(new Icons.Regular.Size20.TextBulletListTree())"
+                                  aria-expanded="@(_leftDrawer ? "true" : "false")" OnClick="@(() => ToggleDrawer(left: true))">Structure</FluentButton>
+                    @* The visible label keeps this switch apart from the Structure panel button next to it below 1100 px. *@
+                    <span class="cr-layout-label" id="cr-layout-label">New sections</span>
+                    <div class="cr-modes cr-layout-switch" role="radiogroup" aria-labelledby="cr-layout-label">
+                        @foreach (var (layout, label, icon, tip) in LayoutChoices)
+                        {
+                            var on = p.DefaultLayout == layout;
+                            <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="cr-mode cr-layout-opt @(on ? "is-on" : null)" title="@tip" aria-label="@label"
+                                    @onclick="() => SwitchLayoutAsync(layout)">
+                                <FluentIcon Value="@icon" Color="Color.Neutral" /><span class="cr-layout-text">@label</span>
+                            </button>
+                        }
+                    </div>
+                    <span class="cr-canvas-sel">@SelectionText()</span>
+                    <FluentButton Appearance="Appearance.Stealth" Class="cr-toggle-wide" IconStart="@(new Icons.Regular.Size20.PanelRight())"
+                                  Title="@(_rightCollapsed ? "Show the inspector" : "Hide the inspector")" aria-label="Inspector panel" aria-pressed="@(_rightCollapsed ? "false" : "true")"
+                                  OnClick="@(() => _rightCollapsed = !_rightCollapsed)" />
+                    <FluentButton Appearance="Appearance.Outline" Class="cr-toggle-narrow" IconStart="@(new Icons.Regular.Size20.Options())"
+                                  aria-expanded="@(_rightDrawer ? "true" : "false")" OnClick="@(() => ToggleDrawer(left: false))">Inspector</FluentButton>
+                </div>
+                <div class="cr-center-body">
+                    @if (_mode == "design")
+                    {
+                        <DesignCanvas @ref="_canvas" Version="State.Version" Zoom="@_zoom" OnAddModule="OpenInsertFor" OnSettings="OpenInspector" OnEditContent="EditContent" />
+                    }
+                    else
+                    {
+                        <CreatorPreview Json="@State.CurrentJson" Zoom="@_zoom" />
+                    }
+                </div>
+                <div class="aio-visually-hidden" aria-live="polite" role="status">@State.Announcement</div>
+            </section>
+
+            @* ------------------------------------------------------------ inspector *@
+            <aside class="cr-right @(_rightCollapsed ? "is-collapsed" : null) @(_rightDrawer ? "is-open" : null)" aria-label="Inspector">
+                <Inspector Version="State.Version" OnChangeTheme="ChangeThemeAsync" OnClose="@(() => _rightDrawer = false)" Tab="@_inspectorTab" TabRequest="_inspectorTabRequest" />
+            </aside>
+
+            @if (_leftDrawer || _rightDrawer)
+            {
+                <div class="cr-scrim" aria-hidden="true" @onclick="CloseDrawers"></div>
+            }
+        </div>
+    </div>
+}

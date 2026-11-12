@@ -1,0 +1,172 @@
+@* Colour control: native swatch picker, hex field, the publication theme's palette and an optional "use default". *@
+@inject CreatorState State
+
+<div class="cr-field cr-color-field">
+    <div class="cr-field-head">
+        <span class="cr-label">@Label</span>
+        @if (Get() is null && AllowNull)
+        {
+            <span class="cr-hint">@(InheritLabel ?? "Default")</span>
+        }
+    </div>
+    <div class="cr-color">
+        <input type="color" class="cr-swatch" value="@ThemeBuilderColor.ToRgb6(Effective, "#000000")"
+               @oninput="OnPicked" aria-label="@($"{Label}: pick a colour")" />
+        <FluentTextField Class="cr-hex" Value="@_text" ValueChanged="@((string? v) => OnTyped(v))" Immediate="true" ImmediateDelay="400"
+                         Placeholder="@(Get() is not null ? "#RRGGBB" : NullText ?? ThemeBuilderColor.ToRgb6(Effective, "#000000"))" Maxlength="9"
+                         AriaLabel="@($"{Label} hex value")" Spellcheck="false" />
+        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size16.Color())" Title="Pick from the theme"
+                      aria-label="@($"{Label}: pick from the theme colours")" aria-expanded="@(_paletteOpen ? "true" : "false")" OnClick="() => _paletteOpen = !_paletteOpen" />
+        @if (AllowNull && Get() is not null)
+        {
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size16.ArrowUndo())" Title="Use default"
+                          aria-label="@($"{Label}: use default")" OnClick="Clear" />
+        }
+    </div>
+    @if (_paletteOpen)
+    {
+        <div class="cr-palette" role="group" aria-label="Theme colours">
+            @foreach (var (name, hex) in Palette())
+            {
+                <button type="button" class="cr-palette-chip" title="@($"{name} {hex}")" aria-label="@($"Use {name} ({hex})")"
+                        style="@($"background:{ThemeBuilderColor.ToCss(hex, "#000000")}")" @onclick="() => Pick(hex)"></button>
+            }
+        </div>
+    }
+    @if (_invalid)
+    {
+        <div class="cr-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" /><span>Use a hex colour such as #1F2937.</span></div>
+    }
+</div>
+
+@code {
+    /// <summary>Visible label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Reads the current value (hex or null).</summary>
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+
+    /// <summary>Writes a new value (the field commits afterwards).</summary>
+    [Parameter, EditorRequired] public Action<string?> Set { get; set; } = _ => { };
+
+    /// <summary>Allows clearing the value so the theme decides.</summary>
+    [Parameter] public bool AllowNull { get; set; } = true;
+
+    /// <summary>The colour used when the value is null (shown in the swatch).</summary>
+    [Parameter] public Func<string?>? Inherited { get; set; }
+
+    /// <summary>What "null" means, shown next to the label ("Theme accent").</summary>
+    [Parameter] public string? InheritLabel { get; set; }
+
+    /// <summary>
+    /// Shown in the empty hex field when the value is null, instead of the inherited colour (for "None", where a hex
+    /// would read like a value that is set).
+    /// </summary>
+    [Parameter] public string? NullText { get; set; }
+
+    private string? _text;
+    private string? _lastValue;
+    private bool _paletteOpen;
+    private bool _invalid;
+
+    private string? Effective => Get() ?? Inherited?.Invoke();
+
+    protected override void OnParametersSet()
+    {
+        var value = Get();
+        if (!string.Equals(value, _lastValue, StringComparison.Ordinal))
+        {
+            _text = value;
+            _lastValue = value;
+            _invalid = false;
+        }
+    }
+
+    private void OnPicked(ChangeEventArgs e) => Apply(e.Value?.ToString()?.ToUpperInvariant(), "pick");
+
+    private void OnTyped(string? text)
+    {
+        text = text?.Trim();
+        _text = text;
+        if (string.IsNullOrEmpty(text))
+        {
+            _invalid = !AllowNull;
+            if (AllowNull)
+            {
+                Apply(null, "type");
+            }
+
+            return;
+        }
+
+        if (!text.StartsWith('#'))
+        {
+            text = "#" + text;
+        }
+
+        _invalid = !ThemeBuilderColor.IsValid(text);
+        if (!_invalid)
+        {
+            Apply(text.ToUpperInvariant(), "type");
+        }
+    }
+
+    private void Pick(string hex)
+    {
+        _paletteOpen = false;
+        Apply(hex, "palette");
+    }
+
+    private void Clear() => Apply(null, "clear");
+
+    private void Apply(string? value, string how)
+    {
+        if (value is not null && !ThemeBuilderColor.IsValid(value))
+        {
+            return;
+        }
+
+        if (value is null && !AllowNull)
+        {
+            return;
+        }
+
+        if (string.Equals(value, Get(), StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        Set(value);
+        _lastValue = value;
+        if (how != "type")
+        {
+            _text = value;
+        }
+
+        _invalid = false;
+        State.Commit("color:" + Label + ":" + how);
+    }
+
+    private IEnumerable<(string Name, string Hex)> Palette()
+    {
+        var t = State.Working?.Theme;
+        if (t is null)
+        {
+            yield break;
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, hex) in new[]
+                 {
+                     ("Accent", t.Colors.Accent), ("Text", t.Colors.Text), ("Muted", t.Colors.Muted), ("Surface", t.Colors.Surface),
+                     ("Border", t.Colors.Border), ("Page", t.Page.Background), ("Headings", t.Headings.Color),
+                     ("White", "#FFFFFF"), ("Black", "#000000"),
+                 })
+        {
+            if (ThemeBuilderColor.IsValid(hex) && seen.Add(hex))
+            {
+                yield return (name, hex);
+            }
+        }
+    }
+}

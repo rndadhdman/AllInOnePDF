@@ -1,0 +1,257 @@
+@* Exact preview: the real PDF (draft quality) rasterised page by page. Renders off the UI thread, debounced and cancellable. *@
+@implements IDisposable
+@inject IPdfRenderer Renderer
+@inject IPdfRasterizer Rasterizer
+
+<div class="tb-exact">
+    <div class="tb-exact-strip" role="listbox" aria-label="Pages">
+        @for (var i = 0; i < _pageCount; i++)
+        {
+            var index = i;
+            var on = index == _page;
+            <button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="tb-exact-thumb @(on ? "is-on" : null)"
+                    title="@($"Page {index + 1}")" @onclick="() => ShowPage(index)">
+                @if (_thumbs.TryGetValue(index, out var thumb))
+                {
+                    <img src="@thumb" alt="@($"Page {index + 1}")" />
+                }
+                else
+                {
+                    <span class="tb-exact-thumb-ph" style="@ThumbRatio"></span>
+                }
+                <span class="tb-exact-num">@(index + 1)</span>
+            </button>
+        }
+    </div>
+    <div class="tb-exact-main">
+        <div class="tb-exact-status" aria-live="polite">
+            @if (_busy)
+            {
+                <FluentProgressRing Width="16px" />
+                <span>Rendering…</span>
+            }
+            else if (_pageCount > 0)
+            {
+                <span>Page @(_page + 1) of @_pageCount</span>
+            }
+        </div>
+        @if (_error is not null)
+        {
+            <div class="tb-exact-error">
+                <FluentMessageBar Intent="MessageIntent.Error" AllowDismiss="false" Title="The PDF could not be rendered">
+                    @_error Change a setting or switch to Fast preview to keep working.
+                </FluentMessageBar>
+            </div>
+        }
+        <div class="tb-exact-view">
+            @if (_main is not null)
+            {
+                <img class="tb-exact-page @(_busy ? "is-stale" : null)" src="@_main" alt="@($"Page {_page + 1} of the exact PDF preview")" style="@MainStyle" />
+            }
+            else if (_error is null)
+            {
+                <FluentSkeleton Shape="SkeletonShape.Rect" Width="@($"{MainWidthPx():0}px")" Height="@($"{MainWidthPx() * _ratio:0}px")" Shimmer="true" />
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private const int MainDpi = 110;
+    private const int ThumbDpi = 24;
+    private const int MaxBackgroundThumbs = 60;
+
+    [Parameter] public Document? Document { get; set; }
+    [Parameter] public string DocumentKey { get; set; } = string.Empty;
+    /// <summary>Normalised theme JSON (<see cref="ThemeBuilderState.CurrentJson"/>).</summary>
+    [Parameter] public string ThemeJson { get; set; } = string.Empty;
+    [Parameter] public string Zoom { get; set; } = "fit";
+    [Parameter] public EventCallback<int> PageCountChanged { get; set; }
+
+    private readonly Dictionary<string, byte[]> _pdfCache = new(StringComparer.Ordinal);
+    private readonly Queue<string> _pdfOrder = new();
+    private readonly Dictionary<string, string> _imageCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, string> _thumbs = [];
+    private CancellationTokenSource? _cts;
+    private string? _requestedHash;
+    private string? _hash;
+    private byte[]? _pdf;
+    private int _pageCount;
+    private int _page;
+    private string? _main;
+    private bool _busy;
+    private string? _error;
+    private double _ratio = 297.0 / 210.0;
+    private double _pageWidthMm = 210;
+    private bool _disposed;
+
+    private string ThumbRatio => $"aspect-ratio:1 / {_ratio.ToString("0.###", CultureInfo.InvariantCulture)}";
+
+    private string MainStyle => Zoom == "fit"
+        ? "width:100%;max-width:" + MainWidthPx().ToString("0", CultureInfo.InvariantCulture) + "px"
+        : "width:" + MainWidthPx().ToString("0", CultureInfo.InvariantCulture) + "px";
+
+    private double MainWidthPx()
+    {
+        var basePx = _pageWidthMm * 96 / 25.4;
+        return Zoom == "fit" ? basePx * 1.25 : basePx * (double.TryParse(Zoom, NumberStyles.Float, CultureInfo.InvariantCulture, out var z) ? z : 1);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Document is null || string.IsNullOrEmpty(ThemeJson))
+        {
+            return;
+        }
+
+        var hash = Hash(ThemeJson + "\n" + DocumentKey);
+        if (hash == _requestedHash)
+        {
+            return;
+        }
+
+        _requestedHash = hash;
+        _ = RenderAsync(hash, Document, ThemeJson, debounce: _hash is not null);
+    }
+
+    private async Task RenderAsync(string hash, Document document, string json, bool debounce)
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        var cts = _cts = new CancellationTokenSource();
+        var ct = cts.Token;
+        try
+        {
+            if (debounce)
+            {
+                await Task.Delay(400, ct);
+            }
+
+            _busy = true;
+            await InvokeAsync(StateHasChanged);
+
+            var theme = PdfTheme.FromJson(json);
+            var (widthMm, heightMm) = theme.Page.GetSizeMm();
+            _pageWidthMm = widthMm;
+            _ratio = heightMm / Math.Max(1, widthMm);
+            if (!_pdfCache.TryGetValue(hash, out var pdf))
+            {
+                pdf = await Renderer.RenderAsync(document, theme, new PdfRenderOptions { Draft = true, EmbedMetadata = false }, null, ct);
+                Remember(hash, pdf);
+            }
+
+            ct.ThrowIfCancellationRequested();
+            var count = await Task.Run(() => Rasterizer.GetPageCount(pdf), ct);
+            _pdf = pdf;
+            _hash = hash;
+            _pageCount = count;
+            _page = Math.Clamp(_page, 0, Math.Max(0, count - 1));
+            _thumbs.Clear();
+            _error = null;
+
+            _main = await GetImageAsync(pdf, hash, _page, MainDpi, ct);
+            _busy = false;
+            await InvokeAsync(StateHasChanged);
+            await PageCountChanged.InvokeAsync(count);
+
+            // Thumbnails, progressively and in order; pages beyond the limit render when clicked.
+            for (var i = 0; i < Math.Min(count, MaxBackgroundThumbs); i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                _thumbs[i] = await GetImageAsync(pdf, hash, i, ThumbDpi, ct);
+                if (i % 4 == 3 || i == count - 1)
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (ct.IsCancellationRequested || _disposed)
+            {
+                return;
+            }
+
+            _busy = false;
+            _error = ex.Message;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ShowPage(int index)
+    {
+        if (_pdf is null || _hash is null || index == _page)
+        {
+            return;
+        }
+
+        _page = index;
+        var pdf = _pdf;
+        var hash = _hash;
+        try
+        {
+            _main = await GetImageAsync(pdf, hash, index, MainDpi, _cts?.Token ?? CancellationToken.None);
+            if (!_thumbs.ContainsKey(index))
+            {
+                _thumbs[index] = await GetImageAsync(pdf, hash, index, ThumbDpi, CancellationToken.None);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task<string> GetImageAsync(byte[] pdf, string hash, int page, int dpi, CancellationToken ct)
+    {
+        var key = $"{hash}:{page}:{dpi}";
+        if (_imageCache.TryGetValue(key, out var url))
+        {
+            return url;
+        }
+
+        var image = await Rasterizer.RasterizePageAsync(pdf, page, new RasterizeOptions
+        {
+            Dpi = dpi,
+            Encoding = dpi >= MainDpi ? ImageEncoding.Png : ImageEncoding.Jpeg,
+            JpegQuality = 80,
+            WithAnnotations = false,
+        }, ct);
+        url = image.ToDataUrl();
+        if (_imageCache.Count > 400)
+        {
+            _imageCache.Clear();
+        }
+
+        _imageCache[key] = url;
+        return url;
+    }
+
+    private void Remember(string hash, byte[] pdf)
+    {
+        _pdfCache[hash] = pdf;
+        _pdfOrder.Enqueue(hash);
+        while (_pdfOrder.Count > 4)
+        {
+            _pdfCache.Remove(_pdfOrder.Dequeue());
+        }
+    }
+
+    private static string Hash(string text) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))[..32];
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

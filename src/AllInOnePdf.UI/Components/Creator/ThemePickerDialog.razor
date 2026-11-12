@@ -1,0 +1,93 @@
+@* Body of the "Theme" dialog: every gallery theme with its page-1 thumbnail; picking one replaces the publication's look. *@
+@implements IDialogContentComponent<ThemePickerModel>
+@implements IDisposable
+@inject IThemeStore Themes
+@inject ThemeBuilderThumbnailCache Thumbnails
+
+<FluentDialogBody>
+    <p class="cr-pick-intro">The publication keeps its own copy of the theme, so later changes to the gallery theme do not affect it. You can undo the change.</p>
+    @if (_themes is null)
+    {
+        <div class="cr-pick-loading" role="status"><FluentProgressRing Width="20px" /> <span>Loading themes…</span></div>
+    }
+    else
+    {
+        <div class="cr-pick-grid" role="radiogroup" aria-label="Themes">
+            @foreach (var theme in _themes)
+            {
+                var on = theme.Id == Content.SelectedId;
+                var current = theme.Id == Content.CurrentId;
+                <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="cr-pick-card @(on ? "is-on" : null)" @onclick="() => Content.SelectedId = theme.Id">
+                    <span class="cr-pick-thumb">
+                        @if (_thumbs.TryGetValue(theme.Id, out var url) && url is not null)
+                        {
+                            <img src="@url" alt="" />
+                        }
+                        else
+                        {
+                            <FluentSkeleton Shape="SkeletonShape.Rect" Width="100%" Height="100%" Shimmer="@(!_failed.Contains(theme.Id))" />
+                        }
+                    </span>
+                    <span class="cr-pick-name">@theme.Name</span>
+                    @if (current)
+                    {
+                        <span class="cr-pick-badge">In use</span>
+                    }
+                </button>
+            }
+        </div>
+    }
+</FluentDialogBody>
+
+@code {
+    /// <summary>The dialog model.</summary>
+    [Parameter] public ThemePickerModel Content { get; set; } = new();
+
+    private readonly CancellationTokenSource _cts = new();
+    private readonly Dictionary<string, string?> _thumbs = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _failed = new(StringComparer.Ordinal);
+    private IReadOnlyList<PdfTheme>? _themes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _themes = await Themes.GetAllAsync(_cts.Token);
+        Content.SelectedId ??= Content.CurrentId;
+        foreach (var t in _themes)
+        {
+            if (Thumbnails.TryGet(t, out var url))
+            {
+                _thumbs[t.Id] = url;
+            }
+        }
+
+        _ = LoadThumbnailsAsync();
+    }
+
+    private async Task LoadThumbnailsAsync()
+    {
+        foreach (var theme in (_themes ?? []).Where(t => !_thumbs.ContainsKey(t.Id)).ToList())
+        {
+            try
+            {
+                var url = await Thumbnails.GetAsync(theme, _cts.Token);
+                _thumbs[theme.Id] = url;
+                if (url is null)
+                {
+                    _failed.Add(theme.Id);
+                }
+
+                await InvokeAsync(StateHasChanged);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+        _cts.Dispose();
+    }
+}

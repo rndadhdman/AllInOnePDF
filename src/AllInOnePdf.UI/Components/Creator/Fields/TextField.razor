@@ -1,0 +1,57 @@
+@* Free-text property (labels, captions, URLs). Empty text maps to null when AllowNull is set. Typing coalesces into one undo step. *@
+@inject CreatorState State
+
+<div class="cr-field">
+    <FluentTextField Value="@(Get() ?? string.Empty)" ValueChanged="@((string? v) => Apply(v))" Label="@Label"
+                     Placeholder="@Placeholder" Immediate="true" ImmediateDelay="150" Style="width:100%" TextFieldType="@Type" Spellcheck="@Spellcheck" />
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <div class="cr-hint">@Hint</div>
+    }
+</div>
+
+@code {
+    /// <summary>Visible label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Reads the current value.</summary>
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+
+    /// <summary>Writes a new value (the field commits afterwards).</summary>
+    [Parameter, EditorRequired] public Action<string?> Set { get; set; } = _ => { };
+
+    /// <summary>Empty text becomes null.</summary>
+    [Parameter] public bool AllowNull { get; set; } = true;
+
+    /// <summary>Placeholder text.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Optional hint below the field.</summary>
+    [Parameter] public string? Hint { get; set; }
+
+    /// <summary>Input type (text, url, date …).</summary>
+    [Parameter] public TextFieldType Type { get; set; } = TextFieldType.Text;
+
+    /// <summary>Browser spell checking.</summary>
+    [Parameter] public bool Spellcheck { get; set; } = true;
+
+    /// <summary>Undo coalescing key; defaults to the label.</summary>
+    [Parameter] public string? Key { get; set; }
+
+    private void Apply(string? value)
+    {
+        if (AllowNull && string.IsNullOrEmpty(value))
+        {
+            value = null;
+        }
+
+        value ??= AllowNull ? null : string.Empty;
+        if (string.Equals(value, Get(), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit("text:" + (Key ?? Label));
+    }
+}

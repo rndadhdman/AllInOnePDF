@@ -1,0 +1,103 @@
+@page "/read"
+@using AllInOnePdf.UI.Components.Reader
+@using AllInOnePdf.UI.Services.Shared
+@implements IAsyncDisposable
+
+<PageTitle>@PageTitleText</PageTitle>
+
+<div class="rd-root @(_focus ? "rd-focus" : null) @(_focus && _doc is not null ? PaletteClass : null)" @ref="_root">
+    @if (_doc is null)
+    {
+        <div class="aio-page rd-start-page">
+            <PageHeader Title="Reader" Description="Read a file in an adjustable view, or preview the PDF pages Convert makes from it." />
+            @ErrorBar
+            @if (_loading)
+            {
+                <div class="rd-loading" role="status">
+                    <FluentProgressRing Width="28px" />
+                    <span>Opening @_loadingName…</span>
+                </div>
+            }
+            <ReaderStart IsDesktop="IsDesktop" Busy="_loading" Accept="@AcceptAttribute" Groups="Groups"
+                         Recent="Session.Recent" OnOpenFile="OpenAnyFileAsync" OnOpenType="OpenTypeAsync" OnUpload="OnUploadAsync" OnOpenSample="OpenSampleAsync"
+                         OnOpenRecent="OpenRecentAsync" OnRemoveRecent="RemoveRecent" />
+        </div>
+    }
+    else
+    {
+        <ReaderToolbar @ref="_toolbar"
+                       Settings="Effective" Defaults="Defaults" SettingsChanged="OnSettingsChangedAsync" PaletteSelected="OnPaletteSelectedAsync"
+                       Mode="_mode" ModeChanged="SetModeAsync"
+                       Title="@_title" WordCount="_words"
+                       ShowOutline="_settings.ShowOutline" Focus="_focus"
+                       OnToggleOutline="ToggleOutlineAsync" OnToggleFocus="ToggleFocusAsync"
+                       IsDesktop="IsDesktop" Groups="Groups" OnOpenType="OpenTypeAsync"
+                       OnOpen="OnToolbarOpenAsync" OnConvert="ConvertThisAsync" OnClose="CloseDocumentAsync" OpenButtonId="@OpenButtonId" />
+        @if (!IsDesktop)
+        {
+            <FluentInputFile Id="rd-open-input" Mode="InputFileMode.Stream" Multiple="false" DragDropZoneVisible="false"
+                             MaximumFileSize="@UploadLimits.MaxDocumentBytes" Accept="@AcceptAttribute" AnchorId="@OpenButtonId"
+                             OnInputFileChange="OnUploadAsync" Style="display:none" />
+        }
+        @ErrorBar
+
+        <div class="rd-body @PaletteClass @(Theme.IsDarkKnown ? null : "rd-pending")">
+            @if (_mode == ReaderMode.Reflow)
+            {
+                @if (_settings.ShowOutline)
+                {
+                    <ReaderOutline Items="_outline" ActiveId="@_activeId" OnNavigate="NavigateToHeadingAsync" OnClose="ToggleOutlineAsync" />
+                }
+
+                @if (_rendered is not null && ReferenceEquals(_rendered.Document, _doc))
+                {
+                    <ReaderSurface @ref="_surface" Html="@_rendered.Html" Settings="Effective" Language="@_language"
+                                   AriaLabel="@_title" RestoreFraction="_restoreFraction"
+                                   OnScrollFraction="OnScrollFraction" OnActiveHeading="OnActiveHeading" />
+                }
+                else if (_renderFailed)
+                {
+                    @* The error bar above says what failed; without this the spinner below would turn forever. *@
+                    <div class="rd-preparing" role="status">
+                        <span>The reading view isn't available for this document. Pages may still show it.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="rd-preparing" role="status">
+                        <FluentProgressRing Width="28px" />
+                        <span>Preparing the document…</span>
+                    </div>
+                }
+            }
+            else
+            {
+                <ReaderPages @ref="_pages" Document="_doc" />
+            }
+
+            @if (_loading)
+            {
+                <div class="rd-overlay" role="status">
+                    <FluentProgressRing Width="32px" />
+                    <span>Opening @_loadingName…</span>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private RenderFragment ErrorBar => __builder =>
+    {
+        if (_error is not null)
+        {
+            <div class="rd-error">
+                <FluentMessageBar Intent="MessageIntent.Error" Title="@_errorTitle" AllowDismiss="false" Style="flex:1 1 auto">
+                    @_error
+                </FluentMessageBar>
+                <FluentButton Appearance="Appearance.Stealth" Title="Dismiss" aria-label="Dismiss message"
+                              IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="DismissError" />
+            </div>
+        }
+    };
+}

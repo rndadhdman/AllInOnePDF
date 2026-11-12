@@ -1,0 +1,18 @@
+@* Body of a read-only dialog that shows prepared HTML: the third-party notices (rendered by ThirdPartyNotices, HTML
+   encoded, no links) or the diagnostics text when the clipboard is not available. *@
+@implements IDialogContentComponent<MarkupDialogContent>
+
+<FluentDialogBody>
+    @if (!string.IsNullOrWhiteSpace(Content.Intro))
+    {
+        <p class="aio-markup-intro">@Content.Intro</p>
+    }
+    <div class="aio-markup" tabindex="0" role="document" aria-label="@Content.Label">
+        @((MarkupString)Content.Html)
+    </div>
+</FluentDialogBody>
+
+@code {
+    /// <summary>What to show.</summary>
+    [Parameter] public MarkupDialogContent Content { get; set; } = new(string.Empty, string.Empty);
+}

@@ -1,0 +1,117 @@
+@* Settings panel. Up to 1599 px wide it is a searchable accordion, one group open at a time. From 1600 px the page
+   shows the section list (SettingsSections) as a column of its own, and this panel shows only the open group under
+   its title: the accordion heads and this search box are hidden by the page CSS. Both search boxes share one query. *@
+
+<div class="tb-panel-inner">
+    <div class="tb-panel-search">
+        <FluentSearch Value="@Query" ValueChanged="@((string? v) => QueryChanged.InvokeAsync(v))" Immediate="true" ImmediateDelay="150"
+                      Placeholder="Search settings" AriaLabel="Search settings" Style="width:100%" />
+    </div>
+    <div class="tb-panel-groups">
+        @{
+            var visible = Visible(Query);
+        }
+        @if (visible.Count == 0)
+        {
+            <p class="tb-panel-empty" role="status">No settings match "@Query".</p>
+        }
+        else if (visible.All(g => g.Key != OpenGroup))
+        {
+            <p class="tb-panel-empty tb-panel-pick">Choose a section to see its settings.</p>
+        }
+        @foreach (var group in visible)
+        {
+            var open = group.Key == OpenGroup;
+            var headId = $"tb-g-{group.Key}-h";
+            var bodyId = $"tb-g-{group.Key}-b";
+            <section class="tb-group @(open ? "is-open" : null)" @key="group.Key">
+                <h3 class="tb-group-title">
+                    <button type="button" class="tb-group-head" id="@headId" aria-expanded="@(open ? "true" : "false")" aria-controls="@bodyId"
+                            @onclick="() => Toggle(group.Key)">
+                        <FluentIcon Value="@group.Icon" Color="@(open ? Color.Accent : Color.Neutral)" />
+                        <span class="tb-group-name">@group.Title</span>
+                        <FluentIcon Class="tb-group-chevron" Value="@(open ? (Icon)new Icons.Regular.Size16.ChevronUp() : new Icons.Regular.Size16.ChevronDown())" Color="Color.Neutral" />
+                    </button>
+                </h3>
+                @if (open)
+                {
+                    <h3 class="tb-group-split-title">@group.Title</h3>
+                    <div class="tb-group-body" id="@bodyId" role="region" aria-labelledby="@headId">
+                        @RenderGroup(group.Key)
+                    </div>
+                }
+            </section>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Version { get; set; }
+    [Parameter] public string? OpenGroup { get; set; }
+    [Parameter] public EventCallback<string?> OpenGroupChanged { get; set; }
+    [Parameter] public string? OpenSub { get; set; }
+    [Parameter] public EventCallback<string?> OpenSubChanged { get; set; }
+    /// <summary>The settings search, owned by the page so the section list and this panel filter together.</summary>
+    [Parameter] public string? Query { get; set; }
+    [Parameter] public EventCallback<string?> QueryChanged { get; set; }
+
+    public sealed record Group(string Key, string Title, Icon Icon, string Keywords);
+
+    private static readonly Group[] Groups =
+    [
+        new("details", "Details", new Icons.Regular.Size20.Info(), "name description author tags"),
+        new("page", "Page", new Icons.Regular.Size20.DocumentOnePage(), "size a4 letter legal a5 a3 orientation portrait landscape custom width height margins top bottom left right background"),
+        new("typography", "Typography", new Icons.Regular.Size20.TextFont(), "body font size line height leading paragraph spacing indent alignment justify letter spacing hyphenate hyphenation orphan widow"),
+        new("headings", "Headings", new Icons.Regular.Size20.TextHeader1(), "h1 h2 h3 h4 h5 h6 heading font colour color numbering page break line height weight italic uppercase underline rule colour color width space before after letter spacing keep with next"),
+        new("colors", "Colours", new Icons.Regular.Size20.Color(), "accent text muted surface border background palette contrast colour color"),
+        new("code", "Code", new Icons.Regular.Size20.Code(), "code font monospace size line height background border radius padding line numbers syntax highlighting palette wrap language label inline"),
+        new("tables", "Tables", new Icons.Regular.Size20.Table(), "table grid lines minimal striped header background weight border stripe cell padding captions repeat"),
+        new("quotes", "Quotes", new Icons.Regular.Size20.TextQuote(), "quote blockquote border background italic padding attribution"),
+        new("callouts", "Callouts", new Icons.Regular.Size20.Lightbulb(), "callout admonition note tip important warning caution label icon background bar border width padding corner radius accent"),
+        new("lists", "Lists", new Icons.Regular.Size20.TextBulletList(), "bullet numbering indent item spacing marker colour task checkbox"),
+        new("links", "Links", new Icons.Regular.Size20.Link(), "link colour underline url weight"),
+        new("images", "Images", new Icons.Regular.Size20.Image(), "image width alignment captions radius border spacing"),
+        new("headerfooter", "Header and footer", new Icons.Regular.Size20.DocumentHeaderFooter(), "header footer left centre center right template token page number title date rule first page spacing"),
+        new("cover", "Cover", new Icons.Regular.Size20.BookOpen(), "cover page title subtitle author date style banner split bold minimal centered accent bar note"),
+        new("toc", "Table of contents", new Icons.Regular.Size20.TextNumberListLtr(), "toc contents depth page numbers dot leaders indent"),
+    ];
+
+    public static string TitleOf(string? key) => Groups.FirstOrDefault(g => g.Key == key)?.Title ?? string.Empty;
+
+    /// <summary>The groups whose title or keywords contain every word of <paramref name="query"/>, in panel order.</summary>
+    public static IReadOnlyList<Group> Visible(string? query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return Groups;
+        }
+
+        var terms = query.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return Groups.Where(g => terms.All(term =>
+            g.Title.Contains(term, StringComparison.OrdinalIgnoreCase) || g.Keywords.Contains(term, StringComparison.OrdinalIgnoreCase))).ToList();
+    }
+
+    private Task Toggle(string key) => OpenGroupChanged.InvokeAsync(OpenGroup == key ? null : key);
+
+    private Task OnSub(string? sub) => OpenSubChanged.InvokeAsync(sub);
+
+    private RenderFragment RenderGroup(string key) => key switch
+    {
+        "details" => @<DetailsGroup Version="Version" />,
+        "page" => @<PageGroup Version="Version" />,
+        "typography" => @<TypographyGroup Version="Version" />,
+        "headings" => @<HeadingsGroup Version="Version" Sub="@OpenSub" SubChanged="OnSub" />,
+        "colors" => @<ColorsGroup Version="Version" />,
+        "code" => @<CodeGroup Version="Version" />,
+        "tables" => @<TablesGroup Version="Version" />,
+        "quotes" => @<QuotesGroup Version="Version" />,
+        "callouts" => @<CalloutsGroup Version="Version" Sub="@OpenSub" SubChanged="OnSub" />,
+        "lists" => @<ListsGroup Version="Version" />,
+        "links" => @<LinksGroup Version="Version" />,
+        "images" => @<ImagesGroup Version="Version" />,
+        "headerfooter" => @<HeaderFooterGroup Version="Version" Sub="@OpenSub" SubChanged="OnSub" />,
+        "cover" => @<CoverGroup Version="Version" />,
+        "toc" => @<TocGroup Version="Version" />,
+        _ => @<p class="tb-panel-empty">Unknown group.</p>,
+    };
+}

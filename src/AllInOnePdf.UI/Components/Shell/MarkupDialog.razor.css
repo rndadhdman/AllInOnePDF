@@ -1,0 +1,117 @@
+.aio-markup {
+  /* Size to the dialog, never to the content: long licence lines must wrap, not widen the dialog. */
+  contain: inline-size;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  max-height: min(70vh, 720px);
+  overflow: auto;
+  padding: 4px 16px 16px 4px;
+  color: var(--neutral-foreground-rest);
+  font-size: 13px;
+  line-height: 20px;
+  overscroll-behavior: contain;
+}
+
+.aio-markup:focus-visible {
+  outline: 2px solid var(--accent-fill-rest);
+  outline-offset: 2px;
+}
+
+.aio-markup ::deep h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+
+.aio-markup ::deep h2 {
+  margin: 24px 0 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--neutral-stroke-divider-rest);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.aio-markup ::deep h3 {
+  margin: 16px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.aio-markup ::deep p,
+.aio-markup ::deep ul {
+  margin: 0 0 8px;
+  max-width: 90ch;
+}
+
+.aio-markup ::deep ul {
+  padding-left: 20px;
+}
+
+.aio-markup ::deep table {
+  border-collapse: collapse;
+  margin: 8px 0 12px;
+  width: 100%;
+}
+
+.aio-markup ::deep th,
+.aio-markup ::deep td {
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.aio-markup ::deep th {
+  font-weight: 600;
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-markup ::deep code {
+  font-family: var(--aio-font-mono);
+  font-size: 12px;
+}
+
+.aio-markup ::deep pre {
+  margin: 0 0 12px;
+  padding: 12px;
+  border-radius: var(--aio-radius-sm);
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  background: var(--neutral-layer-2);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.aio-markup ::deep pre code {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* Licence texts: one collapsed section per component (ThirdPartyNotices.ToHtml). */
+.aio-markup ::deep details.aio-notice {
+  border-top: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.aio-markup ::deep details.aio-notice > summary {
+  padding: 10px 0;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aio-markup ::deep details.aio-notice > summary:focus-visible {
+  outline: 2px solid var(--accent-fill-rest);
+  outline-offset: 2px;
+}
+
+.aio-markup ::deep details.aio-notice[open] > summary {
+  margin-bottom: 4px;
+}
+
+.aio-markup-intro {
+  margin: 0 0 8px;
+  color: var(--neutral-foreground-rest);
+}

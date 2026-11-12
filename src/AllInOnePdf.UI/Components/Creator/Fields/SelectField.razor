@@ -1,0 +1,47 @@
+@* A string property chosen from a list (code language, document language). The empty value means "none". *@
+@inject CreatorState State
+
+<div class="cr-field">
+    <div class="cr-field-head">
+        <span class="cr-label">@Label</span>
+    </div>
+    <FluentSelect TOption="string" Value="@(Get() ?? string.Empty)" ValueChanged="@((string? v) => Apply(v))" AriaLabel="@Label" Width="100%" Height="260px">
+        @if (EmptyText is not null)
+        {
+            <FluentOption TOption="string" Value="">@EmptyText</FluentOption>
+        }
+        @foreach (var (value, text) in Options)
+        {
+            <FluentOption TOption="string" Value="@value">@text</FluentOption>
+        }
+    </FluentSelect>
+</div>
+
+@code {
+    /// <summary>Visible label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Reads the current value.</summary>
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+
+    /// <summary>Writes a new value (the field commits afterwards).</summary>
+    [Parameter, EditorRequired] public Action<string?> Set { get; set; } = _ => { };
+
+    /// <summary>Value and display text pairs.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<(string Value, string Text)> Options { get; set; } = [];
+
+    /// <summary>Text of the empty choice (null hides it).</summary>
+    [Parameter] public string? EmptyText { get; set; }
+
+    private void Apply(string? value)
+    {
+        value = string.IsNullOrEmpty(value) ? null : value;
+        if (string.Equals(value, Get(), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit();
+    }
+}

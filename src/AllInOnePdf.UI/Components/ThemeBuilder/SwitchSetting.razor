@@ -1,0 +1,28 @@
+@* On/off theme property. *@
+@inject ThemeBuilderState State
+
+<div class="tb-field tb-field-switch">
+    <FluentSwitch Value="@Get()" ValueChanged="@((bool v) => Apply(v))" Label="@Label" />
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <div class="tb-hint">@Hint</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<bool> Get { get; set; } = () => false;
+    [Parameter, EditorRequired] public Action<bool> Set { get; set; } = _ => { };
+    [Parameter] public string? Hint { get; set; }
+
+    private void Apply(bool value)
+    {
+        if (value == Get())
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit();
+    }
+}

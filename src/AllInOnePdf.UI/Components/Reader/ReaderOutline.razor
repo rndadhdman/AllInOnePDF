@@ -1,0 +1,71 @@
+@* Outline sidebar: nested headings, current section highlighted by the surface's scroll-spy. *@
+
+<nav class="rd-outline" aria-label="Outline">
+    <div class="rd-outline-head">
+        <span class="rd-outline-title">Outline</span>
+        <FluentButton Appearance="Appearance.Stealth" Title="Hide outline (T)" aria-label="Hide outline"
+                      IconStart="@(new Icons.Regular.Size16.PanelLeftContract())" OnClick="OnClose" />
+    </div>
+    @if (Items.Count == 0)
+    {
+        <p class="rd-outline-empty">This document has no headings.</p>
+    }
+    else
+    {
+        <div class="rd-outline-scroll">
+            @RenderList(Items, 0)
+        </div>
+    }
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ReaderOutlineNode> Items { get; set; } = [];
+
+    [Parameter] public string? ActiveId { get; set; }
+
+    [Parameter] public EventCallback<string> OnNavigate { get; set; }
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private HashSet<string> _activePath = [];
+    private IReadOnlyList<ReaderOutlineNode>? _renderedItems;
+    private string? _renderedActive;
+
+    protected override void OnParametersSet()
+    {
+        _activePath = ReaderOutlineBuilder.PathTo(Items, ActiveId);
+    }
+
+    protected override bool ShouldRender() =>
+        !ReferenceEquals(_renderedItems, Items) || !string.Equals(_renderedActive, ActiveId, StringComparison.Ordinal);
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        _renderedItems = Items;
+        _renderedActive = ActiveId;
+    }
+
+    private RenderFragment RenderList(IReadOnlyList<ReaderOutlineNode> nodes, int depth) => __builder =>
+    {
+        <ul class="rd-outline-list" role="list" data-depth="@depth">
+            @foreach (var node in nodes)
+            {
+                var active = node.Id == ActiveId;
+                var onPath = _activePath.Contains(node.Id);
+                <li @key="node.Id">
+                    <a href="@($"#{node.Id}")"
+                       class="rd-outline-link @(active ? "is-active" : null) @(onPath && !active ? "is-onpath" : null)"
+                       style="--rd-depth:@depth"
+                       aria-current="@(active ? "location" : null)"
+                       title="@node.Text"
+                       @onclick="() => OnNavigate.InvokeAsync(node.Id)"
+                       @onclick:preventDefault="true">@node.Text</a>
+                    @if (node.Children.Count > 0)
+                    {
+                        @RenderList(node.Children, depth + 1)
+                    }
+                </li>
+            }
+        </ul>
+    };
+}

@@ -1,0 +1,83 @@
+@* Pages mode: the document rendered to PDF with the default theme, shown as lazily rasterised page images.
+   This is the print preview of what Convert will produce. *@
+@implements IAsyncDisposable
+
+<div class="rd-pages">
+    <div class="rd-pages-bar" role="toolbar" aria-label="Print preview controls">
+        <div class="rd-pages-label">
+            <FluentIcon Value="@(new Icons.Regular.Size16.DocumentPdf())" Color="Color.Neutral" />
+            <span>Print preview</span>
+            @if (!string.IsNullOrEmpty(Cache.ThemeName) && _status == LoadStatus.Ready)
+            {
+                <span class="rd-pages-theme" title="Laid out with your default PDF theme and default options. Convert makes the same pages unless you choose another theme or options there.">· @Cache.ThemeName theme</span>
+            }
+        </div>
+        <div class="rd-pages-controls">
+            <FluentButton Appearance="Appearance.Stealth" Title="Zoom out (-)" aria-label="Zoom out" Disabled="@(_status != LoadStatus.Ready)"
+                          IconStart="@(new Icons.Regular.Size20.ZoomOut())" OnClick="ZoomOutAsync" />
+            <span class="rd-pages-zoom" aria-live="polite" title="Zoom">@ZoomLabel</span>
+            <FluentButton Appearance="Appearance.Stealth" Title="Zoom in (+)" aria-label="Zoom in" Disabled="@(_status != LoadStatus.Ready)"
+                          IconStart="@(new Icons.Regular.Size20.ZoomIn())" OnClick="ZoomInAsync" />
+            <FluentButton Appearance="Appearance.Stealth" Class="@(_fitWidth ? "rd-toggle is-on" : "rd-toggle")" Title="Fit width"
+                          aria-pressed="@(_fitWidth ? "true" : "false")"
+                          Disabled="@(_status != LoadStatus.Ready)" IconStart="@(new Icons.Regular.Size20.ArrowAutofitWidth())" OnClick="FitWidthAsync">Fit width</FluentButton>
+            <FluentButton Appearance="Appearance.Stealth" Class="@(IsActualSize ? "rd-toggle is-on" : "rd-toggle")" Title="Actual size"
+                          aria-label="Actual size" aria-pressed="@(IsActualSize ? "true" : "false")"
+                          Disabled="@(_status != LoadStatus.Ready)" OnClick="() => SetScaleAsync(1)">100%</FluentButton>
+            <span class="rd-pages-indicator" aria-live="polite">
+                @if (PageCount > 0)
+                {
+                    <text>Page @(_current + 1) of @PageCount</text>
+                }
+            </span>
+        </div>
+    </div>
+
+    <div class="rd-pages-viewport">
+        <div class="rd-progress" role="progressbar" aria-label="Position in document" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="rd-progress-fill" @ref="_progress"></div>
+        </div>
+        <div class="rd-pages-scroll" @ref="_scroller" data-reader-scroll tabindex="0" aria-label="Pages" aria-busy="@(_status == LoadStatus.Rendering ? "true" : "false")">
+            @if (_status == LoadStatus.Rendering)
+            {
+                <div class="rd-pages-status" role="status">
+                    <FluentProgressRing Width="32px" />
+                    <span>Laying out pages with your default theme…</span>
+                </div>
+            }
+            else if (_status == LoadStatus.Failed)
+            {
+                <div class="rd-pages-status" role="alert">
+                    <FluentIcon Value="@(new Icons.Regular.Size24.ErrorCircle())" Color="Color.Error" />
+                    <span>@_error</span>
+                    <FluentButton Appearance="Appearance.Outline" OnClick="RetryAsync">Try again</FluentButton>
+                </div>
+            }
+            else if (PageCount == 0)
+            {
+                <div class="rd-pages-status" role="status"><span>This document has no pages to preview.</span></div>
+            }
+            else
+            {
+                <div class="rd-pages-stack">
+                    @for (var i = 0; i < PageCount; i++)
+                    {
+                        var index = i;
+                        var size = Cache.PageSizes[index];
+                        var cached = Cache.Get(index);
+                        <div class="rd-page" @key="index" data-page="@index" style="@PageStyle(size)">
+                            @if (cached is not null)
+                            {
+                                <img src="@cached.DataUrl" alt="Page @(index + 1)" draggable="false" decoding="async" />
+                            }
+                            else
+                            {
+                                <div class="rd-page-placeholder" aria-hidden="true"><span>@(index + 1)</span></div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

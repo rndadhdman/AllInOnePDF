@@ -1,0 +1,86 @@
+@* Slider + numeric field pair bound to one numeric property of the working publication (Creator copy of the theme
+   builder's NumberSetting, committing to CreatorState). Both are the shared native inputs (RangeInput, NumberInput):
+   the Fluent web components echo every value the circuit sets back as an edit, which made a drag oscillate for ever. *@
+@using AllInOnePdf.UI.Components.Shared
+@using AllInOnePdf.UI.Services.Shared
+@inject CreatorState State
+
+<div class="cr-field">
+    <div class="cr-field-head">
+        <span class="cr-label" id="@($"{_id}-l")">@Label</span>
+        @if (!string.IsNullOrEmpty(Hint))
+        {
+            <span class="cr-hint">@Hint</span>
+        }
+    </div>
+    <div class="cr-num">
+        @if (!HideSlider)
+        {
+            <RangeInput Class="cr-range" Value="@Get()" Min="@Min" Max="@Max" Step="@Step" ValueChanged="Apply" AriaLabel="@($"{Label} slider")" />
+        }
+        <div class="cr-num-box">
+            <NumberInput Class="cr-num-input" Value="@Get()" Min="@LowerLimit" Max="@UpperLimit" Step="@Step" ValueChanged="Apply" AriaLabel="@(Unit is null ? Label : $"{Label} in {Unit}")" />
+            @if (!string.IsNullOrEmpty(Unit))
+            {
+                <span class="cr-unit" aria-hidden="true">@Unit</span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>Visible label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Reads the current value.</summary>
+    [Parameter, EditorRequired] public Func<double> Get { get; set; } = () => 0;
+
+    /// <summary>Writes a new value (the field commits afterwards).</summary>
+    [Parameter, EditorRequired] public Action<double> Set { get; set; } = _ => { };
+
+    /// <summary>Slider minimum and lowest accepted value.</summary>
+    [Parameter] public double Min { get; set; }
+
+    /// <summary>Slider maximum.</summary>
+    [Parameter] public double Max { get; set; } = 100;
+
+    /// <summary>Rounding step.</summary>
+    [Parameter] public double Step { get; set; } = 1;
+
+    /// <summary>The numeric field may accept values beyond the slider's range up to this limit.</summary>
+    [Parameter] public double? InputMax { get; set; }
+
+    /// <summary>The numeric field may accept values below the slider's range down to this limit.</summary>
+    [Parameter] public double? InputMin { get; set; }
+
+    /// <summary>Unit shown after the field ("pt", "%").</summary>
+    [Parameter] public string? Unit { get; set; }
+
+    /// <summary>Optional hint next to the label.</summary>
+    [Parameter] public string? Hint { get; set; }
+
+    /// <summary>Show only the numeric field (compact rows such as spacing boxes).</summary>
+    [Parameter] public bool HideSlider { get; set; }
+
+    /// <summary>Undo coalescing key; defaults to the label.</summary>
+    [Parameter] public string? Key { get; set; }
+
+    private readonly string _id = "crn-" + Guid.NewGuid().ToString("N")[..8];
+
+    private double UpperLimit => Math.Max(Max, InputMax ?? Max);
+
+    private double LowerLimit => Math.Min(Min, InputMin ?? Min);
+
+    private void Apply(double value)
+    {
+        if (NumberInputMath.Normalize(value, LowerLimit, UpperLimit, Step) is not { } v || NumberInputMath.Same(v, Get()))
+        {
+            return;
+        }
+
+        Set(v);
+
+        // One undo step per field and element: a drag coalesces, the same field on another element does not.
+        State.Commit("num:" + (Key ?? Label) + ":" + State.Selection.Id);
+    }
+}

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <Description>Shared Blazor UI (Fluent UI) for AllInOne PDF. Hosted by the Photino desktop app and the Blazor Server web host.</Description>
+    <AddRazorSupportForMvc>false</AddRazorSupportForMvc>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components" />
+    <PackageReference Include="Microsoft.FluentUI.AspNetCore.Components.Icons" />
+    <!-- Renders THIRD-PARTY-NOTICES.md in Settings › About (already a Core dependency). -->
+    <PackageReference Include="Markdig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The repository's notices file, shown in Settings › About › Third-party notices. -->
+    <EmbeddedResource Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" LogicalName="AllInOnePdf.UI.THIRD-PARTY-NOTICES.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AllInOnePdf.Core\AllInOnePdf.Core.csproj" />
+    <ProjectReference Include="..\AllInOnePdf.Publishing\AllInOnePdf.Publishing.csproj" />
+  </ItemGroup>
+
+</Project>

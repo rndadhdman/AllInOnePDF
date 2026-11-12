@@ -1,0 +1,53 @@
+@* Offers a crash-recovery draft back: shown under a builder's top bar while a draft waits for a decision. The wrapper
+   is always rendered so screen readers announce the message when it appears (polite live region). *@
+@using AllInOnePdf.UI.Services.Shared
+
+<div class="drb @(Written is null ? null : "is-shown")" role="status" aria-live="polite" aria-atomic="true">
+    @if (Written is { } written)
+    {
+        <FluentMessageBar Intent="MessageIntent.Warning" AllowDismiss="false" Class="drb-bar">
+            <span class="drb-row">
+                <span class="drb-text">Unsaved changes from @DraftAutosaver.DescribeAge(written, DateTimeOffset.UtcNow) were recovered. Restore them or discard them.</span>
+                <span class="drb-actions">
+                    <FluentButton Appearance="Appearance.Accent" Disabled="@_busy" OnClick="RestoreAsync">Restore</FluentButton>
+                    <FluentButton Appearance="Appearance.Neutral" Disabled="@_busy" OnClick="DiscardAsync">Discard</FluentButton>
+                </span>
+            </span>
+        </FluentMessageBar>
+    }
+</div>
+
+@code {
+    /// <summary>When the recovered draft was written; null hides the bar.</summary>
+    [Parameter] public DateTimeOffset? Written { get; set; }
+
+    /// <summary>Applies the draft.</summary>
+    [Parameter] public EventCallback OnRestore { get; set; }
+
+    /// <summary>Deletes the draft.</summary>
+    [Parameter] public EventCallback OnDiscard { get; set; }
+
+    private bool _busy;
+
+    private Task RestoreAsync() => RunAsync(OnRestore);
+
+    private Task DiscardAsync() => RunAsync(OnDiscard);
+
+    private async Task RunAsync(EventCallback callback)
+    {
+        if (_busy)
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            await callback.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

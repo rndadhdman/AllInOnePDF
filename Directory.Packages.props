@@ -1,0 +1,56 @@
+<Project>
+  <!--
+    Central Package Management: every package version lives here.
+    Projects reference packages WITHOUT a Version attribute.
+    Every package below is permissively licensed (MIT / Apache-2.0 / BSD / OFL).
+    See README.md > Licensing and THIRD-PARTY-NOTICES.md.
+  -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Framework">
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebView" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup Label="UI">
+    <!-- Fluent UI Blazor v4: Microsoft's Fluent design system (the Intune / Azure portal look). MIT. -->
+    <PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components" Version="4.14.5" />
+    <PackageVersion Include="Microsoft.FluentUI.AspNetCore.Components.Icons" Version="4.14.5" />
+    <!-- Photino: cross-platform desktop shell using the OS webview (WebView2 / WebKitGTK). Apache-2.0. -->
+    <PackageVersion Include="Photino.Blazor" Version="4.0.13" />
+    <PackageVersion Include="Photino.NET" Version="4.0.16" />
+  </ItemGroup>
+
+  <ItemGroup Label="Engines (pure .NET, no external processes, fully offline)">
+    <!-- Markdown parser. BSD-2-Clause. -->
+    <PackageVersion Include="Markdig" Version="1.6.0" />
+    <!-- PDF parsing / text + layout extraction. Apache-2.0. -->
+    <PackageVersion Include="PdfPig" Version="0.1.16" />
+    <!-- PDF page rasterization (bundled pdfium, BSD-3). MIT. -->
+    <PackageVersion Include="PDFtoImage" Version="5.4.0" />
+    <!-- 2D drawing and PDF output (Google Skia). MIT. Also pulled in by PDFtoImage; pinned here for the layout engine. -->
+    <PackageVersion Include="SkiaSharp" Version="4.150.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.150.1" />
+    <!-- Text shaping (HarfBuzz) for the layout engine. MIT. -->
+    <PackageVersion Include="HarfBuzzSharp" Version="14.2.1.400" />
+    <PackageVersion Include="HarfBuzzSharp.NativeAssets.Linux" Version="14.2.1.400" />
+    <!-- HTML parsing (HTML and EPUB import). MIT. -->
+    <PackageVersion Include="AngleSharp" Version="1.9.1" />
+    <!-- Word (.docx) reading and writing. MIT. -->
+    <PackageVersion Include="DocumentFormat.OpenXml" Version="3.5.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Tests">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+  </ItemGroup>
+</Project>

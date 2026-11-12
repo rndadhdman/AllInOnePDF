@@ -1,0 +1,189 @@
+name: Release
+
+# Pushing a tag such as v1.0.0 builds every package with that version, runs every test, and publishes a GitHub
+# release with the packages, their SHA-256 sums and the matching section of CHANGELOG.md as the notes:
+#   Windows  AllInOnePdfPortable-win-x64.zip (PortableApps.com layout) and AllInOnePdf-<version>-win-x64.msi
+#   Linux    AllInOnePdf-linux-x64.tar.gz and .zip (portable), allinonepdf_<version>_amd64.deb (Debian/Ubuntu),
+#            allinonepdf-<version>-1.x86_64.rpm (Fedora), AllInOnePdf-<version>.flatpak (single-file bundle)
+# The tag must match the version heading in CHANGELOG.md ("## [1.0.0] - 2026-11-20").
+
+on:
+  push:
+    tags: ["v*"]
+  # A manual run builds the branch it is started from and labels the packages with the tag's version; with
+  # "publish" off it only uploads them as workflow artifacts (a dry run of the packaging).
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag whose version to use (for example v1.0.0)"
+        required: true
+      publish:
+        description: "Create the GitHub release (off = build and upload the packages as workflow artifacts only)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        shell: bash
+        run: |
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          case "$tag" in v[0-9]*) ;; *) echo "Tag '$tag' must look like v1.2.3"; exit 1;; esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test (${{ matrix.os }})
+    needs: version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Linux native dependencies (Skia / pdfium)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libfontconfig1 libfreetype6
+      - run: dotnet restore AllInOnePdf.slnx
+      - run: dotnet build AllInOnePdf.slnx -c Release --no-restore -p:Version=${{ needs.version.outputs.version }}
+      - run: dotnet test tests/AllInOnePdf.Core.Tests/AllInOnePdf.Core.Tests.csproj -c Release --no-build
+      - run: dotnet test tests/AllInOnePdf.Publishing.Tests/AllInOnePdf.Publishing.Tests.csproj -c Release --no-build
+      - run: dotnet test tests/AllInOnePdf.Layout.Tests/AllInOnePdf.Layout.Tests.csproj -c Release --no-build
+
+  # The portable packages (publish.ps1) and, from a second publish without portable.txt, the installers.
+  package-windows:
+    name: Package Windows (zip, msi)
+    needs: [version, test]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Portable zip
+        shell: pwsh
+        run: ./build/publish.ps1 -Rid win-x64 -Version ${{ needs.version.outputs.version }}
+      - name: Publish for the installer
+        shell: pwsh
+        run: ./build/publish-install.ps1 -Rid win-x64 -Version ${{ needs.version.outputs.version }} -Output publish/install-win-x64
+      - name: MSI
+        shell: pwsh
+        run: |
+          dotnet tool restore
+          ./build/msi/build-msi.ps1 -PublishDir publish/install-win-x64 -Version ${{ needs.version.outputs.version }} -Output publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-windows
+          path: |
+            publish/*.zip
+            publish/*.msi
+          if-no-files-found: error
+
+  package-linux:
+    name: Package Linux (tar.gz, zip, deb, rpm)
+    needs: [version, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Portable tar.gz and zip
+        shell: pwsh
+        run: ./build/publish.ps1 -Rid linux-x64 -Version ${{ needs.version.outputs.version }}
+      - name: Publish for the packages
+        shell: pwsh
+        run: ./build/publish-install.ps1 -Rid linux-x64 -Version ${{ needs.version.outputs.version }} -Output publish/install-linux-x64
+      - name: deb and rpm
+        shell: pwsh
+        run: ./build/linux/build-packages.ps1 -PublishDir publish/install-linux-x64 -Version ${{ needs.version.outputs.version }} -Output publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-linux
+          path: |
+            publish/*.tar.gz
+            publish/*.zip
+            publish/*.deb
+            publish/*.rpm
+          if-no-files-found: error
+
+  package-flatpak:
+    name: Package Flatpak
+    needs: [version, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Publish for the bundle
+        shell: pwsh
+        run: ./build/publish-install.ps1 -Rid linux-x64 -Version ${{ needs.version.outputs.version }} -Output publish/install-linux-x64
+      - name: Flatpak bundle
+        shell: pwsh
+        run: ./build/flatpak/build-flatpak.ps1 -PublishDir publish/install-linux-x64 -Version ${{ needs.version.outputs.version }} -Output publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-flatpak
+          path: publish/*.flatpak
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub release
+    needs: [version, package-windows, package-linux, package-flatpak]
+    if: github.event_name == 'push' || inputs.publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Release notes from CHANGELOG.md
+        shell: bash
+        run: |
+          v="${{ needs.version.outputs.version }}"
+          awk -v v="$v" '
+            /^## \[/ { if (found) exit; if (index($0, "## [" v "]") == 1) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "CHANGELOG.md has no section for $v" >&2
+            exit 1
+          fi
+          cat notes.md
+      - name: Checksums
+        shell: bash
+        run: |
+          cd dist
+          ls -l
+          sha256sum *.zip *.tar.gz *.msi *.deb *.rpm *.flatpak > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag="${{ needs.version.outputs.tag }}"
+          prerelease=""
+          case "$tag" in *-*) prerelease="--prerelease";; esac
+          gh release create "$tag" dist/*.msi dist/*.zip dist/*.deb dist/*.rpm dist/*.flatpak dist/*.tar.gz dist/SHA256SUMS.txt \
+            --title "AllInOne PDF ${{ needs.version.outputs.version }}" --notes-file notes.md --verify-tag $prerelease

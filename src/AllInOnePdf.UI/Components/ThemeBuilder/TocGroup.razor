@@ -1,0 +1,12 @@
+@inherits SettingsGroupBase
+
+<SwitchSetting Label="Add a table of contents" Get="() => T.Toc.Enabled" Set="v => T.Toc.Enabled = v" />
+@if (T.Toc.Enabled)
+{
+    <TextSetting Label="Title" AllowNull="false" Get="() => T.Toc.Title" Set="v => T.Toc.Title = string.IsNullOrWhiteSpace(v) ? T.Toc.Title : v!" />
+    <NumberSetting Label="Depth" Unit="levels" Min="1" Max="6" Step="1" Key="toc-depth" Get="() => T.Toc.Depth" Set="v => T.Toc.Depth = (int)v" />
+    <SwitchSetting Label="Page numbers" Get="() => T.Toc.ShowPageNumbers" Set="v => T.Toc.ShowPageNumbers = v" />
+    <SwitchSetting Label="Dot leaders" Get="() => T.Toc.DotLeaders" Set="v => T.Toc.DotLeaders = v" />
+    <SwitchSetting Label="Indent sub-levels" Get="() => T.Toc.IndentLevels" Set="v => T.Toc.IndentLevels = v" />
+    <SwitchSetting Label="Start the text on a new page" Get="() => T.Toc.PageBreakAfter" Set="v => T.Toc.PageBreakAfter = v" />
+}

@@ -1,0 +1,39 @@
+@* Section list of the theme builder in wide windows (1600 px and up): the settings search and one entry per settings
+   group. Choosing an entry shows that group in the settings panel on the right; it never closes the group. *@
+
+<div class="tb-rail-inner">
+    <div class="tb-rail-search">
+        <FluentSearch Value="@Query" ValueChanged="@((string? v) => QueryChanged.InvokeAsync(v))" Immediate="true" ImmediateDelay="150"
+                      Placeholder="Search settings" AriaLabel="Search settings" Style="width:100%" />
+    </div>
+    @{
+        var visible = SettingsPanel.Visible(Query);
+    }
+    @if (visible.Count == 0)
+    {
+        <p class="tb-rail-empty" role="status">No settings match "@Query".</p>
+    }
+    else
+    {
+        <ul class="tb-rail-list">
+            @foreach (var group in visible)
+            {
+                var on = group.Key == OpenGroup;
+                <li @key="group.Key">
+                    <button type="button" class="tb-rail-item @(on ? "is-on" : null)" aria-current="@(on ? "true" : null)"
+                            @onclick="() => OpenGroupChanged.InvokeAsync(group.Key)">
+                        <FluentIcon Value="@group.Icon" Color="@(on ? Color.Accent : Color.Neutral)" />
+                        <span>@group.Title</span>
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Query { get; set; }
+    [Parameter] public EventCallback<string?> QueryChanged { get; set; }
+    [Parameter] public string? OpenGroup { get; set; }
+    [Parameter] public EventCallback<string?> OpenGroupChanged { get; set; }
+}

@@ -1,0 +1,263 @@
+/* The page fills the window (the page is the size container, so a collapsed navigation counts):
+   - narrow: the contents list above, the sections in one column;
+   - from 1000 px of page: the contents list on the left (sticky), the sections beside it;
+   - from 1560 px: the guide sections in a column at reading width, the reference sections in a second column that takes
+     the rest of the width. Prose keeps an 82ch measure; shortcut tables and topic groups may use the full width. */
+.aio-help {
+  container: aio-help / inline-size;
+}
+
+.aio-help-layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aio-gap);
+}
+
+.aio-help-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aio-gap);
+  min-width: 0;
+  padding-bottom: 48px;
+}
+
+.aio-help-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aio-gap);
+  min-width: 0;
+}
+
+.aio-help-toc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  padding: 12px var(--aio-card-padding);
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-md);
+  background: var(--neutral-layer-floating, var(--neutral-layer-1));
+}
+
+.aio-help-toc-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+
+.aio-help-toc-title {
+  font-weight: 600;
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-help-toc ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.aio-help-toc a {
+  color: var(--accent-foreground-rest);
+  text-decoration: none;
+  border-radius: 2px;
+}
+
+.aio-help-toc a:hover {
+  text-decoration: underline;
+}
+
+.aio-help-toc a:focus-visible {
+  outline: 2px solid var(--accent-fill-rest);
+  outline-offset: 2px;
+}
+
+@container aio-help (min-width: 1000px) {
+  .aio-help-layout {
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .aio-help-toc {
+    position: sticky;
+    top: 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .aio-help-toc-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .aio-help-toc-title {
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .aio-help-toc ul {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .aio-help-toc a {
+    display: block;
+    padding: 6px 10px;
+    border-radius: var(--aio-radius-sm);
+    color: var(--neutral-foreground-rest);
+  }
+
+  .aio-help-toc a:hover {
+    background: var(--neutral-fill-stealth-hover);
+    text-decoration: none;
+  }
+}
+
+@container aio-help (min-width: 1560px) {
+  .aio-help-main {
+    display: grid;
+    grid-template-columns: minmax(0, 50rem) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.aio-help-body {
+  padding: 8px 0;
+  line-height: 22px;
+}
+
+/* Running text keeps a reading measure; tables and topic groups are not capped. */
+.aio-help-body p,
+.aio-help-body ul,
+.aio-help-body h3 {
+  max-width: 82ch;
+}
+
+/* Topics of one section side by side when the card is wide enough for two columns of text. */
+.aio-help-topics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 36rem), 1fr));
+  gap: 0 32px;
+  align-items: start;
+}
+
+.aio-help-topic {
+  min-width: 0;
+}
+
+.aio-help-topic > h3:first-child {
+  margin-top: 4px;
+}
+
+/* Shortcut groups side by side in a wide card. */
+.aio-help-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 32rem), 1fr));
+  gap: 0 32px;
+  align-items: start;
+}
+
+.aio-help-shortcut-group {
+  min-width: 0;
+}
+.aio-help-body p,
+.aio-help-body ul {
+  margin: 0 0 12px;
+}
+
+.aio-help-body ul {
+  padding-left: 20px;
+}
+
+.aio-help-body li + li {
+  margin-top: 4px;
+}
+
+.aio-help-body h3 {
+  margin: 16px 0 6px;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.aio-help-body h3:first-child {
+  margin-top: 4px;
+}
+
+.aio-help-body code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--neutral-layer-2);
+  font-family: var(--aio-font-mono);
+  font-size: 12.5px;
+}
+
+.aio-help-path {
+  overflow-wrap: anywhere;
+}
+
+.aio-help-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.aio-help-table th,
+.aio-help-table td {
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.aio-help-table th {
+  font-weight: 600;
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-help-keys {
+  width: 40%;
+  white-space: nowrap;
+}
+
+.aio-help-table kbd {
+  display: inline-block;
+  min-width: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--neutral-stroke-rest);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--neutral-layer-2);
+  color: var(--neutral-foreground-rest);
+  font-family: var(--aio-font-mono);
+  font-size: 12px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.aio-help-or {
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-help-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+
+@media (max-width: 640px) {
+  .aio-help-keys {
+    white-space: normal;
+  }
+}

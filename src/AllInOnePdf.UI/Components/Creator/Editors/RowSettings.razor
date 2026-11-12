@@ -1,0 +1,35 @@
+@* Row content: the column layout picker, gutter, vertical alignment, keep together and label. *@
+@inject CreatorState State
+
+@{
+    var current = ColumnLayouts.Match(Row.Fractions);
+}
+<div class="cr-field">
+    <div class="cr-field-head">
+        <span class="cr-label" id="@_id">Columns</span>
+        <span class="cr-hint">@(current?.Name ?? "Custom split")</span>
+    </div>
+    <div class="cr-layout-picker" role="radiogroup" aria-labelledby="@_id">
+        @foreach (var preset in ColumnLayouts.Presets)
+        {
+            var on = ReferenceEquals(preset, current);
+            <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="cr-layout-opt @(on ? "is-on" : null)"
+                    title="@preset.Name" aria-label="@($"Columns {preset.Name}")" @onclick="() => State.SetRowLayout(Row.Id, preset.Fractions)">
+                <LayoutGlyph Fractions="preset.Fractions" Current="on" />
+            </button>
+        }
+    </div>
+    <div class="cr-hint">Fewer columns move the extra modules into the last column, so nothing is lost.</div>
+</div>
+<NumberField Label="Space between columns" Unit="pt" Min="0" Max="60" InputMax="100" Step="1" Get="() => Row.GutterPt" Set="v => Row.GutterPt = v" />
+<EnumField TEnum="VerticalAlign" Label="Vertical alignment" Segmented="true" Get="() => Row.Align" Set="v => Row.Align = v" />
+<SwitchField Label="Keep the row on one page" Get="() => Row.KeepTogether" Set="v => Row.KeepTogether = v"
+             Hint="Applies when the row is short enough to fit on a page." />
+<TextField Label="Name in the Structure panel" Get="() => Row.Label" Set="v => Row.Label = v" Placeholder="Row" />
+
+@code {
+    /// <summary>The row being edited.</summary>
+    [Parameter, EditorRequired] public Row Row { get; set; } = default!;
+
+    private readonly string _id = "crl-" + Guid.NewGuid().ToString("N")[..8];
+}

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=AllInOne PDF
+Comment=Convert anything to PDF and PDF to anything
+Exec=/path/to/AllInOnePdf-linux-x64/AllInOnePdf.sh %F
+Icon=/path/to/AllInOnePdf-linux-x64/app/wwwroot/app.png
+Terminal=false
+Categories=Office;Utility;
+MimeType=text/markdown;text/plain;application/pdf;text/html;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/epub+zip;

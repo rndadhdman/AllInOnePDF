@@ -1,0 +1,195 @@
+@* Right panel: settings for the selection with Content and Design tabs; the document settings when nothing is selected. *@
+@inject CreatorState State
+
+@{
+    var location = State.Locate(State.Selection.Id);
+    var kind = location?.Kind ?? CreatorSelectionKind.Document;
+    var hasContent = kind is not CreatorSelectionKind.Column and not CreatorSelectionKind.Document;
+    var tab = hasContent ? _tab : "design";
+}
+<div class="cr-insp">
+    <div class="cr-insp-head">
+        <FluentIcon Value="@IconFor(location)" Color="Color.Accent" />
+        <div class="cr-insp-titles">
+            <h2 class="cr-insp-title">@TitleFor(location)</h2>
+            @if (location is not null)
+            {
+                <nav class="cr-crumbs" aria-label="Selection path">
+                    <button type="button" class="cr-crumb" @onclick="() => State.ClearSelection()">Document</button>
+                    @foreach (var (label, id) in Crumbs(location))
+                    {
+                        <span class="cr-crumb-sep" aria-hidden="true">›</span>
+                        <button type="button" class="cr-crumb" @onclick="() => State.SelectId(id)">@label</button>
+                    }
+                </nav>
+            }
+        </div>
+        @if (OnClose.HasDelegate)
+        {
+            <FluentButton Appearance="Appearance.Stealth" Class="cr-insp-close" IconStart="@(new Icons.Regular.Size20.Dismiss())" Title="Close the inspector"
+                          aria-label="Close the inspector" OnClick="OnClose" />
+        }
+    </div>
+
+    @if (hasContent)
+    {
+        <div class="cr-tabs cr-insp-tabs" role="tablist" aria-label="Settings">
+            @foreach (var (key, label) in new[] { ("content", "Content"), ("design", "Design") })
+            {
+                var on = key == tab;
+                <button type="button" role="tab" id="@($"cr-itab-{key}")" aria-selected="@(on ? "true" : "false")" aria-controls="cr-ipanel" tabindex="@(on ? 0 : -1)"
+                        class="cr-tab @(on ? "is-on" : null)" @onclick="() => _tab = key"
+                        @onkeydown="@(e => { if (e.Key is "ArrowLeft" or "ArrowRight") { _tab = _tab == "content" ? "design" : "content"; } })">
+                    @label
+                </button>
+            }
+        </div>
+    }
+
+    <div class="cr-insp-body" id="cr-ipanel" role="@(hasContent ? "tabpanel" : null)" aria-labelledby="@(hasContent ? $"cr-itab-{tab}" : null)">
+        @switch (location)
+        {
+            case null:
+                <DocumentSettings OnChangeTheme="OnChangeTheme" />
+                break;
+
+            case { Kind: CreatorSelectionKind.Module, Module: { } module }:
+                <div class="cr-insp-fields" @key="@(module.Id + tab)">
+                    @if (tab == "content")
+                    {
+                        <ModuleContent Module="module" />
+                    }
+                    else if (location.Item is { } item)
+                    {
+                        <ItemBoxEditor Item="item" Section="location.Section" />
+                        <BoxDesignEditor Design="module.Design" ShowPosition="false" />
+                    }
+                    else
+                    {
+                        <BoxDesignEditor Design="module.Design" />
+                    }
+                </div>
+                break;
+
+            case { Kind: CreatorSelectionKind.Row, Row: { } row }:
+                <div class="cr-insp-fields" @key="@(row.Id + tab)">
+                    @if (tab == "content")
+                    {
+                        <RowSettings Row="row" />
+                    }
+                    else
+                    {
+                        <BoxDesignEditor Design="row.Design" />
+                    }
+                </div>
+                break;
+
+            case { Kind: CreatorSelectionKind.Column, Column: { } column, Row: { } parent }:
+                <div class="cr-insp-fields" @key="column.Id">
+                    <p class="cr-note">
+                        Column @(location.Index + 1) of @parent.Columns.Count in a @(ColumnLayouts.Match(parent.Fractions)?.Name ?? "custom") row.
+                        Change the split in the row's settings.
+                    </p>
+                    <div class="cr-insp-actions">
+                        <FluentButton Appearance="Appearance.Outline" OnClick="() => State.Select(CreatorSelectionKind.Row, parent.Id)">Row settings</FluentButton>
+                        @if (parent.Columns.Count > 1)
+                        {
+                            <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="() => State.Delete(column.Id)">Remove column</FluentButton>
+                        }
+                    </div>
+                    <BoxDesignEditor Design="column.Design" />
+                </div>
+                break;
+
+            case { Kind: CreatorSelectionKind.Section, Section: var section }:
+                <div class="cr-insp-fields" @key="@(section.Id + tab)">
+                    @if (tab == "content")
+                    {
+                        <TextField Label="Name in the Structure panel" Get="() => section.Label" Set="v => section.Label = v" Placeholder="@($"Section {location.Index + 1}")" />
+                        <SectionLayoutSettings Section="section" />
+                        @if (section.Layout == SectionLayout.Structure)
+                        {
+                            <SwitchField Label="Start on a new page" Get="() => section.PageBreakBefore" Set="v => section.PageBreakBefore = v" />
+                            <SwitchField Label="Start a new page after this section" Get="() => section.PageBreakAfter" Set="v => section.PageBreakAfter = v" />
+                            <div class="cr-insp-actions">
+                                <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="() => State.AddRow(section.Id)">Add row</FluentButton>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <BoxDesignEditor Design="section.Design" />
+                    }
+                </div>
+                break;
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Re-render trigger.</summary>
+    [Parameter] public int Version { get; set; }
+
+    /// <summary>Opens the theme picker.</summary>
+    [Parameter] public EventCallback OnChangeTheme { get; set; }
+
+    /// <summary>Closes the drawer (narrow windows); the close button shows only when set.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>The tab to show ("content" or "design"), applied when <see cref="TabRequest"/> changes (or on first render).</summary>
+    [Parameter] public string? Tab { get; set; }
+
+    /// <summary>Bump to apply <see cref="Tab"/> again (a double-click on a free-flow item asks for Content).</summary>
+    [Parameter] public int TabRequest { get; set; }
+
+    private string _tab = "content";
+    private int? _appliedRequest;
+
+    protected override void OnParametersSet()
+    {
+        if (Tab is "content" or "design" && _appliedRequest != TabRequest)
+        {
+            _tab = Tab;
+        }
+
+        _appliedRequest = TabRequest;
+    }
+
+    private static string TitleFor(CreatorLocation? location) => location switch
+    {
+        null => "Document",
+        { Kind: CreatorSelectionKind.Module, Module: { } m } => CreatorModuleCatalog.NameOf(m) + " module",
+        { Kind: CreatorSelectionKind.Row, Row: { } r } => string.IsNullOrWhiteSpace(r.Label) ? $"Row {location.Index + 1}" : r.Label!,
+        { Kind: CreatorSelectionKind.Column } => $"Column {location.Index + 1}",
+        { Kind: CreatorSelectionKind.Section, Section: var s } => string.IsNullOrWhiteSpace(s.Label) ? $"Section {location.Index + 1}" : s.Label!,
+        _ => "Selection",
+    };
+
+    private static Icon IconFor(CreatorLocation? location) => location switch
+    {
+        null => new Icons.Regular.Size20.Document(),
+        { Kind: CreatorSelectionKind.Module, Module: { } m } => CreatorModuleCatalog.IconOf(m),
+        { Kind: CreatorSelectionKind.Row } => new Icons.Regular.Size20.LayoutColumnTwo(),
+        { Kind: CreatorSelectionKind.Column } => new Icons.Regular.Size20.LayoutColumnOneThirdLeft(),
+        _ => new Icons.Regular.Size20.RectangleLandscape(),
+    };
+
+    private IEnumerable<(string Label, string Id)> Crumbs(CreatorLocation location)
+    {
+        var p = State.Working!;
+        if (location.Kind != CreatorSelectionKind.Section)
+        {
+            yield return ($"Section {p.Sections.IndexOf(location.Section) + 1}", location.Section.Id);
+        }
+
+        if (location.Row is { } row && location.Kind != CreatorSelectionKind.Row)
+        {
+            yield return ($"Row {location.Section.Rows.IndexOf(row) + 1}", row.Id);
+        }
+
+        if (location.Column is { } column && location.Kind == CreatorSelectionKind.Module)
+        {
+            yield return ($"Column {location.Row!.Columns.IndexOf(column) + 1}", column.Id);
+        }
+    }
+}

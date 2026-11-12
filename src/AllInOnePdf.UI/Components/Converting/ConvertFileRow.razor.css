@@ -1,0 +1,279 @@
+/* Layout follows the width of the file list (the Convert page makes it a size container), not the window:
+   - narrow (< 600 px): one column;
+   - medium (< 1040 px): name and target on top, status and actions below;
+   - wide: one line per file, every row on the list's shared columns (subgrid), with a column header above;
+     from 1400 px the type and size leave the meta line for columns of their own. */
+.aio-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) minmax(160px, 240px);
+  grid-template-areas:
+    "icon info target"
+    "icon status status"
+    ". actions actions";
+  align-items: center;
+  column-gap: 16px;
+  row-gap: 8px;
+  padding: 12px 16px;
+  min-height: 68px;
+  background: var(--neutral-layer-1);
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-md, 8px);
+  box-shadow: var(--aio-shadow-2);
+}
+
+.aio-row.is-unsupported {
+  background: var(--neutral-layer-2);
+}
+
+.aio-row.is-failed {
+  border-left: 3px solid var(--error, #C50F1F);
+}
+
+.aio-row.is-succeeded {
+  border-left: 3px solid var(--success, #107C10);
+}
+
+.aio-row.is-running,
+.aio-row.is-queued {
+  border-left: 3px solid var(--accent-fill-rest);
+}
+
+.aio-row-icon {
+  grid-area: icon;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--aio-radius-md, 8px);
+  background: var(--neutral-layer-2);
+}
+
+.aio-row-info {
+  grid-area: info;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aio-row-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--neutral-foreground-hint);
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+}
+
+.aio-row-hint {
+  color: var(--neutral-foreground-hint);
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+}
+
+.aio-row-meta-type::after {
+  content: "·";
+  margin-left: 6px;
+}
+
+/* Type and size columns exist only in the wide layout. */
+.aio-row-type,
+.aio-row-size {
+  display: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-row-size {
+  text-align: right;
+}
+
+/* Extension next to each target in the open list; drawn from an attribute so the closed select shows the name only. */
+.aio-row-target ::deep .aio-ext::after {
+  content: attr(data-ext);
+  color: var(--neutral-foreground-hint);
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+}
+
+.aio-row-target {
+  grid-area: target;
+  min-width: 0;
+}
+
+.aio-row-status {
+  grid-area: status;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.aio-row-progress {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* A sweep over the running bar: the work is visibly alive even when one step holds a percentage for seconds. */
+.aio-row-progress.is-working {
+  position: relative;
+}
+
+.aio-row-progress.is-working::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--neutral-layer-1) 70%, transparent) 50%, transparent 100%);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: aio-row-sweep 1.4s linear infinite;
+}
+
+@keyframes aio-row-sweep {
+  from { background-position: -40% 0; }
+  to { background-position: 140% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aio-row-progress.is-working::before { animation: none; display: none; }
+}
+
+.aio-row-target {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aio-row-state {
+  max-width: 100%;
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.aio-row-state ::deep svg {
+  vertical-align: -3px;
+  margin-right: 4px;
+}
+
+.aio-row-state.is-muted { color: var(--neutral-foreground-hint); }
+.aio-row-state.is-ok { color: var(--neutral-foreground-rest); }
+.aio-row-state.is-warn { color: var(--neutral-foreground-rest); }
+.aio-row-state.is-error { color: var(--error, #C50F1F); }
+
+.aio-row-links {
+  display: inline-flex;
+  gap: 12px;
+}
+
+.aio-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+  color: var(--accent-foreground-rest);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.aio-link:focus-visible {
+  outline: 2px solid var(--focus-stroke-outer);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.aio-row-actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.aio-row-details {
+  grid-column: 2 / -1;
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 12px;
+  border-radius: var(--aio-radius-sm, 4px);
+  background: var(--neutral-layer-3, var(--neutral-layer-2));
+  color: var(--neutral-foreground-rest);
+  font-family: var(--aio-font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Narrow list: one column. */
+@container aio-files (max-width: 599px) {
+  .aio-row {
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-areas:
+      "icon info"
+      "target target"
+      "status status"
+      "actions actions";
+  }
+
+  .aio-row-details {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Wide list: one line per file on the list's shared columns (Home.razor.css defines the tracks). */
+@container aio-files (min-width: 1040px) {
+  .aio-row {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    grid-template-areas: none;
+    row-gap: 4px;
+  }
+
+  .aio-row-icon { grid-column: icon; grid-row: 1; }
+  .aio-row-info { grid-column: info; grid-row: 1; }
+  .aio-row-target { grid-column: target; grid-row: 1; }
+  .aio-row-status { grid-column: status; grid-row: 1; }
+  .aio-row-actions { grid-column: actions; grid-row: 1; justify-content: flex-end; flex-wrap: nowrap; }
+  .aio-row-details { grid-column: info / -1; grid-row: 2; }
+}
+
+/* Widest list: type and size get their own columns and leave the meta line. */
+@container aio-files (min-width: 1400px) {
+  .aio-row-type { grid-column: type; grid-row: 1; display: block; }
+  .aio-row-size { grid-column: size; grid-row: 1; display: block; }
+
+  .aio-row-meta-type,
+  .aio-row-meta-size {
+    display: none;
+  }
+
+  /* The meta line keeps only badges and hints; without them the name sits alone, centred in the row. */
+  .aio-row-meta:not(:has(> :not(.aio-row-meta-type, .aio-row-meta-size))) {
+    display: none;
+  }
+}

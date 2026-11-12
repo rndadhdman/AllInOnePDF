@@ -1,0 +1,38 @@
+.TH ALLINONEPDF 1 "" "AllInOne PDF" "User Commands"
+.SH NAME
+allinonepdf \- convert, read, style and lay out PDFs, all offline
+.SH SYNOPSIS
+.B allinonepdf
+[\fIoption\fR] [\fIfile\fR...]
+.SH DESCRIPTION
+AllInOne PDF turns files into PDFs and PDFs into files (Markdown, HTML, Word, Excel, PowerPoint, RTF, EPUB, text,
+images and more), reads them in a reflowable view, styles PDFs with themes and lays out publications in the Creator.
+Without an option the application window opens.
+.SH OPTIONS
+.TP
+.B \-\-paths
+Print where settings, themes, history and output go, then exit.
+.TP
+.BR \-\-check\-assets " [\fIfile\fR]"
+Check that the window can load every file it needs, then exit. Writes the report to \fIfile\fR, or to the console.
+The exit code is 1 if anything is missing.
+.TP
+.BR \-\-help ", " \-h
+Show the help, then exit.
+.SH FILES
+.TP
+.I ~/.config/AllInOnePdf
+Settings, themes, history, publications, the browser cache and crash logs. Delete it (with the app closed) to start
+fresh.
+.TP
+.I AllInOne PDF
+Default folder for converted files, in the Documents folder (or the home folder when there is none).
+.TP
+.I /opt/allinonepdf
+The program and its bundled .NET runtime.
+.SH ENVIRONMENT
+.TP
+.B ALLINONEPDF_DATA_DIR
+Use this folder for data instead of ~/.config/AllInOnePdf.
+.SH BUGS
+https://github.com/rndadhdman/AllInOnePDF/issues

@@ -1,0 +1,21 @@
+@inherits SettingsGroupBase
+
+<TextSetting Label="Name" AllowNull="false" Get="() => T.Name" Set="v => State.Rename(v ?? string.Empty)" />
+<TextSetting Label="Description" Placeholder="Shown under the name in the gallery" Get="() => T.Description" Set="v => T.Description = v" />
+<TextSetting Label="Author" Get="() => T.Author" Set="v => T.Author = v" />
+<TextSetting Label="Tags" Placeholder="serif, book, dark" Hint="Separate tags with commas. The gallery search and tag filter use them."
+             Get="TagsText" Set="SetTags" />
+
+@code {
+    private string? TagsText() => string.Join(", ", T.Tags);
+
+    private void SetTags(string? value)
+    {
+        T.Tags = (value ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(t => t.ToLowerInvariant())
+            .Distinct(StringComparer.Ordinal)
+            .Take(12)
+            .ToList();
+    }
+}

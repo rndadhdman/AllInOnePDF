@@ -1,0 +1,331 @@
+.rd-toolbar {
+    position: relative;
+    z-index: 5;
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 8px;
+    min-height: 52px;
+    padding: 6px 12px 6px 20px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest, #E0E0E0);
+    background: var(--neutral-layer-2, #FAFAFA);
+    color: var(--neutral-foreground-rest, #242424);
+    font-family: var(--aio-font-ui);
+    font-size: 13px;
+}
+
+.rd-tb-doc {
+    flex: 1 1 200px;
+    min-width: 0;
+    margin-right: 8px;
+}
+
+.rd-tb-title {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rd-tb-meta {
+    color: var(--neutral-foreground-hint, #616161);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.rd-tb-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.rd-tb-divider {
+    width: 1px;
+    height: 24px;
+    margin: 0 4px;
+    background: var(--neutral-stroke-divider-rest, #E0E0E0);
+}
+
+/* Mode-specific tools wrap inside their own box; the end group (Open, Convert this) stays put in both modes. */
+.rd-tb-tools {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px 8px;
+}
+
+.rd-tb-end {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+/* Below this width the reflow tools do not fit next to the end group. They take a second row in both modes, so
+   Open and "Convert this" stay on the first row, at the right, whatever the mode. */
+@media (max-width: 1440px) {
+    .rd-tb-end {
+        order: 2;
+    }
+
+    .rd-tb-tools {
+        order: 3;
+        flex: 1 1 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* Wide windows: the view and text tools are centred over the reading column instead of collecting at the far right
+   next to Open; the document name keeps the left and Open, "Convert this" and Close the right. */
+@media (min-width: 1441px) {
+    .rd-toolbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto minmax(0, 1fr);
+        column-gap: 12px;
+    }
+
+    .rd-tb-tools {
+        justify-content: flex-start;
+    }
+
+    .rd-tb-end {
+        justify-self: end;
+    }
+}
+
+/* Pressed toggles: a neutral selected fill, never the accent. */
+.rd-toolbar ::deep fluent-button.rd-toggle.is-on::part(control) {
+    background: var(--neutral-fill-secondary-rest, rgba(0, 0, 0, .06));
+    box-shadow: inset 0 -2px 0 var(--neutral-foreground-hint, #616161);
+}
+
+.rd-toolbar ::deep fluent-button.rd-toggle.is-on:hover::part(control) {
+    background: var(--neutral-fill-secondary-hover, rgba(0, 0, 0, .09));
+}
+
+/* ---- Segmented mode switch ------------------------------------------------ */
+.rd-tb-mode {
+    padding: 2px;
+    border-radius: 6px;
+    background: var(--neutral-fill-secondary-rest, rgba(0, 0, 0, .05));
+}
+
+.rd-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--neutral-foreground-rest, #242424);
+    font: inherit;
+    cursor: pointer;
+}
+
+.rd-seg:hover {
+    background: var(--neutral-fill-stealth-hover, rgba(0, 0, 0, .05));
+}
+
+.rd-seg.is-on {
+    background: var(--neutral-layer-1, #FFFFFF);
+    box-shadow: var(--aio-shadow-2);
+    font-weight: 600;
+}
+
+.rd-seg:focus-visible,
+.rd-swatch:focus-visible,
+.rd-font:focus-visible {
+    outline: 2px solid var(--accent-fill-rest, #0F6CBD);
+    outline-offset: 1px;
+}
+
+/* ---- Palette swatches ------------------------------------------------------ */
+.rd-swatches {
+    gap: 6px;
+    padding: 0 4px;
+}
+
+.rd-swatch {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(127, 127, 127, .45);
+    font-family: var(--aio-font-serif);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+
+.rd-swatch:hover {
+    transform: scale(1.08);
+}
+
+.rd-swatch.is-on {
+    box-shadow: 0 0 0 2px var(--neutral-layer-2, #FAFAFA), 0 0 0 4px var(--accent-fill-rest, #0F6CBD);
+}
+
+.rd-swatch-paper { background: var(--aio-reader-paper-bg); color: var(--aio-reader-paper-fg); }
+.rd-swatch-sepia { background: var(--aio-reader-sepia-bg); color: var(--aio-reader-sepia-fg); }
+.rd-swatch-dusk { background: var(--aio-reader-dusk-bg); color: var(--aio-reader-dusk-fg); }
+.rd-swatch-night { background: var(--aio-reader-night-bg); color: var(--aio-reader-night-fg); }
+
+/* ---- Size stepper -------------------------------------------------------------- */
+.rd-size-value {
+    min-width: 22px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+.rd-size-glyph {
+    font-family: var(--aio-font-serif);
+    font-weight: 600;
+    line-height: 1;
+}
+
+.rd-size-small { font-size: 12px; }
+.rd-size-large { font-size: 18px; }
+
+/* ---- Text settings panel ----------------------------------------------------------- */
+.rd-panel-anchor {
+    position: relative;
+}
+
+.rd-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9;
+}
+
+.rd-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 10;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--neutral-stroke-divider-rest, #E0E0E0);
+    background: var(--neutral-layer-floating, var(--neutral-layer-1, #FFFFFF));
+    box-shadow: var(--aio-shadow-16);
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+.rd-panel-section + .rd-panel-section {
+    margin-top: 16px;
+}
+
+.rd-panel-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.rd-panel-label {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+.rd-panel-section > .rd-panel-label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.rd-panel-value {
+    color: var(--neutral-foreground-rest, #242424);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Two by two: four columns in the 320 px panel clipped "JetBrains Mono". */
+.rd-fonts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.rd-font {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--neutral-stroke-rest, #D1D1D1);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.rd-font:hover {
+    background: var(--neutral-fill-stealth-hover, rgba(0, 0, 0, .04));
+}
+
+.rd-font.is-on {
+    border-color: var(--accent-fill-rest, #0F6CBD);
+    box-shadow: inset 0 0 0 1px var(--accent-fill-rest, #0F6CBD);
+}
+
+.rd-font-sample {
+    font-size: 20px;
+    line-height: 1.2;
+}
+
+.rd-font-name {
+    min-width: 0;
+    font-size: 12px;
+    color: var(--neutral-foreground-rest, #242424);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rd-panel-note {
+    margin: 12px 0 0;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+.rd-panel ::deep fluent-slider {
+    width: 100%;
+}
+
+.rd-panel-foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+    .rd-tb-hide-narrow {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rd-swatch {
+        transition: none;
+    }
+
+    .rd-swatch:hover {
+        transform: none;
+    }
+}

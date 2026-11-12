@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest a change or a new capability.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you are trying to do
+      description: The task you have in mind and where the app gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+      description: How you picture it working. Screenshots or sketches help.
+    validations:
+      required: true
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Project rules
+      description: The app works offline in pure .NET with permissively licensed dependencies (see CONTRIBUTING.md).
+      options:
+        - label: This does not need a network connection, an external program or a new native engine.

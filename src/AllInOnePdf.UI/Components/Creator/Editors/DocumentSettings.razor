@@ -1,0 +1,176 @@
+@* Nothing selected: document name and metadata, theme, page (edits the snapshot theme's Page) and header & footer. *@
+@inject CreatorState State
+
+@{
+    var p = State.Working!;
+    var t = p.Theme;
+}
+<div class="cr-groups">
+    @foreach (var (key, title, icon) in Groups)
+    {
+        var open = key == _open;
+        <section class="cr-group @(open ? "is-open" : null)" @key="key">
+            <h3 class="cr-group-title">
+                <button type="button" class="cr-group-head" id="@($"cr-dg-{key}-h")" aria-expanded="@(open ? "true" : "false")" aria-controls="@($"cr-dg-{key}-b")"
+                        @onclick="() => _open = open ? null : key">
+                    <FluentIcon Value="@icon" Color="@(open ? Color.Accent : Color.Neutral)" />
+                    <span class="cr-group-name">@title</span>
+                    <FluentIcon Value="@(open ? (Icon)new Icons.Regular.Size16.ChevronUp() : new Icons.Regular.Size16.ChevronDown())" Color="Color.Neutral" />
+                </button>
+            </h3>
+            @if (open)
+            {
+                <div class="cr-group-body" id="@($"cr-dg-{key}-b")" role="region" aria-labelledby="@($"cr-dg-{key}-h")">
+                    @switch (key)
+                    {
+                        case "document":
+                            <div class="cr-field">
+                                <FluentTextField Value="@p.Name" ValueChanged="@((string? v) => State.Rename(v ?? string.Empty))" Label="Name" Immediate="true" ImmediateDelay="300" Style="width:100%" />
+                                <div class="cr-hint">Shown in the gallery and used as the file name.</div>
+                            </div>
+                            <TextField Label="Description" Get="() => p.Description" Set="v => p.Description = v" Placeholder="A sentence for the gallery" />
+                            <TextField Label="Title" Get="() => p.Metadata.Title" Set="v => p.Metadata.Title = v" Placeholder="@p.Name" Hint="Written into the PDF; the name is used when empty." />
+                            <TextField Label="Subtitle" Get="() => p.Metadata.Subtitle" Set="v => p.Metadata.Subtitle = v" />
+                            <TextField Label="Authors" Get="() => Join(p.Metadata.Authors)" Set="v => p.Metadata.Authors = Split(v)" Hint="Separate several with commas." />
+                            <TextField Label="Date" Placeholder="YYYY-MM-DD" Spellcheck="false" Get="() => p.Metadata.Date?.ToString(DateFormat, CultureInfo.InvariantCulture)" Set="v => p.Metadata.Date = ParseDate(v)" />
+                            <SelectField Label="Language" Options="Languages" Get="() => p.Metadata.Language" Set="SetLanguage" />
+                            <TextField Label="Keywords" Get="() => Join(p.Metadata.Keywords)" Set="v => p.Metadata.Keywords = Split(v)" Hint="Separate with commas." />
+                            break;
+
+                        case "theme":
+                            <div class="cr-theme-card">
+                                <div class="cr-theme-swatches" aria-hidden="true">
+                                    @foreach (var c in new[] { t.Page.Background, t.Colors.Text, t.Colors.Accent, t.Colors.Surface })
+                                    {
+                                        <span style="@($"background:{ThemeBuilderColor.ToCss(c, "#FFFFFF")}")"></span>
+                                    }
+                                </div>
+                                <div class="cr-theme-text">
+                                    <span class="cr-theme-name">@t.Name</span>
+                                    <span class="cr-hint">@t.Typography.BodyFont, @t.Typography.BodySizePt.ToString("0.#", CultureInfo.InvariantCulture) pt</span>
+                                </div>
+                                <FluentButton Appearance="Appearance.Outline" OnClick="OnChangeTheme">Change…</FluentButton>
+                            </div>
+                            <p class="cr-note">The publication keeps its own copy of the theme. Page, header and footer changes here do not touch the theme in the gallery.</p>
+                            break;
+
+                        case "page":
+                            <EnumField TEnum="PageSizeName" Label="Size" Get="() => t.Page.Size" Set="v => t.Page.Size = v" Text="SizeText" />
+                            <EnumField TEnum="PageOrientation" Label="Orientation" Segmented="true" Get="() => t.Page.Orientation" Set="v => t.Page.Orientation = v" />
+                            @if (t.Page.Size == PageSizeName.Custom)
+                            {
+                                <NumberField Label="Width" Unit="mm" Min="50" Max="600" Step="1" Get="() => t.Page.CustomWidthMm" Set="v => t.Page.CustomWidthMm = v" />
+                                <NumberField Label="Height" Unit="mm" Min="50" Max="900" Step="1" Get="() => t.Page.CustomHeightMm" Set="v => t.Page.CustomHeightMm = v" />
+                            }
+                            <div class="cr-subhead">
+                                <span>Margins</span>
+                                <FluentSwitch @bind-Value="_linked" Label="Link all four" />
+                            </div>
+                            @if (_linked)
+                            {
+                                <NumberField Label="All margins" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Key="margin-all" Get="() => t.Page.MarginTopMm" Set="SetAllMargins" />
+                            }
+                            else
+                            {
+                                <NumberField Label="Top" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => t.Page.MarginTopMm" Set="v => t.Page.MarginTopMm = v" />
+                                <NumberField Label="Bottom" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => t.Page.MarginBottomMm" Set="v => t.Page.MarginBottomMm = v" />
+                                <NumberField Label="Left" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => t.Page.MarginLeftMm" Set="v => t.Page.MarginLeftMm = v" />
+                                <NumberField Label="Right" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => t.Page.MarginRightMm" Set="v => t.Page.MarginRightMm = v" />
+                            }
+                            <ColorField Label="Background" AllowNull="false" Get="() => t.Page.Background" Set="v => t.Page.Background = v ?? t.Page.Background" />
+                            break;
+
+                        case "headerfooter":
+                            var hf = _hfTab == "footer" ? t.Footer : t.Header;
+                            <div class="cr-tabs" role="tablist" aria-label="Header or footer">
+                                @foreach (var (tab, label) in new[] { ("header", "Header"), ("footer", "Footer") })
+                                {
+                                    var on = tab == _hfTab;
+                                    <button type="button" role="tab" aria-selected="@(on ? "true" : "false")" tabindex="@(on ? 0 : -1)" class="cr-tab @(on ? "is-on" : null)"
+                                            @onclick="() => _hfTab = tab">@label</button>
+                                }
+                            </div>
+                            <SwitchField Label="@($"Show the {_hfTab}")" Get="() => hf.Enabled" Set="v => hf.Enabled = v" />
+                            @if (hf.Enabled)
+                            {
+                                <TextField Label="Left" Get="() => hf.Left" Set="v => hf.Left = v" Key="@(_hfTab + "-l")" Placeholder="Empty" />
+                                <TextField Label="Centre" Get="() => hf.Center" Set="v => hf.Center = v" Key="@(_hfTab + "-c")" Placeholder="Empty" />
+                                <TextField Label="Right" Get="() => hf.Right" Set="v => hf.Right = v" Key="@(_hfTab + "-r")" Placeholder="Empty" />
+                                <p class="cr-note">Tokens: @string.Join(", ", ThemeBuilderPreview.Tokens.Where(x => x.Token != "{filename}").Select(x => x.Token))</p>
+                                <NumberField Label="Text size" Unit="pt" Min="6" Max="14" Step="0.5" Key="@(_hfTab + "-size")" Get="() => hf.SizePt" Set="v => hf.SizePt = v" />
+                                <ColorField Label="Colour" InheritLabel="Muted colour" Inherited="() => t.Colors.Muted" Get="() => hf.Color" Set="v => hf.Color = v" />
+                                <SwitchField Label="@(_hfTab == "header" ? "Rule below" : "Rule above")" Get="() => hf.Rule" Set="v => hf.Rule = v" />
+                                <SwitchField Label="Show on the first page" Get="() => hf.ShowOnFirstPage" Set="v => hf.ShowOnFirstPage = v" />
+                                <NumberField Label="Distance from the content" Unit="pt" Min="0" Max="40" Step="0.5" Key="@(_hfTab + "-sp")" Get="() => hf.SpacingPt" Set="v => hf.SpacingPt = v" />
+                            }
+                            break;
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    /// <summary>Opens the theme picker.</summary>
+    [Parameter] public EventCallback OnChangeTheme { get; set; }
+
+    private const string DateFormat = "yyyy-MM-dd";
+
+    private static readonly (string Key, string Title, Icon Icon)[] Groups =
+    [
+        ("document", "Document", new Icons.Regular.Size20.DocumentText()),
+        ("theme", "Theme", new Icons.Regular.Size20.PaintBrush()),
+        ("page", "Page", new Icons.Regular.Size20.DocumentOnePage()),
+        ("headerfooter", "Header and footer", new Icons.Regular.Size20.DocumentHeaderFooter()),
+    ];
+
+    private static readonly IReadOnlyList<(string Value, string Text)> Languages =
+    [
+        ("en", "English"), ("en-GB", "English (United Kingdom)"), ("en-US", "English (United States)"), ("de", "German"), ("fr", "French"),
+        ("es", "Spanish"), ("it", "Italian"), ("nl", "Dutch"), ("pt", "Portuguese"), ("sv", "Swedish"), ("da", "Danish"), ("nb", "Norwegian"),
+        ("fi", "Finnish"), ("pl", "Polish"), ("cs", "Czech"), ("tr", "Turkish"), ("el", "Greek"), ("ru", "Russian"), ("uk", "Ukrainian"),
+        ("ja", "Japanese"), ("zh", "Chinese"), ("ko", "Korean"), ("ar", "Arabic"), ("he", "Hebrew"),
+    ];
+
+    private string? _open = "document";
+    private string _hfTab = "header";
+    private bool _linked;
+
+    protected override void OnInitialized()
+    {
+        var page = State.Working!.Theme.Page;
+        _linked = page.MarginTopMm == page.MarginBottomMm && page.MarginTopMm == page.MarginLeftMm && page.MarginTopMm == page.MarginRightMm;
+    }
+
+    private void SetAllMargins(double v)
+    {
+        var page = State.Working!.Theme.Page;
+        page.MarginTopMm = page.MarginBottomMm = page.MarginLeftMm = page.MarginRightMm = v;
+    }
+
+    private void SetLanguage(string? value) => State.Working!.Metadata.Language = string.IsNullOrWhiteSpace(value) ? "en" : value;
+
+    private static string Join(List<string> values) => string.Join(", ", values);
+
+    private static List<string> Split(string? text) =>
+        [.. (text ?? string.Empty).Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)];
+
+    private static DateTimeOffset? ParseDate(string? text) =>
+        DateTime.TryParseExact(text, DateFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
+            ? new DateTimeOffset(d.Date, TimeSpan.Zero)
+            : null;
+
+    private static string SizeText(PageSizeName size) => size switch
+    {
+        PageSizeName.A4 => "A4 (210 × 297 mm)",
+        PageSizeName.Letter => "Letter (8.5 × 11 in)",
+        PageSizeName.Legal => "Legal (8.5 × 14 in)",
+        PageSizeName.A5 => "A5 (148 × 210 mm)",
+        PageSizeName.A3 => "A3 (297 × 420 mm)",
+        PageSizeName.Tabloid => "Tabloid (11 × 17 in)",
+        PageSizeName.Executive => "Executive (7.25 × 10.5 in)",
+        PageSizeName.B5 => "B5 (176 × 250 mm)",
+        _ => "Custom size",
+    };
+}

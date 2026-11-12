@@ -1,0 +1,408 @@
+.aio-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 84px;
+  justify-content: flex-end;
+  font-size: 13px;
+  color: var(--neutral-foreground-hint);
+  transition: opacity 250ms ease-out;
+}
+
+.aio-save-status.is-idle {
+  opacity: 0;
+}
+
+.aio-save-status.is-failed {
+  color: var(--error, #C50F1F);
+}
+
+/* The page fills the window. The section list sits on the left; the cards fill the rest, in two columns once each
+   column can hold a setting row at a comfortable width (about 600 px), so a wide window is not one narrow column with
+   empty space beside it. The layout is the size container, so the collapsed or expanded navigation counts. */
+.aio-settings-layout {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+  container: aio-settings / inline-size;
+}
+
+.aio-settings-toc {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aio-settings-toc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--aio-radius-sm);
+  background: transparent;
+  color: var(--neutral-foreground-rest);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.aio-settings-toc-item:hover {
+  background: var(--neutral-fill-stealth-hover);
+}
+
+.aio-settings-toc-item.is-active {
+  background: var(--neutral-fill-stealth-selected, var(--neutral-fill-secondary-rest));
+  font-weight: 600;
+}
+
+.aio-settings-toc-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent-fill-rest);
+}
+
+.aio-settings-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aio-gap);
+  min-width: 0;
+  padding-bottom: 48px;
+}
+
+.aio-settings-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--aio-gap);
+  min-width: 0;
+}
+
+@container aio-settings (min-width: 1440px) {
+  .aio-settings-sections {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+/* ---- Segmented control --------------------------------------------------- */
+.aio-segmented {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  border: 1px solid var(--neutral-stroke-rest);
+  border-radius: var(--aio-radius-sm);
+  background: var(--neutral-layer-2);
+}
+
+.aio-segment {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--neutral-foreground-rest);
+  font: inherit;
+  cursor: pointer;
+}
+
+.aio-segment.is-narrow {
+  min-width: 36px;
+  padding: 0 8px;
+}
+
+.aio-segment:hover {
+  background: var(--neutral-fill-stealth-hover);
+}
+
+.aio-segment.is-selected {
+  background: var(--neutral-layer-floating, var(--neutral-layer-1));
+  box-shadow: var(--aio-shadow-2);
+  color: var(--accent-foreground-rest);
+  font-weight: 600;
+}
+
+/* ---- Accent swatches ------------------------------------------------------ */
+.aio-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.aio-swatch {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: var(--aio-swatch);
+  background-clip: padding-box;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12);
+  transition: transform 150ms ease-out;
+}
+
+.aio-swatch:hover {
+  transform: scale(1.08);
+}
+
+.aio-swatch.is-selected {
+  border-color: var(--neutral-layer-1);
+  box-shadow: 0 0 0 2px var(--neutral-foreground-rest);
+}
+
+.aio-custom-accent {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.aio-color-input {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--aio-radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--neutral-stroke-rest);
+  cursor: pointer;
+}
+
+.aio-color-input input {
+  width: 48px;
+  height: 48px;
+  margin: -8px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+}
+
+.aio-field-error {
+  color: var(--error, #C50F1F);
+  font-size: 13px;
+}
+
+/* ---- Reader palettes -------------------------------------------------------- */
+.aio-palettes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  width: 100%;
+  max-width: 600px;
+}
+
+.aio-palette {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 4px 10px;
+  padding: 12px;
+  border: 1px solid rgba(127, 127, 127, .35);
+  border-radius: var(--aio-radius-md);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: box-shadow 150ms ease-out;
+}
+
+.aio-palette:hover {
+  box-shadow: var(--aio-shadow-8);
+}
+
+.aio-palette.is-selected {
+  outline: 2px solid var(--accent-fill-rest);
+  outline-offset: 2px;
+}
+
+.aio-palette-sample {
+  grid-row: 1 / span 2;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.aio-palette-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.aio-palette-lines i {
+  display: block;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  opacity: .35;
+}
+
+.aio-palette-lines i:nth-child(2) { width: 80%; }
+.aio-palette-lines i:nth-child(3) { width: 55%; }
+
+.aio-palette-name {
+  font-family: var(--aio-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.aio-reading-preview {
+  margin: 8px 0 12px;
+  padding: 20px 24px;
+  border-radius: var(--aio-radius-lg);
+  border: 1px solid rgba(127, 127, 127, .25);
+  overflow: hidden;
+}
+
+.aio-reading-preview .aio-doc {
+  margin: 0;
+}
+
+.aio-reading-preview .aio-h3 {
+  margin-top: 0;
+}
+
+.aio-reading-preview .aio-p {
+  margin-bottom: 0;
+}
+
+.aio-reading-preview .aio-doc.is-justified .aio-p {
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* Automatic palette swatch: half Paper, half Dusk. */
+.aio-palette-auto {
+  background: var(--neutral-layer-1);
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-palette-auto .aio-palette-sample {
+  display: inline-flex;
+  border-radius: var(--aio-radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(127, 127, 127, .35);
+}
+
+.aio-palette-half {
+  display: inline-block;
+  padding: 2px 4px;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+/* ---- Sliders ------------------------------------------------------------- */
+.aio-slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 300px;
+  max-width: 100%;
+}
+
+.aio-slider ::deep fluent-slider {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.aio-slider-value {
+  flex: 0 0 52px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--neutral-foreground-rest);
+  font-size: 13px;
+}
+
+/* ---- Output -------------------------------------------------------------- */
+.aio-folder-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  max-width: 640px;
+}
+
+.aio-folder-field ::deep .aio-folder-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ---- About --------------------------------------------------------------- */
+.aio-about {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 12px 0 16px;
+  align-items: center;
+}
+
+.aio-about dt {
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-about dd {
+  margin: 0;
+  min-width: 0;
+}
+
+.aio-about-path {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aio-about-path code {
+  min-width: 0;
+  padding: 4px 8px;
+  border-radius: var(--aio-radius-sm);
+  background: var(--neutral-layer-2);
+  font-size: 12px;
+}
+
+.aio-about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.aio-licence-note {
+  margin: 12px 0 8px;
+  font-size: 12px;
+  line-height: 18px;
+  max-width: 80ch;
+}
+
+@media (max-width: 1000px) {
+  .aio-settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .aio-settings-toc {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .aio-about {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

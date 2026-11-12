@@ -1,0 +1,52 @@
+# Flatpak manifest for AllInOne PDF.
+# Built by build/flatpak/build-flatpak.ps1, which stages this file next to its sources:
+#   publish/                                    the self-contained linux-x64 publish folder (dotnet publish output)
+#   allinonepdf.sh                              build/flatpak/allinonepdf.sh
+#   com.therandomadmin.AllInOnePdf.desktop      build/linux/share/... as is
+#   com.therandomadmin.AllInOnePdf.metainfo.xml build/linux/share/... with {VERSION} and {DATE} filled in
+#   com.therandomadmin.AllInOnePdf.png          src/AllInOnePdf.Desktop/wwwroot/app.png (256x256)
+# Nothing is downloaded while building except the runtime and SDK; the module has no network access.
+app-id: com.therandomadmin.AllInOnePdf
+runtime: org.gnome.Platform
+runtime-version: '51'
+sdk: org.gnome.Sdk
+command: allinonepdf
+finish-args:
+  # Display: Wayland with X11 as fallback, shared memory for X11, GPU for WebKitGTK compositing.
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  # Converts files anywhere in the home folder and writes next to the source by default.
+  - --filesystem=home
+  - --env=DOTNET_CLI_TELEMETRY_OPTOUT=1
+  # No --share=network: the app is offline by design.
+modules:
+  - name: allinonepdf
+    buildsystem: simple
+    build-options:
+      # Prebuilt .NET binaries: no debuginfo extraction, no stripping of the runtime's native libraries.
+      no-debuginfo: true
+      strip: false
+    build-commands:
+      - mkdir -p /app/lib/allinonepdf
+      - cp -a publish/. /app/lib/allinonepdf/
+      # Portable mode would put the settings next to the read-only program; installed apps use XDG config.
+      - rm -f /app/lib/allinonepdf/portable.txt
+      - chmod 755 /app/lib/allinonepdf/AllInOnePdf
+      - install -Dm755 allinonepdf.sh /app/bin/allinonepdf
+      - install -Dm644 com.therandomadmin.AllInOnePdf.desktop /app/share/applications/com.therandomadmin.AllInOnePdf.desktop
+      - install -Dm644 com.therandomadmin.AllInOnePdf.metainfo.xml /app/share/metainfo/com.therandomadmin.AllInOnePdf.metainfo.xml
+      - install -Dm644 com.therandomadmin.AllInOnePdf.png /app/share/icons/hicolor/256x256/apps/com.therandomadmin.AllInOnePdf.png
+    sources:
+      - type: dir
+        path: publish
+        dest: publish
+      - type: file
+        path: allinonepdf.sh
+      - type: file
+        path: com.therandomadmin.AllInOnePdf.desktop
+      - type: file
+        path: com.therandomadmin.AllInOnePdf.metainfo.xml
+      - type: file
+        path: com.therandomadmin.AllInOnePdf.png

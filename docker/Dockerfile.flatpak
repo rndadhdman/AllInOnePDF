@@ -1,0 +1,20 @@
+# Flatpak build image for AllInOne PDF: flatpak, flatpak-builder and the validators, with the GNOME runtime and SDK
+# from Flathub cached in an image layer (about 1.5 GB, downloaded once per GNOME_VERSION).
+#   docker build -f docker/Dockerfile.flatpak --build-arg GNOME_VERSION=51 -t allinonepdf-flatpak:51 docker
+# build/flatpak/build-flatpak.ps1 builds this image itself (the version comes from the manifest's runtime-version)
+# and runs it with --privileged, which flatpak-builder's bubblewrap sandbox needs inside a container.
+FROM ubuntu:24.04
+
+ARG GNOME_VERSION=51
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates flatpak flatpak-builder appstream desktop-file-utils \
+      git elfutils binutils dbus \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo \
+ && flatpak install --system -y --noninteractive flathub \
+      "org.gnome.Platform//${GNOME_VERSION}" "org.gnome.Sdk//${GNOME_VERSION}"
+
+WORKDIR /work

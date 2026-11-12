@@ -1,0 +1,38 @@
+/* Native number box styled with the Fluent tokens so it looks like a Fluent text field in both themes. Set the width
+   from the page through the Class parameter and ::deep. */
+.aio-num-input {
+    box-sizing: border-box;
+    width: 96px;
+    min-width: 0;
+    height: 32px;
+    margin: 0;
+    padding: 0 8px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-bottom-color: var(--neutral-stroke-strong-rest, var(--neutral-stroke-rest));
+    border-radius: calc(var(--control-corner-radius, 4) * 1px);
+    background: var(--neutral-fill-input-rest, var(--neutral-layer-1));
+    color: var(--neutral-foreground-rest);
+    font-family: var(--body-font, inherit);
+    font-size: var(--type-ramp-base-font-size, 14px);
+    font-variant-numeric: tabular-nums;
+    color-scheme: inherit;
+}
+
+.aio-num-input:hover:not(:disabled) {
+    border-color: var(--neutral-stroke-hover, var(--neutral-stroke-rest));
+}
+
+.aio-num-input:focus {
+    outline: none;
+    border-color: var(--accent-fill-rest);
+    box-shadow: inset 0 -1px 0 var(--accent-fill-rest);
+}
+
+.aio-num-input:disabled {
+    cursor: not-allowed;
+    opacity: var(--disabled-opacity, .3);
+}
+
+.aio-num-input[aria-invalid="true"] {
+    border-color: var(--error, #C50F1F);
+}

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <Description>Cross-platform desktop host for AllInOne PDF (Photino + Blazor). Uses the OS webview: WebView2 on Windows, WebKitGTK on Linux.</Description>
+    <OutputType>Exe</OutputType>
+    <OutputType Condition="'$(OS)' == 'Windows_NT'">WinExe</OutputType>
+    <AssemblyName>AllInOnePdf</AssemblyName>
+    <ApplicationIcon Condition="Exists('app.ico')">app.ico</ApplicationIcon>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Photino.Blazor" />
+    <!-- Photino.Blazor targets net8/net9; pin the WebView package to the .NET 10 line so blazor.webview.js matches the Components version. -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebView" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AllInOnePdf.UI\AllInOnePdf.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="wwwroot\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

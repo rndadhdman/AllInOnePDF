@@ -1,0 +1,677 @@
+.cr-insp {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.cr-insp-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 52px;
+    padding: 10px 8px 8px 14px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.cr-insp-titles {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cr-insp-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.cr-crumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px;
+    margin-top: 2px;
+}
+
+.cr-crumb {
+    padding: 0 4px;
+    border: 0;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--accent-foreground-rest);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.cr-crumb:hover {
+    background: var(--neutral-fill-stealth-hover);
+    text-decoration: underline;
+}
+
+.cr-crumb:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+}
+
+.cr-crumb-sep {
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-insp-tabs {
+    flex: 0 0 auto;
+    margin: 0 14px;
+}
+
+.cr-insp-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.cr-insp-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px 14px 32px;
+}
+
+.cr-insp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* ---- document accordion ---------------------------------------------- */
+.cr-insp ::deep .cr-group {
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.cr-insp ::deep .cr-group-title {
+    margin: 0;
+    font: inherit;
+}
+
+.cr-insp ::deep .cr-group-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 0;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-group-head:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-insp ::deep .cr-group-head:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: -2px;
+}
+
+.cr-insp ::deep .cr-group.is-open .cr-group-head {
+    color: var(--accent-foreground-rest);
+}
+
+.cr-insp ::deep .cr-group-name {
+    flex: 1 1 auto;
+}
+
+.cr-insp ::deep .cr-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 14px 16px;
+}
+
+.cr-insp ::deep .cr-theme-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: 8px;
+    background: var(--neutral-layer-2);
+}
+
+.cr-insp ::deep .cr-theme-swatches {
+    display: grid;
+    grid-template-columns: repeat(2, 14px);
+    gap: 2px;
+}
+
+.cr-insp ::deep .cr-theme-swatches span {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid var(--neutral-stroke-rest);
+}
+
+.cr-insp ::deep .cr-theme-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.cr-insp ::deep .cr-theme-name {
+    font-weight: 600;
+}
+
+/* ---- shared field styles (mirrors the theme builder's panel) ---------- */
+.cr-insp ::deep .cr-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.cr-insp ::deep .cr-field-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.cr-insp ::deep .cr-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--neutral-foreground-rest);
+}
+
+.cr-insp ::deep .cr-hint {
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-insp ::deep .cr-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-insp ::deep .cr-warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--neutral-foreground-rest);
+    background: var(--neutral-fill-secondary-rest);
+    border-left: 3px solid var(--warning, #BC4B09);
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+.cr-insp ::deep .cr-subhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--neutral-stroke-divider-rest);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--neutral-foreground-rest);
+}
+
+.cr-insp ::deep .cr-num {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Native range and number inputs (see RangeInput/NumberInput for why they are not the Fluent web components),
+   styled with the Fluent tokens so they match the other fields in both themes. */
+.cr-insp ::deep .cr-range {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 24px;
+    margin: 0;
+    accent-color: var(--accent-fill-rest);
+    background: transparent;
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-range:focus-visible {
+    outline: 2px solid var(--accent-fill-focus, var(--accent-fill-rest));
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.cr-insp ::deep input.cr-num-input {
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-bottom-color: var(--neutral-stroke-strong-rest, var(--neutral-stroke-rest));
+    border-radius: calc(var(--control-corner-radius, 4) * 1px);
+    background: var(--neutral-fill-input-rest, var(--neutral-layer-1));
+    color: var(--neutral-foreground-rest);
+    font-family: var(--body-font, inherit);
+    font-size: var(--type-ramp-base-font-size, 14px);
+    color-scheme: inherit;
+}
+
+.cr-insp ::deep input.cr-num-input:hover {
+    border-color: var(--neutral-stroke-hover, var(--neutral-stroke-rest));
+}
+
+.cr-insp ::deep input.cr-num-input:focus {
+    outline: none;
+    border-color: var(--accent-fill-rest);
+    box-shadow: inset 0 -1px 0 var(--accent-fill-rest);
+}
+
+.cr-insp ::deep .cr-num-box {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cr-insp ::deep .cr-num-input {
+    width: 76px;
+    min-width: 76px;
+}
+
+.cr-insp ::deep .cr-unit {
+    min-width: 24px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-insp ::deep .cr-seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 6px;
+    background: var(--neutral-fill-secondary-rest);
+}
+
+.cr-insp ::deep .cr-seg-btn {
+    flex: 1 1 auto;
+    min-height: 32px;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-seg-btn:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-insp ::deep .cr-seg-btn.is-on {
+    background: var(--neutral-layer-1);
+    color: var(--accent-foreground-rest);
+    font-weight: 600;
+    box-shadow: var(--aio-shadow-2);
+}
+
+.cr-insp ::deep :is(.cr-seg-btn, .cr-tab, .cr-palette-chip, .cr-link-btn, .cr-md-btn, .cr-layout-opt, .cr-table-btn, .cr-img-reuse-btn):focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: 1px;
+}
+
+.cr-insp ::deep .cr-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.cr-insp ::deep .cr-tab {
+    flex: 1 1 0;
+    min-height: 36px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-tab:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-insp ::deep .cr-tab.is-on {
+    border-bottom-color: var(--accent-fill-rest);
+    color: var(--accent-foreground-rest);
+}
+
+/* colour */
+.cr-insp ::deep .cr-color {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cr-insp ::deep .cr-swatch {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 32px;
+    padding: 2px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+    background: var(--neutral-layer-1);
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-hex {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--aio-font-mono);
+}
+
+.cr-insp ::deep .cr-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: 6px;
+    background: var(--neutral-layer-2);
+}
+
+.cr-insp ::deep .cr-palette-chip {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* spacing box */
+.cr-insp ::deep .cr-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--accent-foreground-rest);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-link-btn:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-insp ::deep .cr-spacing-one {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cr-insp ::deep .cr-spacing-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.cr-insp ::deep .cr-spacing-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.cr-insp ::deep .cr-spacing-grid .cr-num-input {
+    width: 100%;
+    min-width: 0;
+}
+
+.cr-insp ::deep .cr-spacing-side {
+    font-size: 11px;
+    color: var(--neutral-foreground-hint);
+}
+
+/* Markdown editor */
+.cr-insp ::deep .cr-md-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-bottom: 0;
+    border-radius: 4px 4px 0 0;
+    background: var(--neutral-layer-2);
+}
+
+.cr-insp ::deep .cr-md-bar + .cr-md-text {
+    margin-top: -6px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.cr-insp ::deep .cr-md-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-md-btn:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-insp ::deep .cr-md-text {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 96px;
+    padding: 8px 10px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+    background: var(--neutral-fill-input-rest, var(--neutral-layer-1));
+    color: var(--neutral-foreground-rest);
+    font-family: var(--aio-font-ui);
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.cr-insp ::deep .cr-md-text.is-code {
+    font-family: var(--aio-font-mono);
+    font-size: 12px;
+    white-space: pre;
+    tab-size: 4;
+}
+
+.cr-insp ::deep .cr-md-text:focus {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: -1px;
+}
+
+/* layout picker */
+.cr-insp ::deep .cr-layout-picker {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.cr-insp ::deep .cr-layout-opt {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 6px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 6px;
+    background: var(--neutral-layer-1);
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-layout-opt:hover {
+    border-color: var(--accent-fill-rest);
+}
+
+.cr-insp ::deep .cr-layout-opt.is-on {
+    border: 2px solid var(--accent-fill-rest);
+    padding: 5px;
+}
+
+/* image */
+.cr-insp ::deep .cr-img-pick {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.cr-insp ::deep .cr-img-thumb {
+    flex: 0 0 96px;
+    width: 96px;
+    height: 72px;
+    object-fit: contain;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: 4px;
+    background: var(--neutral-layer-2);
+}
+
+.cr-insp ::deep .cr-img-none {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-size: 11px;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-insp ::deep .cr-img-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.cr-insp ::deep .cr-img-reuse {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cr-insp ::deep .cr-img-reuse-btn {
+    width: 52px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+    background: var(--neutral-layer-2);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.cr-insp ::deep .cr-img-reuse-btn img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* table editor */
+.cr-insp ::deep .cr-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: 4px;
+}
+
+.cr-insp ::deep .cr-table-grid {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.cr-insp ::deep .cr-table-grid th,
+.cr-insp ::deep .cr-table-grid td {
+    padding: 2px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.cr-insp ::deep .cr-table-colhead {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+}
+
+.cr-insp ::deep .cr-table-rowact {
+    width: 28px;
+}
+
+.cr-insp ::deep .cr-table-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    cursor: pointer;
+}
+
+.cr-insp ::deep .cr-table-btn:hover:not(:disabled) {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-insp ::deep .cr-table-btn:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.cr-insp ::deep .cr-cell {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 64px;
+    height: 30px;
+    padding: 2px 6px;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    background: var(--neutral-fill-input-rest, var(--neutral-layer-1));
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 13px;
+}
+
+.cr-insp ::deep tr.is-header .cr-cell {
+    font-weight: 600;
+}
+
+.cr-insp ::deep .cr-cell:focus {
+    border-color: var(--accent-fill-rest);
+    outline: none;
+}
+
+.cr-insp ::deep .cr-table-add {
+    display: flex;
+    gap: 8px;
+}

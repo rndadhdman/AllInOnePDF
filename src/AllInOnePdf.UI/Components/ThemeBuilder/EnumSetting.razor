@@ -1,0 +1,87 @@
+@* Enum theme property: a select, or a segmented button row for short lists. *@
+@typeparam TEnum where TEnum : struct, Enum
+@inject ThemeBuilderState State
+
+<div class="tb-field">
+    <div class="tb-field-head">
+        <span class="tb-label" id="@_id">@Label</span>
+    </div>
+    @if (Segmented)
+    {
+        <div class="tb-seg" role="radiogroup" aria-labelledby="@_id">
+            @foreach (var value in Values)
+            {
+                var selected = EqualityComparer<TEnum>.Default.Equals(value, Get());
+                <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")"
+                        class="tb-seg-btn @(selected ? "is-on" : null)" @onclick="() => Apply(value)">
+                    @Display(value)
+                </button>
+            }
+        </div>
+    }
+    else
+    {
+        <FluentSelect TOption="TEnum" Items="@Values" OptionText="@Display" OptionValue="@(v => v.ToString())"
+                      Value="@Get().ToString()" ValueChanged="@((string? v) => ApplyText(v))" AriaLabel="@Label" Width="100%" />
+    }
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <div class="tb-hint">@Hint</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<TEnum> Get { get; set; } = () => default;
+    [Parameter, EditorRequired] public Action<TEnum> Set { get; set; } = _ => { };
+    [Parameter] public Func<TEnum, string>? Text { get; set; }
+    [Parameter] public bool Segmented { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    /// <summary>Limits the offered values (defaults to all).</summary>
+    [Parameter] public IReadOnlyList<TEnum>? Options { get; set; }
+
+    private readonly string _id = "tbe-" + Guid.NewGuid().ToString("N")[..8];
+
+    private IReadOnlyList<TEnum> Values => Options ?? Enum.GetValues<TEnum>();
+
+    private string Display(TEnum value) => Text?.Invoke(value) ?? Humanize(value.ToString());
+
+    private void ApplyText(string? text)
+    {
+        if (Enum.TryParse<TEnum>(text, out var value))
+        {
+            Apply(value);
+        }
+    }
+
+    private void Apply(TEnum value)
+    {
+        if (EqualityComparer<TEnum>.Default.Equals(value, Get()))
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit();
+    }
+
+    /// <summary>"SemiBold" → "Semi bold" (sentence case).</summary>
+    public static string Humanize(string name)
+    {
+        var sb = new System.Text.StringBuilder(name.Length + 4);
+        for (var i = 0; i < name.Length; i++)
+        {
+            var ch = name[i];
+            if (i > 0 && char.IsUpper(ch) && !char.IsUpper(name[i - 1]))
+            {
+                sb.Append(' ').Append(char.ToLowerInvariant(ch));
+            }
+            else
+            {
+                sb.Append(ch);
+            }
+        }
+
+        return sb.ToString();
+    }
+}

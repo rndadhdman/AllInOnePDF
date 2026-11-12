@@ -1,0 +1,179 @@
+@* Reader start page, laid out the way Office and Windows open documents: one drop zone (drop or browse, plus the
+   sample), then Recent (files opened this session) and File types (Windows "Default apps" style rows). On the
+   desktop a type row opens the native dialog filtered to that type; on the web the rows describe what Browse
+   accepts and are not interactive. Wide windows put Recent and File types side by side (see the .css). *@
+@using AllInOnePdf.UI.Services.Shared
+
+<div class="rd-start">
+    <FluentInputFile Id="rd-dropzone" Class="rd-drop-zone" Mode="InputFileMode.Stream" Multiple="false"
+                     MaximumFileSize="@UploadLimits.MaxDocumentBytes" Accept="@Accept" Disabled="Busy"
+                     AnchorId="@(IsDesktop ? null : BrowseId)"
+                     OnInputFileChange="OnUpload" aria-label="Open a file to read">
+        <ChildContent>
+            <div class="rd-drop-content">
+                <span class="rd-drop-icon" aria-hidden="true">
+                    <FluentIcon Value="@(new Icons.Regular.Size48.BookOpen())" Width="32px" Color="Color.Accent" />
+                </span>
+                <div class="rd-drop-text">
+                    <div class="rd-drop-title">Drop a file here or browse</div>
+                    <div class="rd-drop-hint">@FormatCountHint · up to @UploadLimits.Describe(UploadLimits.MaxDocumentBytes)</div>
+                </div>
+                <div class="rd-drop-actions">
+                    @if (IsDesktop)
+                    {
+                        <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.FolderOpen())"
+                                      Disabled="Busy" OnClick="OnOpenFile">Browse…</FluentButton>
+                    }
+                    else
+                    {
+                        <FluentButton Id="@BrowseId" Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.FolderOpen())"
+                                      Disabled="Busy">Browse…</FluentButton>
+                    }
+                    <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.DocumentText())"
+                                  Disabled="Busy" OnClick="OnOpenSample">Try a sample document</FluentButton>
+                </div>
+            </div>
+        </ChildContent>
+    </FluentInputFile>
+
+    <div class="rd-start-columns">
+        <section class="rd-recent" aria-labelledby="rd-recent-title">
+            <div class="rd-section-head">
+                <h2 id="rd-recent-title" class="rd-section-title">Recent</h2>
+                @if (Recent.Count > 0)
+                {
+                    <span class="rd-section-hint">@SessionNote</span>
+                }
+            </div>
+            @if (Recent.Count == 0)
+            {
+                <div class="rd-recent-empty">
+                    <FluentIcon Value="@(new Icons.Regular.Size24.History())" Color="Color.Neutral" aria-hidden="true" />
+                    <span>@EmptyRecentText</span>
+                </div>
+            }
+            else
+            {
+                <ul class="rd-recent-list" role="list">
+                    @foreach (var item in Recent)
+                    {
+                        var folder = IsDesktop ? item.Folder : null;
+                        <li @key="item" class="rd-recent-item">
+                            <button type="button" class="rd-recent-open" disabled="@Busy" @onclick="() => OnOpenRecent.InvokeAsync(item)"
+                                    title="@(IsDesktop ? item.Path ?? item.DisplayName : item.DisplayName)">
+                                <FluentIcon Value="@RecentIcon(item)" Color="Color.Neutral" />
+                                <span class="rd-recent-text">
+                                    <span class="rd-recent-name">@item.DisplayName</span>
+                                    @if (folder is not null)
+                                    {
+                                        <span class="rd-recent-path">@folder</span>
+                                    }
+                                </span>
+                                <span class="rd-recent-time">@item.OpenedLabel(DateTimeOffset.Now, System.Globalization.CultureInfo.CurrentCulture)</span>
+                            </button>
+                            <FluentButton Appearance="Appearance.Stealth" Title="Remove from Recent (the file is not deleted)"
+                                          aria-label="@($"Remove {item.DisplayName} from Recent")"
+                                          IconStart="@(new Icons.Regular.Size16.Dismiss())" OnClick="() => OnRemoveRecent.InvokeAsync(item)" />
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        @if (Groups.Count > 0)
+        {
+            <section class="rd-types" aria-labelledby="rd-types-title">
+                <div class="rd-section-head">
+                    <h2 id="rd-types-title" class="rd-section-title">File types</h2>
+                    <span class="rd-section-hint">@(IsDesktop ? "Choose a type to browse for files of that type." : "Browse accepts these types.")</span>
+                </div>
+                <div class="rd-type-groups">
+                    @foreach (var group in Groups)
+                    {
+                        var headingId = $"rd-type-group-{GroupSlug(group.Name)}";
+                        <div class="rd-type-group" @key="group.Name">
+                            <h3 id="@headingId" class="rd-type-group-name">@group.Name</h3>
+                            <ul class="rd-type-list" role="list" aria-labelledby="@headingId">
+                                @foreach (var entry in group.Formats)
+                                {
+                                    var summary = entry.ExtensionSummary();
+                                    var truncated = summary != entry.ExtensionList;
+                                    <li @key="entry.Format.Id">
+                                        @if (IsDesktop)
+                                        {
+                                            <button type="button" class="rd-type-row" disabled="@Busy"
+                                                    title="@($"Browse for {entry.Name} files ({entry.ExtensionList})")"
+                                                    @onclick="() => OnOpenType.InvokeAsync(entry.Format)">
+                                                <FluentIcon Value="@entry.Icon" Width="20px" Color="Color.Custom" CustomColor="currentColor" />
+                                                <span class="rd-type-text">
+                                                    <span class="rd-type-name">@entry.Name</span>
+                                                    <span class="rd-type-ext">@summary</span>
+                                                </span>
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Class="rd-type-chevron" Color="Color.Custom" CustomColor="currentColor" aria-hidden="true" />
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <div class="rd-type-row is-static" title="@(truncated ? entry.ExtensionList : null)">
+                                                <FluentIcon Value="@entry.Icon" Width="20px" Color="Color.Custom" CustomColor="currentColor" />
+                                                <span class="rd-type-text">
+                                                    <span class="rd-type-name">@entry.Name</span>
+                                                    <span class="rd-type-ext">@summary</span>
+                                                </span>
+                                            </div>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </section>
+        }
+    </div>
+</div>
+
+@code {
+    private const string BrowseId = "rd-dropzone-browse";
+
+    [Parameter] public bool IsDesktop { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string Accept { get; set; } = string.Empty;
+
+    /// <summary>Readable formats grouped for display (see <see cref="FormatCatalog.ReadableGroups"/>).</summary>
+    [Parameter] public IReadOnlyList<FormatGroup> Groups { get; set; } = [];
+    [Parameter] public IReadOnlyList<ReaderRecentItem> Recent { get; set; } = [];
+    [Parameter] public EventCallback OnOpenFile { get; set; }
+    /// <summary>Desktop only: open the native dialog filtered to one type.</summary>
+    [Parameter] public EventCallback<FileFormat> OnOpenType { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnUpload { get; set; }
+    [Parameter] public EventCallback OnOpenSample { get; set; }
+    [Parameter] public EventCallback<ReaderRecentItem> OnOpenRecent { get; set; }
+    [Parameter] public EventCallback<ReaderRecentItem> OnRemoveRecent { get; set; }
+
+    private int FormatCount => Groups.Sum(g => g.Formats.Count);
+
+    private string FormatCountHint => FormatCount switch
+    {
+        0 => "Documents",
+        1 => "1 file type",
+        var n => $"{n} file types",
+    };
+
+    // Recent lives in ReaderSession: per window on the desktop, per browser tab (circuit) on the web, where a reload
+    // starts a new session. Say which, so the list emptying is not a surprise.
+    private string EmptyRecentText => IsDesktop
+        ? "Files you open appear here until you close the app."
+        : "Files you open appear here until you close or reload this page.";
+
+    private string SessionNote => IsDesktop ? "Listed until you close the app." : "Listed until you close or reload this page.";
+
+    private static string GroupSlug(string name) =>
+        string.Concat(name.Where(char.IsLetterOrDigit)).ToLowerInvariant();
+
+    // Uploads keep their file name; the sample is listed by its title, which has no extension (plain document icon).
+    private static Icon RecentIcon(ReaderRecentItem item) =>
+        KnownFormats.FindByExtension(item.DisplayName) is { } format
+            ? ConvertFormatting.FileIcon(format)
+            : new Icons.Regular.Size24.Document();
+}

@@ -1,0 +1,195 @@
+@* Markdown (or code) textarea with a small formatting toolbar. Typing updates the canvas after 150 ms of quiet and
+   coalesces into one undo step; Ctrl+B / Ctrl+I format the selection. *@
+@implements IAsyncDisposable
+@inject CreatorState State
+@inject IJSRuntime JS
+
+<div class="cr-field cr-md" @ref="_wrap">
+    <div class="cr-field-head">
+        <label class="cr-label" for="@_id">@Label</label>
+        @if (!Code)
+        {
+            <span class="cr-hint">Markdown</span>
+        }
+    </div>
+    @if (!Code)
+    {
+        <div class="cr-md-bar" role="toolbar" aria-label="@($"{Label} formatting")">
+            @foreach (var (action, title, icon) in Actions)
+            {
+                <button type="button" class="cr-md-btn" title="@title" aria-label="@title" @onclick="() => FormatAsync(action)">
+                    <FluentIcon Value="@icon" Color="Color.Custom" CustomColor="currentColor" />
+                </button>
+            }
+        </div>
+    }
+    <textarea @key="_generation" @ref="_area" id="@_id" class="cr-md-text @(Code ? "is-code" : null)" rows="@Rows" spellcheck="@(Code ? "false" : "true")"
+              placeholder="@Placeholder" @oninput="OnInput" @onblur="FlushNow">@_initial</textarea>
+</div>
+
+@code {
+    /// <summary>Visible label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Identifies the edited element; a change resets the editor (and keys undo coalescing).</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+
+    /// <summary>Reads the current text.</summary>
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+
+    /// <summary>Writes the text (the editor commits afterwards).</summary>
+    [Parameter, EditorRequired] public Action<string> Set { get; set; } = _ => { };
+
+    /// <summary>Monospace code editing without the Markdown toolbar.</summary>
+    [Parameter] public bool Code { get; set; }
+
+    /// <summary>Visible lines.</summary>
+    [Parameter] public int Rows { get; set; } = 10;
+
+    /// <summary>Placeholder text.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    private static readonly (string Action, string Title, Icon Icon)[] Actions =
+    [
+        ("bold", "Bold (Ctrl+B)", new Icons.Regular.Size16.TextBold()),
+        ("italic", "Italic (Ctrl+I)", new Icons.Regular.Size16.TextItalic()),
+        ("link", "Link", new Icons.Regular.Size16.Link()),
+        ("bullet", "Bulleted list", new Icons.Regular.Size16.TextBulletListLtr()),
+        ("heading", "Heading", new Icons.Regular.Size20.TextHeader2()),
+        ("quote", "Quote", new Icons.Regular.Size16.TextQuote()),
+        ("code", "Inline code", new Icons.Regular.Size16.Code()),
+    ];
+
+    private readonly string _id = "crm-" + Guid.NewGuid().ToString("N")[..8];
+    private readonly Debouncer _debounce = new(TimeSpan.FromMilliseconds(150));
+    private ElementReference _wrap;
+    private ElementReference _area;
+    private IJSObjectReference? _module;
+    private string? _boundId;
+    private string _initial = string.Empty;
+    private string _text = string.Empty;
+    private string? _lastKnown;
+    private int _generation;
+    private bool _pending;
+
+    protected override void OnParametersSet()
+    {
+        var value = Get() ?? string.Empty;
+        if (!string.Equals(_boundId, Id, StringComparison.Ordinal))
+        {
+            // Another element: flush what was typed for the previous one, then start over.
+            if (_pending)
+            {
+                Flush();
+            }
+
+            _boundId = Id;
+            Sync(value);
+        }
+        else if (!_pending && !string.Equals(value, _lastKnown, StringComparison.Ordinal))
+        {
+            // Changed elsewhere (undo, redo, reset).
+            Sync(value);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/AllInOnePdf.UI/Components/Creator/Editors/MarkdownEditor.razor.js");
+            await _module.InvokeVoidAsync("init", _wrap, !Code);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+            // Shortcuts and toolbar formatting are enhancements; typing still works.
+        }
+    }
+
+    private void Sync(string value)
+    {
+        _initial = value;
+        _text = value;
+        _lastKnown = value;
+        _generation++;
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _text = e.Value?.ToString() ?? string.Empty;
+        _pending = true;
+        _debounce.Debounce(_ => InvokeAsync(Flush));
+    }
+
+    private void FlushNow()
+    {
+        if (_pending)
+        {
+            _debounce.Cancel();
+            Flush();
+        }
+    }
+
+    private void Flush()
+    {
+        if (!_pending)
+        {
+            return;
+        }
+
+        _pending = false;
+        if (string.Equals(_text, Get() ?? string.Empty, StringComparison.Ordinal))
+        {
+            _lastKnown = _text;
+            return;
+        }
+
+        Set(_text);
+        _lastKnown = _text;
+        State.Commit("md:" + (_boundId ?? Id) + ":" + Label);
+    }
+
+    private async Task FormatAsync(string action)
+    {
+        if (_module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _module.InvokeVoidAsync("format", _area, action);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _debounce.Cancel();
+        Flush();
+        _debounce.Dispose();
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+}

@@ -1,0 +1,128 @@
+@page "/"
+@using AllInOnePdf.UI.Components.Converting
+@implements IDisposable
+
+<PageTitle>Convert · AllInOne PDF</PageTitle>
+
+<div class="aio-page aio-convert">
+    <PageHeader Title="Convert" Description="Convert files to PDF, Word, EPUB, Markdown, images and other formats. Each file gets its own target and options.">
+        <Actions>
+            @if (_ready && Workspace.HasItems)
+            {
+                @if (Summary.IsRunning)
+                {
+                    <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Stop())" OnClick="Workspace.CancelAll">
+                        Cancel all
+                    </FluentButton>
+                }
+                <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.ArrowSwap())"
+                              Disabled="@(PendingCount == 0)" OnClick="ConvertAllAsync" Title="@(PendingCount == 0 ? "Nothing left to convert" : null)">
+                    @(PendingCount > 1 ? $"Convert all ({PendingCount})" : "Convert")
+                </FluentButton>
+            }
+        </Actions>
+    </PageHeader>
+
+    @if (!_ready)
+    {
+        <div class="aio-convert-skeleton" aria-busy="true" aria-label="Loading">
+            <FluentSkeleton Width="100%" Height="320px" Shape="SkeletonShape.Rect" Shimmer="true" />
+        </div>
+    }
+    else
+    {
+        @* One drop zone for both states: swapping instances while a drop is still streaming would dispose the
+           input that holds the remaining files (they were lost silently). Compact once files are listed. *@
+        <FileDropZone Compact="@Workspace.HasItems" OnAdded="OnFilesAdded" OnSample="@(ShowSample ? EventCallback.Factory.Create(this, AddSample) : default)" />
+    }
+
+    @if (_ready && Workspace.HasItems)
+    {
+        @* Toolbar and status line stay at the top of the page while a long list scrolls. *@
+        <div class="aio-convert-bar">
+            <div class="aio-convert-toolbar" role="toolbar" aria-label="File list actions">
+                <span class="aio-convert-count">
+                    @Items.Count @(Items.Count == 1 ? "file" : "files") · @ConvertFormatting.Bytes(Items.Sum(i => i.Size))
+                    @if (UnsupportedCount > 0)
+                    {
+                        @($" · {UnsupportedCount} unsupported")
+                    }
+                </span>
+                <FluentSpacer />
+                @if (DownloadCount > 0)
+                {
+                    @* Up here rather than only in the footer: toasts stack in the bottom-right corner, where the footer's
+                       button sat under them (first clicks landed on a toast). *@
+                    <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.ArrowDownload())" OnClick="DownloadAllAsync"
+                                  Title="Download the results of every converted file" aria-label="@($"Download all ({DownloadCount})")">
+                        Download all (@DownloadCount)
+                    </FluentButton>
+                }
+                @if (BulkTargets.Count > 0)
+                {
+                    <div class="aio-bulk">
+                        @* data-aio-escape-closes: app.js closes the menu on Escape (its items live in the menu provider). *@
+                        <FluentButton Id="aio-bulk-target" Appearance="Appearance.Outline" IconEnd="@(new Icons.Regular.Size16.ChevronDown())"
+                                      OnClick="ToggleBulkMenu" aria-haspopup="menu" aria-expanded="@(_bulkMenuOpen ? "true" : "false")" data-aio-escape-closes="true">
+                            Set target for all
+                        </FluentButton>
+                        <FluentMenu Anchor="aio-bulk-target" Open="_bulkMenuOpen" OpenChanged="OnBulkMenuOpenChanged" VerticalThreshold="170">
+                            @foreach (var target in BulkTargets)
+                            {
+                                <FluentMenuItem Disabled="@(target.Status == ConverterStatus.Planned)" OnClick="() => SetTargetForAll(target)">
+                                    @* Icon, name and extension, like a Windows menu. Inline styles: the items render in the
+                                       menu provider, outside this page's scoped CSS. *@
+                                    <span slot="start" style="display: inline-flex"><FluentIcon Value="@ConvertFormatting.FileIcon(target.Format)" Color="Color.Neutral" Width="16px" /></span>
+                                    @ConvertFormatting.TargetName(target)
+                                    <span slot="end" style="margin-left: 24px; color: var(--neutral-foreground-hint); font-size: 12px">@target.Format.PrimaryExtension</span>
+                                </FluentMenuItem>
+                            }
+                        </FluentMenu>
+                    </div>
+                }
+                @if (Summary.Succeeded > 0)
+                {
+                    <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.CheckmarkCircle())" OnClick="Workspace.ClearCompleted">
+                        Clear completed
+                    </FluentButton>
+                }
+                <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Dismiss())" OnClick="Workspace.Clear"
+                              Title="Remove every file that is not converting from the list (files on disk are not touched)" aria-label="Clear all"
+                              Disabled="@Items.All(i => i.IsBusy)">
+                    Clear all
+                </FluentButton>
+            </div>
+
+            @if (Summary.HasJobs)
+            {
+                <div class="aio-convert-summary @(Summary.IsRunning ? "is-running" : null)" role="status" aria-live="polite">
+                    <div class="aio-convert-summary-text">
+                        <strong>@ConvertRules.Describe(Summary)</strong>
+                    </div>
+                    <FluentProgress Min="0" Max="100" Value="@OverallPercent" Width="100%" aria-label="Overall progress" />
+                </div>
+            }
+        </div>
+
+        <div class="aio-convert-files">
+            <div class="aio-convert-list" role="list" aria-label="Files to convert">
+                @* Column titles for the wide layout, where every row shares these columns; hidden when rows stack. *@
+                <div class="aio-convert-head" aria-hidden="true">
+                    <span class="aio-head-info">Name</span>
+                    <span class="aio-head-type">Type</span>
+                    <span class="aio-head-size">Size</span>
+                    <span class="aio-head-target">Target</span>
+                    <span class="aio-head-status">Status</span>
+                </div>
+                @foreach (var item in Items)
+                {
+                    <div role="listitem" class="aio-convert-item" @key="item.Id">
+                        <ConvertFileRow Item="item" OnConvert="ConvertOneAsync" OnOptions="OpenOptionsAsync" />
+                    </div>
+                }
+            </div>
+        </div>
+
+        <OutputSettingsBar Revision="_revision" />
+    }
+</div>

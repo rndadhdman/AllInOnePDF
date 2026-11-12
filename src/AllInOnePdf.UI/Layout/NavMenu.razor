@@ -1,0 +1,178 @@
+@* Left navigation in the Intune / Azure portal style: 220 px, collapsible to a 48 px icon rail. *@
+@implements IAsyncDisposable
+@inject ThemeService Theme
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<nav @ref="_navElement" class="@NavClass" aria-label="Main">
+    <button type="button"
+            class="aio-nav-toggle"
+            aria-controls="aio-nav-list"
+            aria-expanded="@(Collapsed ? "false" : "true")"
+            aria-label="@(Collapsed ? "Expand navigation" : "Collapse navigation")"
+            title="@(Collapsed ? "Expand navigation" : "Collapse navigation")"
+            @onclick="ToggleAsync">
+        <FluentIcon Value="@(new Icons.Regular.Size20.Navigation())" Color="Color.Custom" CustomColor="currentColor" />
+    </button>
+
+    <ul id="aio-nav-list" class="aio-nav-list">
+        @foreach (var item in MainItems)
+        {
+            @NavItem(item)
+        }
+    </ul>
+
+    <ul class="aio-nav-list aio-nav-list-bottom">
+        @foreach (var item in BottomItems)
+        {
+            @NavItem(item)
+        }
+    </ul>
+</nav>
+
+@if (IsOverlay)
+{
+    <div class="aio-nav-scrim" aria-hidden="true" @onclick="CloseOverlay"></div>
+}
+
+@code {
+    /// <summary>A navigation entry. <paramref name="Hint"/> follows the label in the tooltip of the collapsed rail.</summary>
+    private sealed record Item(string Id, string Href, string Label, string Hint, Icon Icon, NavLinkMatch Match = NavLinkMatch.Prefix);
+
+    private static readonly Item[] MainItems =
+    [
+        new("aio-nav-reader", "read", "Reader", "Open and read documents", new Icons.Regular.Size20.BookOpen()),
+        new("aio-nav-create", "create", "Create", "Build publications and export them as PDF", new Icons.Regular.Size20.DesignIdeas()),
+        new("aio-nav-convert", "", "Convert", "Convert files from one format to another", new Icons.Regular.Size20.ArrowSwap(), NavLinkMatch.All),
+        new("aio-nav-themes", "themes", "Themes", "Choose and edit how PDFs look", new Icons.Regular.Size20.PaintBrush()),
+        new("aio-nav-history", "history", "History", "Past conversions, to find or repeat", new Icons.Regular.Size20.History()),
+    ];
+
+    private static readonly Item[] BottomItems =
+    [
+        new("aio-nav-help", "help", "Help", "How the app works, and keyboard shortcuts", new Icons.Regular.Size20.QuestionCircle()),
+        new("aio-nav-settings", "settings", "Settings", "Appearance, reading defaults and output", new Icons.Regular.Size20.Settings()),
+    ];
+
+    private ElementReference _navElement;
+    private DotNetObjectReference<NavMenu>? _selfRef;
+    private IJSObjectReference? _module;
+    private bool _narrow;
+    private bool _overlayOpen;
+
+    /// <summary>Narrow windows always start as a rail; the toggle opens the full nav as an overlay (not persisted).</summary>
+    private bool Collapsed => _narrow ? !_overlayOpen : Theme.NavCollapsed;
+
+    private bool IsOverlay => _narrow && _overlayOpen;
+
+    private string NavClass =>
+        "aio-nav" + (Collapsed ? " is-collapsed" : " is-expanded") + (IsOverlay ? " is-overlay" : null);
+
+    private RenderFragment NavItem(Item item) => @<li>
+        <NavLink id="@item.Id" class="aio-nav-link" href="@item.Href" Match="@item.Match"
+                 aria-label="@(Collapsed ? item.Label : null)" @onclick="OnLinkClicked">
+            <span class="aio-nav-indicator" aria-hidden="true"></span>
+            <span class="aio-nav-icon" aria-hidden="true">
+                <FluentIcon Value="@item.Icon" Color="Color.Custom" CustomColor="currentColor" />
+            </span>
+            <span class="aio-nav-label">@item.Label</span>
+        </NavLink>
+        @if (Collapsed)
+        {
+            <FluentTooltip Anchor="@item.Id" Position="TooltipPosition.End" UseTooltipService="false" Delay="400"><strong>@item.Label</strong><br />@item.Hint</FluentTooltip>
+        }
+    </li>;
+
+    protected override void OnInitialized() => Theme.Changed += OnThemeChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _selfRef = DotNetObjectReference.Create(this);
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/AllInOnePdf.UI/Layout/NavMenu.razor.js");
+            var narrow = await _module.InvokeAsync<bool>("init", _navElement, _selfRef);
+            if (narrow != _narrow)
+            {
+                _narrow = narrow;
+                StateHasChanged();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+            // Without the helper the nav still works; it just will not auto-collapse or support arrow keys.
+        }
+    }
+
+    [JSInvokable]
+    public Task OnNarrowChanged(bool narrow)
+    {
+        _narrow = narrow;
+        _overlayOpen = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task OnEscape()
+    {
+        if (!IsOverlay)
+        {
+            return Task.CompletedTask;
+        }
+
+        _overlayOpen = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleAsync()
+    {
+        if (_narrow)
+        {
+            _overlayOpen = !_overlayOpen;
+            return;
+        }
+
+        await Theme.SetNavCollapsedAsync(!Theme.NavCollapsed);
+    }
+
+    private void OnLinkClicked()
+    {
+        if (IsOverlay)
+        {
+            _overlayOpen = false;
+        }
+    }
+
+    private void CloseOverlay() => _overlayOpen = false;
+
+    private void OnThemeChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public async ValueTask DisposeAsync()
+    {
+        Theme.Changed -= OnThemeChanged;
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("dispose", _navElement);
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (JSException)
+            {
+            }
+        }
+
+        _selfRef?.Dispose();
+    }
+}

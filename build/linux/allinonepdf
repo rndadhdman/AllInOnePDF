@@ -1,0 +1,19 @@
+#!/bin/sh
+# Launcher for the installed AllInOne PDF (deb and rpm): /usr/bin/allinonepdf -> /opt/allinonepdf/AllInOnePdf.
+# Settings, themes and history go to ~/.config/AllInOnePdf (the package ships no portable.txt).
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+# Without libicu the .NET runtime refuses to start; fall back to invariant globalisation instead.
+# ldconfig lives in /sbin, which is not on a regular user's PATH on Debian, so look there too.
+has_icu=no
+for ldc in ldconfig /sbin/ldconfig /usr/sbin/ldconfig; do
+  if command -v "$ldc" >/dev/null 2>&1; then
+    if "$ldc" -p 2>/dev/null | grep -q 'libicuuc'; then has_icu=yes; fi
+    break
+  fi
+done
+if [ "$has_icu" = no ]; then
+  export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+fi
+
+exec /opt/allinonepdf/AllInOnePdf "$@"

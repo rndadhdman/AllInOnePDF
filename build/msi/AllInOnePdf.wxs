@@ -1,0 +1,117 @@
+<!--
+  AllInOne PDF Windows installer (WiX Toolset v5). Built by build/msi/build-msi.ps1, which passes:
+    PublishDir  the self-contained win-x64 publish folder (dotnet publish -r win-x64 -self-contained)
+    Version     four-part numeric version (1.1.0 -> 1.1.0.0)
+    LicenseRtf  the MIT licence as RTF, generated from LICENSE
+    RepoRoot    the repository root (for LICENSE)
+  Per-machine, x64, installs to "Program Files\AllInOne PDF". User data stays in %APPDATA%\AllInOnePdf: the installed
+  copy has no portable.txt, so AppPaths uses the per-user folder, and uninstall removes only the program folder.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <!-- UpgradeCode: generated once on 2026-11-07. NEVER change it: every future MSI must carry the same value so that
+       Windows Installer recognises it as the same product and upgrades in place. -->
+  <Package Name="AllInOne PDF"
+           Manufacturer="AllInOne PDF contributors"
+           Version="$(Version)"
+           UpgradeCode="07C238E8-5534-4E05-BB19-7F9216748287"
+           Scope="perMachine"
+           InstallerVersion="500"
+           Compressed="yes"
+           Language="1033">
+
+    <SummaryInformation Description="AllInOne PDF $(Version) installer" Manufacturer="AllInOne PDF contributors" />
+
+    <MajorUpgrade DowngradeErrorMessage="!(loc.DowngradeError)" Schedule="afterInstallInitialize" />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- Add/Remove Programs (Settings > Apps): icon, links, no Repair/Modify buttons. -->
+    <Icon Id="AppIcon.ico" SourceFile="$(PublishDir)\wwwroot\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPHELPLINK" Value="https://therandomadmin.com" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/rndadhdman/AllInOnePDF" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <SetProperty Id="ARPINSTALLLOCATION" Value="[INSTALLFOLDER]" After="CostFinalize" />
+
+    <!-- Optional desktop shortcut: off by default; the checkbox on the folder dialog sets it, or pass
+         INSTALLDESKTOPSHORTCUT=1 on the msiexec command line. -->
+    <Property Id="INSTALLDESKTOPSHORTCUT" Secure="yes" />
+
+    <!-- WebView2 Evergreen runtime (ships with current Windows 10/11). Not required to install; when it is missing the
+         final dialog says so. Keys documented by Microsoft for detecting the runtime. -->
+    <Property Id="WEBVIEW2_MACHINE">
+      <RegistrySearch Id="WebView2Machine" Root="HKLM" Key="SOFTWARE\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" Name="pv" Type="raw" Bitness="always32" />
+    </Property>
+    <Property Id="WEBVIEW2_USER">
+      <RegistrySearch Id="WebView2User" Root="HKCU" Key="Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" Name="pv" Type="raw" />
+    </Property>
+    <SetProperty Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="!(loc.WebView2Missing)" Before="CostInitialize" Sequence="ui"
+                 Condition="NOT Installed AND (NOT WEBVIEW2_MACHINE OR WEBVIEW2_MACHINE = &quot;0.0.0.0&quot;) AND (NOT WEBVIEW2_USER OR WEBVIEW2_USER = &quot;0.0.0.0&quot;)" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="AllInOne PDF" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="AllInOne PDF" AllowAbsent="no">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <!-- UI: the WixUI_InstallDir dialog set (licence, folder choice) with a desktop-shortcut checkbox, see UI.wxs. -->
+    <UIRef Id="AioUI_InstallDir" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(LicenseRtf)" />
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="!(loc.LaunchCheckbox)" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+
+    <!-- "Launch AllInOne PDF" on the final dialog. Runs from the (non-elevated) UI process. -->
+    <Property Id="WixShellExecTarget" Value="[#AllInOnePdfExe]" />
+    <CustomAction Id="LaunchApplication" BinaryRef="Wix4UtilCA_X64" DllEntry="WixShellExec" Impersonate="yes" />
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+  </Package>
+
+  <Fragment>
+    <!-- Everything dotnet publish produced, harvested by wildcard. The exe is authored on its own so the shortcuts and
+         the launch action can refer to it; portable.txt (portable layout marker) and symbols never go in. -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Component Id="MainExecutable">
+        <File Id="AllInOnePdfExe" Source="$(PublishDir)\AllInOnePdf.exe" KeyPath="yes" />
+      </Component>
+      <Component Id="LicenseFile">
+        <File Id="LicenseTxt" Source="$(RepoRoot)\LICENSE" Name="LICENSE.txt" KeyPath="yes" />
+      </Component>
+      <Files Include="$(PublishDir)\**">
+        <Exclude Files="$(PublishDir)\AllInOnePdf.exe" />
+        <Exclude Files="$(PublishDir)\LICENSE.txt" />
+        <Exclude Files="$(PublishDir)\portable.txt" />
+        <Exclude Files="$(PublishDir)\**\*.pdb" />
+      </Files>
+    </ComponentGroup>
+
+    <!-- Shortcuts: per-machine, so they go to the all-users Start menu and the public desktop. A shortcut cannot be a
+         key path and Windows Installer's ICE38/ICE43/ICE57 rules want a per-user (HKCU) one for shortcut folders, so each
+         component writes a marker value under HKCU\Software\AllInOne PDF\Installer (removed again on uninstall). The
+         targets are spelled out rather than [#file] so the shortcut components do not reference another component's file
+         (ICE69). -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="StartMenuShortcut">
+        <Shortcut Id="StartMenuShortcutLink" Name="AllInOne PDF" Description="!(loc.ShortcutDescription)"
+                  Target="[INSTALLFOLDER]AllInOnePdf.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.ico" />
+        <RegistryValue Root="HKCU" Key="Software\AllInOne PDF\Installer" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Condition="INSTALLDESKTOPSHORTCUT = 1">
+        <Shortcut Id="DesktopShortcutLink" Name="AllInOne PDF" Description="!(loc.ShortcutDescription)"
+                  Target="[INSTALLFOLDER]AllInOnePdf.exe" WorkingDirectory="INSTALLFOLDER" Icon="AppIcon.ico" />
+        <RegistryValue Root="HKCU" Key="Software\AllInOne PDF\Installer" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+  </Fragment>
+</Wix>

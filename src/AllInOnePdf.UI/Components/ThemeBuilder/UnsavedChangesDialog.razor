@@ -1,0 +1,58 @@
+@* "Unsaved changes" dialog shown when leaving the theme builder or the Creator. Keep editing is the primary, focused
+   choice; closing the dialog any other way (Escape, the X) also keeps editing. "Save and leave" returns SaveResult,
+   "Leave without saving" returns LeaveResult. *@
+@implements IDialogContentComponent<UnsavedChangesModel>
+
+<FluentDialogHeader ShowDismiss="true">
+    <FluentStack VerticalAlignment="VerticalAlignment.Center" HorizontalGap="10">
+        <FluentIcon Value="@(new Icons.Filled.Size24.Warning())" Color="Color.Warning" aria-hidden="true" />
+        <FluentLabel Typo="Typography.PaneHeader" id="tb-unsaved-title">Unsaved changes</FluentLabel>
+    </FluentStack>
+</FluentDialogHeader>
+
+<FluentDialogBody>
+    <p class="tb-unsaved-text" id="tb-unsaved-desc">Your changes to "@Content.Name" are not saved. If you leave without saving, they are kept as a recovery draft, and you can restore them the next time you open it.</p>
+</FluentDialogBody>
+
+<FluentDialogFooter>
+    <FluentButton @ref="_keep" Appearance="Appearance.Accent" OnClick="KeepEditingAsync" Autofocus="true">Keep editing</FluentButton>
+    <FluentButton Appearance="Appearance.Outline" OnClick="SaveAsync">@Content.SaveLabel</FluentButton>
+    <FluentButton Appearance="Appearance.Neutral" OnClick="LeaveAsync">Leave without saving</FluentButton>
+</FluentDialogFooter>
+
+@code {
+    public const string LeaveResult = "leave";
+
+    public const string SaveResult = "save";
+
+    [Parameter] public UnsavedChangesModel Content { get; set; } = new();
+
+    [CascadingParameter] public FluentDialog Dialog { get; set; } = default!;
+
+    private FluentButton? _keep;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // The dialog's focus trap focuses its container first; move focus to the safe, primary choice.
+        if (firstRender && _keep?.Element is { } element)
+        {
+            await Task.Delay(50);
+            try
+            {
+                await element.FocusAsync();
+            }
+            catch (JSException)
+            {
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+
+    private Task KeepEditingAsync() => Dialog.CancelAsync();
+
+    private Task SaveAsync() => Dialog.CloseAsync(SaveResult);
+
+    private Task LeaveAsync() => Dialog.CloseAsync(LeaveResult);
+}

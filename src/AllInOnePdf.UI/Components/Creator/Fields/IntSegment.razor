@@ -1,0 +1,50 @@
+@* A small integer range as a segmented control (heading level 1–6). *@
+@inject CreatorState State
+
+<div class="cr-field">
+    <div class="cr-field-head">
+        <span class="cr-label" id="@_id">@Label</span>
+    </div>
+    <div class="cr-seg" role="radiogroup" aria-labelledby="@_id">
+        @for (var i = Min; i <= Max; i++)
+        {
+            var value = i;
+            var on = value == Get();
+            <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="cr-seg-btn @(on ? "is-on" : null)"
+                    aria-label="@($"{Label} {value}")" @onclick="() => Apply(value)">@Prefix@value</button>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Visible label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Reads the current value.</summary>
+    [Parameter, EditorRequired] public Func<int> Get { get; set; } = () => 0;
+
+    /// <summary>Writes a new value (the field commits afterwards).</summary>
+    [Parameter, EditorRequired] public Action<int> Set { get; set; } = _ => { };
+
+    /// <summary>Smallest value.</summary>
+    [Parameter] public int Min { get; set; } = 1;
+
+    /// <summary>Largest value.</summary>
+    [Parameter] public int Max { get; set; } = 6;
+
+    /// <summary>Text before each number ("H").</summary>
+    [Parameter] public string? Prefix { get; set; }
+
+    private readonly string _id = "cri-" + Guid.NewGuid().ToString("N")[..8];
+
+    private void Apply(int value)
+    {
+        if (value == Get())
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit();
+    }
+}

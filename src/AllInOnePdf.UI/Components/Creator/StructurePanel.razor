@@ -1,0 +1,351 @@
+@* Left panel: the Structure tree (Sections → Rows → Columns → Modules; click selects, drag reorders) and the Insert
+   tiles (click inserts next to the selection, drag onto the canvas or the tree). *@
+@implements IAsyncDisposable
+@inject CreatorState State
+@inject IJSRuntime JS
+
+<div class="cr-left-inner">
+    <div class="cr-ltabs" role="tablist" aria-label="Left panel">
+        @foreach (var (key, label) in new[] { ("structure", "Structure"), ("insert", "Insert") })
+        {
+            var on = key == Tab;
+            <button type="button" role="tab" id="@($"cr-ltab-{key}")" aria-selected="@(on ? "true" : "false")" aria-controls="@($"cr-lpanel-{key}")"
+                    tabindex="@(on ? 0 : -1)" class="cr-ltab @(on ? "is-on" : null)" @onclick="() => TabChanged.InvokeAsync(key)"
+                    @onkeydown="@(e => e.Key is "ArrowLeft" or "ArrowRight" ? TabChanged.InvokeAsync(key == "structure" ? "insert" : "structure") : Task.CompletedTask)">
+                @label
+            </button>
+        }
+    </div>
+
+    <div class="cr-lbody" id="cr-lpanel-structure" role="tabpanel" aria-labelledby="cr-ltab-structure" hidden="@(Tab != "structure")">
+        <div class="cr-tree" @ref="_tree">
+            @if (State.Working is { } p)
+            {
+                var sel = State.Selection.Id;
+                var map = State.PageMap;
+                var page = 0;
+                <button type="button" class="cr-tnode cr-tnode-doc @(sel is null ? "is-on" : null)" data-tkind="document" aria-current="@(sel is null ? "true" : null)"
+                        @onclick="() => State.ClearSelection()">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Document())" Color="Color.Neutral" />
+                    <span class="cr-tlabel">Document</span>
+                </button>
+                @if (p.Sections.Count == 0)
+                {
+                    <p class="cr-tempty">No sections yet. Add one to start laying out the page.</p>
+                }
+                <ul class="cr-tlist">
+                    @for (var si = 0; si < p.Sections.Count; si++)
+                    {
+                        var section = p.Sections[si];
+                        var sIndex = si;
+                        @if (map?.FirstPageOf(section.Id) is { } sPage && sPage > page)
+                        {
+                            page = sPage;
+                            <li class="cr-tpage" role="presentation" @key="@("page:" + section.Id)"><span>Page @sPage</span></li>
+                        }
+                        <li @key="section.Id">
+                            @{ var free = section.Layout == SectionLayout.FreeFlow; }
+                            <div class="cr-tnode cr-tnode-section @(sel == section.Id ? "is-on" : null)" data-tkind="section" data-id="@section.Id" data-index="@sIndex"
+                                 data-count="@(free ? section.Items.Count : section.Rows.Count)" data-layout="@(free ? "freeflow" : "structure")" draggable="true">
+                                <div role="button" tabindex="0" class="cr-tmain" aria-current="@(sel == section.Id ? "true" : null)" @onclick="() => Pick(CreatorSelectionKind.Section, section.Id)">
+                                    <FluentIcon Value="@(free ? (Icon)new Icons.Regular.Size16.Grid() : new Icons.Regular.Size16.RectangleLandscape())" Color="Color.Accent" />
+                                    <span class="cr-tlabel">@(string.IsNullOrWhiteSpace(section.Label) ? $"Section {sIndex + 1}" : section.Label)</span>
+                                    @if (free)
+                                    {
+                                        <span class="cr-tmeta">Free flow</span>
+                                    }
+                                </div>
+                                @NodeActions(section.Id, $"section {sIndex + 1}", sIndex > 0, sIndex < p.Sections.Count - 1, true)
+                            </div>
+                            @if (free)
+                            {
+                                var order = CreatorFreeFlow.FrontToBack(section);
+                                <ul class="cr-tlist" aria-label="Modules from front to back">
+                                    @if (order.Count == 0)
+                                    {
+                                        <li class="cr-tempty-item"><span class="cr-tmeta">empty canvas</span></li>
+                                    }
+                                    @for (var fi = 0; fi < order.Count; fi++)
+                                    {
+                                        var item = order[fi];
+                                        var module = item.Module;
+                                        var fIndex = fi;
+                                        <li @key="module.Id">
+                                            <div class="cr-tnode cr-tnode-mod cr-tnode-item @(sel == module.Id ? "is-on" : null) @(module.Hidden ? "is-hidden" : null)" data-tkind="item"
+                                                 data-id="@module.Id" data-parent="@section.Id" data-index="@fIndex" draggable="true">
+                                                <div role="button" tabindex="0" class="cr-tmain" aria-current="@(sel == module.Id ? "true" : null)"
+                                                     @onclick="() => Pick(CreatorSelectionKind.Module, module.Id)"
+                                                     aria-label="@($"{CreatorModuleCatalog.NameOf(module)} module: {CreatorModuleCatalog.Summary(module)}, {fIndex + 1} of {order.Count} from the front, at {Pt(item.XPt)}, {Pt(item.YPt)}")">
+                                                    <FluentIcon Value="@CreatorModuleCatalog.IconOf(module)" Width="16px" Color="Color.Neutral" />
+                                                    <span class="cr-tlabel">@CreatorModuleCatalog.Summary(module)</span>
+                                                    <span class="cr-tmeta" title="Position on the canvas (x, y) in points">@Pt(item.XPt), @Pt(item.YPt)</span>
+                                                    @if (map?.IsOverflowing(module.Id) == true)
+                                                    {
+                                                        <span class="cr-tmeta cr-twarn" title="Content is cut off. Make the box larger.">cut off</span>
+                                                    }
+                                                </div>
+                                                @NodeActions(module.Id, CreatorModuleCatalog.NameOf(module).ToLowerInvariant() + " module", fIndex > 0, fIndex < order.Count - 1, true,
+                                                             "Bring {0} forward", "Send {0} backward")
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                            <ul class="cr-tlist">
+                                @for (var ri = 0; ri < section.Rows.Count; ri++)
+                                {
+                                    var row = section.Rows[ri];
+                                    var rIndex = ri;
+                                    @if (map?.FirstPageOf(row.Id) is { } rPage && rPage > page)
+                                    {
+                                        page = rPage;
+                                        <li class="cr-tpage" role="presentation" @key="@("page:" + row.Id)"><span>Page @rPage</span></li>
+                                    }
+                                    <li @key="row.Id">
+                                        <div class="cr-tnode cr-tnode-row @(sel == row.Id ? "is-on" : null)" data-tkind="row" data-id="@row.Id" data-parent="@section.Id"
+                                             data-index="@rIndex" draggable="true">
+                                            <div role="button" tabindex="0" class="cr-tmain" aria-current="@(sel == row.Id ? "true" : null)" @onclick="() => Pick(CreatorSelectionKind.Row, row.Id)">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.LayoutColumnTwo())" Color="Color.Neutral" />
+                                                <span class="cr-tlabel">@(string.IsNullOrWhiteSpace(row.Label) ? $"Row {rIndex + 1}" : row.Label)</span>
+                                                <span class="cr-tmeta">@(ColumnLayouts.Match(row.Fractions)?.Name ?? $"{row.Columns.Count} columns")</span>
+                                                @if (row.Columns.Count > 1 && map?.Of(row.Id) is { } rSpan && rSpan.Last > rSpan.First)
+                                                {
+                                                    <span class="cr-tmeta" title="@($"Continues on page {rSpan.First + 1}")">p. @rSpan.First–@rSpan.Last</span>
+                                                }
+                                            </div>
+                                            @NodeActions(row.Id, $"row {rIndex + 1}", rIndex > 0, rIndex < section.Rows.Count - 1, true)
+                                        </div>
+                                        <ul class="cr-tlist">
+                                            @for (var ci = 0; ci < row.Columns.Count; ci++)
+                                            {
+                                                var column = row.Columns[ci];
+                                                var cIndex = ci;
+                                                <li @key="column.Id">
+                                                    <div class="cr-tnode cr-tnode-col @(sel == column.Id ? "is-on" : null)" data-tkind="column" data-id="@column.Id" data-count="@column.Modules.Count">
+                                                        <div role="button" tabindex="0" class="cr-tmain" aria-current="@(sel == column.Id ? "true" : null)" @onclick="() => Pick(CreatorSelectionKind.Column, column.Id)">
+                                                            <FluentIcon Value="@(new Icons.Regular.Size16.LayoutColumnOneThirdLeft())" Color="Color.Neutral" />
+                                                            <span class="cr-tlabel">Column @(cIndex + 1)</span>
+                                                            @if (column.Modules.Count == 0)
+                                                            {
+                                                                <span class="cr-tmeta">empty</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <ul class="cr-tlist">
+                                                        @for (var mi = 0; mi < column.Modules.Count; mi++)
+                                                        {
+                                                            var module = column.Modules[mi];
+                                                            var mIndex = mi;
+                                                            @if (map?.FirstPageOf(module.Id) is { } mPage && mPage > page)
+                                                            {
+                                                                page = mPage;
+                                                                <li class="cr-tpage" role="presentation" @key="@("page:" + module.Id)"><span>Page @mPage</span></li>
+                                                            }
+                                                            <li @key="module.Id">
+                                                                <div class="cr-tnode cr-tnode-mod @(sel == module.Id ? "is-on" : null) @(module.Hidden ? "is-hidden" : null)" data-tkind="module"
+                                                                     data-id="@module.Id" data-parent="@column.Id" data-index="@mIndex" draggable="true">
+                                                                    <div role="button" tabindex="0" class="cr-tmain" aria-current="@(sel == module.Id ? "true" : null)"
+                                                                         @onclick="() => Pick(CreatorSelectionKind.Module, module.Id)"
+                                                                         aria-label="@($"{CreatorModuleCatalog.NameOf(module)} module: {CreatorModuleCatalog.Summary(module)}")">
+                                                                        <FluentIcon Value="@CreatorModuleCatalog.IconOf(module)" Width="16px" Color="Color.Neutral" />
+                                                                        <span class="cr-tlabel">@CreatorModuleCatalog.Summary(module)</span>
+                                                                        @if (map?.Of(module.Id) is { } mSpan && mSpan.Last > mSpan.First)
+                                                                        {
+                                                                            <span class="cr-tmeta" title="@($"Continues on page {mSpan.First + 1}")">p. @mSpan.First–@mSpan.Last</span>
+                                                                        }
+                                                                    </div>
+                                                                    @NodeActions(module.Id, CreatorModuleCatalog.NameOf(module).ToLowerInvariant() + " module", mIndex > 0, mIndex < column.Modules.Count - 1, true)
+                                                                </div>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </li>
+                                }
+                            </ul>
+                            }
+                        </li>
+                    }
+                </ul>
+                <div class="cr-tfoot">
+                    <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="() => State.AddSection()">Add section</FluentButton>
+                    <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.DocumentAdd())" OnClick="() => State.AddPage()" Title="Add a section that starts on a new page">Add page</FluentButton>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="cr-lbody" id="cr-lpanel-insert" role="tabpanel" aria-labelledby="cr-ltab-insert" hidden="@(Tab != "insert")">
+        <div class="cr-insert" @ref="_palette">
+            <p class="cr-insert-hint">@InsertHint()</p>
+            <h3 class="cr-insert-head">Modules</h3>
+            <div class="cr-tiles">
+                @{ var onCanvas = State.InsertTargetIsFreeFlow; }
+                @foreach (var kind in CreatorModuleCatalog.All)
+                {
+                    var off = onCanvas && !CreatorFreeFlow.Allowed(kind.Type);
+                    <div role="button" tabindex="@(off ? -1 : 0)" class="cr-tile @(off ? "is-disabled" : null)" draggable="@(off ? "false" : "true")" data-insert="@(off ? null : kind.Type)"
+                         title="@(off ? "Not in Free flow" : kind.Description)" aria-disabled="@(off ? "true" : null)"
+                         aria-label="@(off ? $"{kind.Name}: not in Free flow" : $"Insert {kind.Name.ToLowerInvariant()}: {kind.Description}")" @onclick="() => { if (!off) Insert(kind); }">
+                        <FluentIcon Value="@kind.Icon" Color="Color.Accent" />
+                        <span>@kind.Name</span>
+                    </div>
+                }
+            </div>
+            <h3 class="cr-insert-head">Rows</h3>
+            <div class="cr-layouts">
+                @foreach (var preset in ColumnLayouts.Presets)
+                {
+                    <button type="button" class="cr-layout" title="@($"Add a row: {preset.Name}")" aria-label="@($"Add a row with columns {preset.Name}")"
+                            @onclick="() => AddRow(preset.Fractions)">
+                        <LayoutGlyph Fractions="preset.Fractions" />
+                    </button>
+                }
+            </div>
+            <h3 class="cr-insert-head">Sections</h3>
+            <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.Add())" OnClick="AddSectionAfterSelection">Add section</FluentButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    /// <summary>"structure" or "insert".</summary>
+    [Parameter] public string Tab { get; set; } = "structure";
+
+    /// <summary>Raised when the user switches tabs.</summary>
+    [Parameter] public EventCallback<string> TabChanged { get; set; }
+
+    /// <summary>Re-render trigger.</summary>
+    [Parameter] public int Version { get; set; }
+
+    /// <summary>Raised after a tree node is picked (the page may reveal it on the canvas).</summary>
+    [Parameter] public EventCallback<string> OnPicked { get; set; }
+
+    private ElementReference _tree;
+    private ElementReference _palette;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<StructurePanel>? _self;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/AllInOnePdf.UI/Components/Creator/DesignCanvas.razor.js");
+            _self = DotNetObjectReference.Create(this);
+            await _module.InvokeVoidAsync("initTree", _tree, _self);
+            await _module.InvokeVoidAsync("initPalette", _palette);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        catch (JSException)
+        {
+            // Dragging is an enhancement; clicks and the move buttons still work.
+        }
+    }
+
+    /// <summary>Called by the tree script when something is dropped on a tree node.</summary>
+    [JSInvokable]
+    public Task OnTreeDrop(string kind, string id, string targetId, int index) => InvokeAsync(() => CreatorDrops.Apply(State, kind, id, targetId, index));
+
+    private async Task Pick(CreatorSelectionKind kind, string id)
+    {
+        State.Select(kind, id);
+        await OnPicked.InvokeAsync(id);
+    }
+
+    private void Insert(CreatorModuleKind kind) => State.InsertModule(kind.Create());
+
+    private void AddRow(IReadOnlyList<double> fractions)
+    {
+        if (State.Working is not { } p)
+        {
+            return;
+        }
+
+        var location = State.Locate(State.Selection.Id);
+        if (location is not null)
+        {
+            var index = location.Kind == CreatorSelectionKind.Section ? location.Section.Rows.Count : location.Section.Rows.IndexOf(location.Row!) + 1;
+            State.AddRow(location.Section.Id, fractions, index);
+            return;
+        }
+
+        var section = p.Sections.LastOrDefault() ?? State.AddSection();
+        if (section is not null)
+        {
+            State.AddRow(section.Id, fractions);
+        }
+    }
+
+    private void AddSectionAfterSelection()
+    {
+        var location = State.Locate(State.Selection.Id);
+        var index = location is null || State.Working is null ? (int?)null : State.Working.Sections.IndexOf(location.Section) + 1;
+        State.AddSection(index);
+    }
+
+    private string InsertHint()
+    {
+        var location = State.Locate(State.Selection.Id);
+        return location?.Kind switch
+        {
+            CreatorSelectionKind.Module => "Click a module to insert it after the selected one, or drag it onto the page.",
+            CreatorSelectionKind.Column => "Click a module to add it to the selected column, or drag it onto the page.",
+            CreatorSelectionKind.Row => "Click a module to add it to the first column of the selected row, or drag it onto the page.",
+            CreatorSelectionKind.Section => "Click a module to add it to the selected section, or drag it onto the page.",
+            _ => "Click a module to add it at the end, or drag it to the exact spot on the page.",
+        };
+    }
+
+    private static string Pt(double value) => CreatorCanvasHtml.ItemNumber(Math.Round(value));
+
+    private RenderFragment NodeActions(string id, string what, bool canUp, bool canDown, bool canDuplicate, string upText = "Move {0} up", string downText = "Move {0} down") =>
+        @<span class="cr-tacts">
+            <button type="button" class="cr-tact" title="@string.Format(CultureInfo.InvariantCulture, upText, what)" aria-label="@string.Format(CultureInfo.InvariantCulture, upText, what)" disabled="@(!canUp)" @onclick="() => State.MoveBy(id, -1)">
+                <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSortUp())" Color="Color.Custom" CustomColor="currentColor" />
+            </button>
+            <button type="button" class="cr-tact" title="@string.Format(CultureInfo.InvariantCulture, downText, what)" aria-label="@string.Format(CultureInfo.InvariantCulture, downText, what)" disabled="@(!canDown)" @onclick="() => State.MoveBy(id, 1)">
+                <FluentIcon Value="@(new Icons.Regular.Size16.ArrowSortDown())" Color="Color.Custom" CustomColor="currentColor" />
+            </button>
+            @if (canDuplicate)
+            {
+                <button type="button" class="cr-tact" title="@($"Duplicate {what}")" aria-label="@($"Duplicate {what}")" @onclick="() => State.Duplicate(id)">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Copy())" Color="Color.Custom" CustomColor="currentColor" />
+                </button>
+            }
+            <button type="button" class="cr-tact" title="@($"Delete {what}")" aria-label="@($"Delete {what}")" @onclick="() => State.Delete(id)">
+                <FluentIcon Value="@(new Icons.Regular.Size16.Delete())" Color="Color.Custom" CustomColor="currentColor" />
+            </button>
+        </span>;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("dispose", _tree);
+                await _module.InvokeVoidAsync("dispose", _palette);
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
+        _self?.Dispose();
+    }
+}

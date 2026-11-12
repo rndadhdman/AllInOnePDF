@@ -1,0 +1,22 @@
+@* Reusable empty state: icon, title, one line of guidance, optional actions. *@
+<div class="aio-empty" role="status">
+    <div class="aio-empty-icon">
+        <FluentIcon Value="@Icon" Width="40px" Color="Color.Neutral" />
+    </div>
+    <div class="aio-empty-title">@Title</div>
+    @if (!string.IsNullOrWhiteSpace(Description))
+    {
+        <div class="aio-empty-text">@Description</div>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="aio-empty-actions">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter] public Icon Icon { get; set; } = new Icons.Regular.Size48.DocumentAdd();
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

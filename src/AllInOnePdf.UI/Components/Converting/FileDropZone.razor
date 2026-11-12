@@ -1,0 +1,287 @@
+@* Drop zone for the Convert page. Large in the zero state, a compact bar once files are listed.
+   Web: FluentInputFile (drag-drop + browse) streams files into memory.
+   Desktop: the same drop zone plus native "Browse…" and "Add folder" that keep real paths. *@
+@inject ConvertWorkspace Workspace
+@inject IHostServices Host
+@inject IToastService Toasts
+@inject ILogger<FileDropZone> Logger
+
+<div class="aio-drop @(Compact ? "is-compact" : "is-full") @(_busy ? "is-busy" : null)">
+    <FluentInputFile Id="@_inputId"
+                     Mode="InputFileMode.Stream"
+                     Multiple="true"
+                     MaximumFileCount="200"
+                     MaximumFileSize="@UploadLimits.MaxUploadBytes"
+                     Accept="@_accept"
+                     AnchorId="@(Host.SupportsNativeDialogs ? null : _browseId)"
+                     OnFileUploaded="OnFileUploadedAsync"
+                     OnFileError="OnFileError"
+                     OnFileCountExceeded="OnCountExceeded"
+                     OnCompleted="OnCompleted"
+                     Class="aio-drop-zone"
+                     aria-label="Add files to convert"
+                     tabindex="-1">
+        <ProgressTemplate Context="upload">
+            @* Progress is shown in the drop zone's own title ("Adding …"); the component's default block would stay
+               visible over the file list's toolbar after a second upload. *@
+        </ProgressTemplate>
+        <ChildContent>
+            <div class="aio-drop-content">
+                <span class="aio-drop-icon" aria-hidden="true">
+                    @if (_busy)
+                    {
+                        <FluentProgressRing Width="@(Compact ? "20px" : "40px")" />
+                    }
+                    else if (Compact)
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size24.ArrowUpload())" Color="Color.Accent" />
+                    }
+                    else
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size48.DocumentAdd())" Color="Color.Accent" />
+                    }
+                </span>
+                <div class="aio-drop-text">
+                    <div class="aio-drop-title" aria-live="polite">
+                        @if (_busy)
+                        {
+                            @($"Adding {_busyName}…")
+                        }
+                        else if (Compact)
+                        {
+                            @("Drop more files here to add them to the list")
+                        }
+                        else
+                        {
+                            @("Drop files here to convert them")
+                        }
+                    </div>
+                    @if (!Compact)
+                    {
+                        <div class="aio-drop-hint">Up to @UploadLimits.Describe(UploadLimits.MaxUploadBytes) per file.</div>
+                    }
+                </div>
+                <div class="aio-drop-actions">
+                    @if (Host.SupportsNativeDialogs)
+                    {
+                        <FluentButton Appearance="@(Compact ? Appearance.Outline : Appearance.Accent)" IconStart="@(new Icons.Regular.Size20.DocumentAdd())"
+                                      OnClick="BrowseNativeAsync" Disabled="_busy">Browse…</FluentButton>
+                        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.FolderAdd())"
+                                      OnClick="AddFolderAsync" Disabled="_busy">Add folder</FluentButton>
+                        <FluentCheckbox @bind-Value="IncludeSubfolders" Label="Include sub-folders" Class="aio-drop-sub" />
+                    }
+                    else
+                    {
+                        <FluentButton Id="@_browseId" Appearance="@(Compact ? Appearance.Outline : Appearance.Accent)"
+                                      IconStart="@(new Icons.Regular.Size20.DocumentAdd())" Disabled="_busy">Browse…</FluentButton>
+                    }
+                    @if (!Compact && OnSample.HasDelegate)
+                    {
+                        <FluentButton Appearance="Appearance.Lightweight" IconStart="@(new Icons.Regular.Size20.DocumentText())"
+                                      OnClick="OnSample" Disabled="_busy">Add a sample document</FluentButton>
+                    }
+                </div>
+            </div>
+        </ChildContent>
+    </FluentInputFile>
+
+    @if (!Compact)
+    {
+        @* Supported types as a list of rows (icon, name, extensions), grouped like FormatCatalog groups them for the
+           Reader. The columns follow the width: one group per column on a wide window. *@
+        <section class="aio-drop-types" aria-labelledby="@($"{_inputId}-types")">
+            <h2 class="aio-drop-types-title" id="@($"{_inputId}-types")">Files you can convert</h2>
+            <div class="aio-drop-groups">
+                @foreach (var group in _groups)
+                {
+                    <div class="aio-drop-group">
+                        <h3 class="aio-drop-group-name">@group.Name</h3>
+                        <ul class="aio-drop-type-list">
+                            @foreach (var entry in group.Formats)
+                            {
+                                <li class="aio-drop-type" title="@entry.Format.Description">
+                                    <FluentIcon Value="@entry.Icon" Color="Color.Neutral" Width="20px" aria-hidden="true" />
+                                    <span class="aio-drop-type-name">@entry.Name</span>
+                                    <span class="aio-drop-type-ext">@entry.ExtensionList</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private readonly string _inputId = "aio-drop-" + Guid.NewGuid().ToString("N")[..8];
+    private string _browseId => _inputId + "-browse";
+    private string _accept = "";
+    private IReadOnlyList<FormatGroup> _groups = [];
+    private bool _busy;
+    private string? _busyName;
+    private int _addedInBatch;
+
+    /// <summary>Compact bar (files already listed) instead of the large zero-state zone.</summary>
+    [Parameter] public bool Compact { get; set; }
+
+    /// <summary>Raised after files were added, with the number added.</summary>
+    [Parameter] public EventCallback<int> OnAdded { get; set; }
+
+    /// <summary>When set, the large zone offers "Add a sample document", which raises this.</summary>
+    [Parameter] public EventCallback OnSample { get; set; }
+
+    private bool IncludeSubfolders
+    {
+        get => Workspace.IncludeSubfolders;
+        set => Workspace.IncludeSubfolders = value;
+    }
+
+    protected override void OnInitialized()
+    {
+        var registry = Workspace.Registry;
+        _accept = string.Join(",", registry.ImportableExtensions);
+        _groups = FormatCatalog.ReadableGroups(registry);
+    }
+
+    private async Task BrowseNativeAsync()
+    {
+        var registry = Workspace.Registry;
+        var filters = new List<FileFilter> { new("Supported files", registry.ImportableExtensions) };
+        filters.AddRange(registry.Importers
+            .Where(i => i.Status != ConverterStatus.Planned)
+            .Select(i => new FileFilter(i.Format.DisplayName, i.Format.Extensions)));
+
+        IReadOnlyList<string> paths;
+        try
+        {
+            paths = await Host.PickFilesAsync("Add files to convert", filters, multiSelect: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "File picker failed");
+            Toasts.ShowError("The file picker could not open. Drag the files here instead.");
+            return;
+        }
+
+        foreach (var path in paths)
+        {
+            Workspace.AddPath(path);
+        }
+
+        if (paths.Count > 0)
+        {
+            await OnAdded.InvokeAsync(paths.Count);
+        }
+    }
+
+    private async Task AddFolderAsync()
+    {
+        string? folder;
+        try
+        {
+            folder = await Host.PickFolderAsync("Add every supported file in a folder");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Folder picker failed");
+            Toasts.ShowError("The folder picker could not open.");
+            return;
+        }
+
+        if (string.IsNullOrEmpty(folder))
+        {
+            return;
+        }
+
+        _busy = true;
+        _busyName = Path.GetFileName(folder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        StateHasChanged();
+        try
+        {
+            var recursive = Workspace.IncludeSubfolders;
+            var count = await Task.Run(() => Workspace.AddFolder(folder, recursive));
+            if (count == 0)
+            {
+                Toasts.ShowWarning(recursive
+                    ? "No supported files were found in that folder or its sub-folders."
+                    : "No supported files were found in that folder. Turn on Include sub-folders to search the folders inside it.");
+            }
+            else
+            {
+                await OnAdded.InvokeAsync(count);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Toasts.ShowError($"Could not read the folder: {ex.Message}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnFileUploadedAsync(FluentInputFileEventArgs file)
+    {
+        if (file.Stream is null)
+        {
+            return;
+        }
+
+        await using var source = file.Stream;
+        if (Workspace.CheckUpload(file.Size) is { } rejected)
+        {
+            Toasts.ShowError($"{file.Name} was not added because {rejected}.");
+            return;
+        }
+
+        _busy = true;
+        _busyName = file.Name;
+        StateHasChanged();
+        try
+        {
+            if (Workspace.ShouldSpool(file.Size))
+            {
+                // Large uploads go straight to a temporary file so they never sit in memory.
+                await Workspace.AddSpooledAsync(file.Name, source);
+            }
+            else
+            {
+                using var buffer = new MemoryStream(capacity: (int)Math.Min(file.Size, UploadLimits.SpoolThresholdBytes));
+                await source.CopyToAsync(buffer);
+                Workspace.AddContent(file.Name, buffer.ToArray());
+            }
+
+            _addedInBatch++;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or TaskCanceledException or UnauthorizedAccessException
+                                   or ObjectDisposedException or Microsoft.JSInterop.JSException)
+        {
+            // A JSException here means the browser side of the upload went away mid-stream; the user must hear about it.
+            Logger.LogWarning(ex, "Upload of {File} failed", file.Name);
+            _busy = false;
+            Toasts.ShowError($"{file.Name} could not be added. Drop it again, or add a smaller file.");
+        }
+    }
+
+    private void OnFileError(FluentInputFileEventArgs file)
+    {
+        var reason = Workspace.CheckUpload(file.Size) ?? file.ErrorMessage ?? "the file could not be read";
+        Toasts.ShowError($"{file.Name} was not added because {reason}.");
+    }
+
+    private void OnCountExceeded(int count) =>
+        Toasts.ShowWarning($"You can add up to 200 files at a time. {count} files were dropped.");
+
+    private async Task OnCompleted(IEnumerable<FluentInputFileEventArgs> files)
+    {
+        _busy = false;
+        var added = _addedInBatch;
+        _addedInBatch = 0;
+        if (added > 0)
+        {
+            await OnAdded.InvokeAsync(added);
+        }
+    }
+}

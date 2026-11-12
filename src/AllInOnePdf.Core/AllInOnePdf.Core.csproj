@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Document model, conversion pipeline, PDF themes and rendering engines for AllInOne PDF. Pure .NET, offline, no external processes.</Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Markdig" />
+    <ProjectReference Include="..\AllInOnePdf.Layout\AllInOnePdf.Layout.csproj" />
+    <PackageReference Include="PdfPig" />
+    <PackageReference Include="PDFtoImage" />
+    <PackageReference Include="AngleSharp" />
+    <PackageReference Include="DocumentFormat.OpenXml" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Bundled fonts (SIL Open Font License) are embedded so PDFs look identical on every OS. -->
+    <EmbeddedResource Include="Fonts\**\*.ttf" />
+    <EmbeddedResource Include="Fonts\**\OFL.txt" />
+    <None Include="Fonts\**\*" Pack="false" />
+  </ItemGroup>
+
+</Project>

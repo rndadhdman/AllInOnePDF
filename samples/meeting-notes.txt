@@ -1,0 +1,30 @@
+PROJECT KICKOFF
+===============
+
+Attendees: Ada, Grace, Linus
+Date: 2026-11-05
+
+AGENDA
+
+1. Scope and phases
+2. Risks
+3. Next steps
+
+SCOPE AND PHASES
+----------------
+
+The interface lands first: shell, convert workspace, reader, theme builder.
+Then Markdown to PDF with full theme support, and PDF back to Markdown.
+
+Further formats follow through the neutral document model so each one is a single importer or exporter.
+
+RISKS
+
+Fidelity of PDF to Markdown depends on layout analysis. Tables and multi-column pages are the hard cases.
+Fonts: stick to bundled fonts for identical output on Windows and Linux.
+
+NEXT STEPS
+
+- Review the interface build
+- Try converting this file to PDF with the Technical theme
+- File issues for anything that feels off

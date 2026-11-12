@@ -1,0 +1,128 @@
+@* A native number box (use it instead of FluentNumberField wherever the value is stored and re-rendered on change).
+   fluent-number-field re-emits "input" and "change" whenever the circuit sets its value, so arrow-key presses still
+   in flight echoed back as edits and the value cycled for ever. A native input only reports what the user does
+   (Enter, leaving the box, the arrow keys). While it has focus it does not re-render, so a render of an older value
+   never overwrites what the user is typing or stepping.
+
+   The box rounds the entry to Step and clamps it to Min/Max itself and reports that value, so it can correct its own
+   text straight away without waiting for the owner's re-render: a held arrow key sends changes faster than the
+   circuit is allowed to render (unacknowledged render batches are capped), so the Value parameter can lag several
+   presses behind, and correcting the box to it pulled the box back to an old number. When the box loses focus it
+   shows Value again, so an owner that stores something else is reflected then. *@
+@using AllInOnePdf.UI.Services.Shared
+
+<input @attributes="AdditionalAttributes" type="number" id="@Id" class="aio-num-input @Class" inputmode="decimal"
+       step="@(Step > 0 ? NumberInputMath.Format(Step) : "any")"
+       min="@(Min is { } min ? NumberInputMath.Format(min) : null)" max="@(Max is { } max ? NumberInputMath.Format(max) : null)"
+       value="@_text" disabled="@Disabled" aria-label="@AriaLabel"
+       @onchange="OnChangeAsync" @onfocus="OnFocus" @onblur="OnBlurAsync" />
+
+@code {
+    /// <summary>The current value.</summary>
+    [Parameter] public double Value { get; set; }
+
+    /// <summary>Called with the number the user entered, already rounded to <see cref="Step"/> and clamped.</summary>
+    [Parameter] public EventCallback<double> ValueChanged { get; set; }
+
+    /// <summary>Lowest accepted value (null for none).</summary>
+    [Parameter] public double? Min { get; set; }
+
+    /// <summary>Highest accepted value (null for none).</summary>
+    [Parameter] public double? Max { get; set; }
+
+    /// <summary>Arrow-key step and rounding step (0 or less: arrow keys step by 1, typed values are kept to 4 decimals).</summary>
+    [Parameter] public double Step { get; set; } = 1;
+
+    /// <summary>Accessible name (or use a &lt;label for&gt; with <see cref="Id"/>).</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>Element id (for a &lt;label for&gt;).</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Extra CSS class (size it from the page).</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Disables the input.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Other attributes (aria-describedby, aria-invalid, title…), applied first.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string _text = "0";
+    private string? _userText;
+    private bool _focused;
+    private bool _forcing;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        if (!_focused)
+        {
+            _text = NumberInputMath.Format(Value);
+        }
+    }
+
+    /// <inheritdoc />
+    protected override bool ShouldRender() => !_focused || _forcing;
+
+    private void OnFocus()
+    {
+        _focused = true;
+        _userText = null;
+    }
+
+    private async Task OnChangeAsync(ChangeEventArgs e)
+    {
+        var raw = e.Value as string ?? string.Empty;
+        _userText = raw;
+        if (!NumberInputMath.TryParse(raw, out var typed)
+            || NumberInputMath.Normalize(typed, Min ?? double.MinValue, Max ?? double.MaxValue, Step) is not { } value)
+        {
+            // Not a number (or an empty box): show the stored value again.
+            await SyncAsync(raw, NumberInputMath.Format(Value));
+            return;
+        }
+
+        await ValueChanged.InvokeAsync(value);
+
+        // Stored as entered (arrow-key steps, plain typing): nothing to correct, and no render that could lag behind.
+        var shown = NumberInputMath.Format(value);
+        if (!string.Equals(shown, NumberInputMath.Format(typed), StringComparison.Ordinal))
+        {
+            await SyncAsync(raw, shown);
+        }
+    }
+
+    private async Task OnBlurAsync()
+    {
+        _focused = false;
+        await SyncAsync(_userText, NumberInputMath.Format(Value));
+        _userText = null;
+    }
+
+    /// <summary>
+    /// Makes the box show <paramref name="text"/>. The last rendered value may not be what the box shows (the user
+    /// typed over it), and Blazor only writes a value that differs from the last render: render the user's text
+    /// first, then the real one.
+    /// </summary>
+    private async Task SyncAsync(string? shown, string text)
+    {
+        _forcing = true;
+        try
+        {
+            if (shown is not null)
+            {
+                _text = shown;
+                StateHasChanged();
+                await Task.Yield();
+            }
+
+            _text = text;
+            StateHasChanged();
+        }
+        finally
+        {
+            _forcing = false;
+        }
+    }
+}

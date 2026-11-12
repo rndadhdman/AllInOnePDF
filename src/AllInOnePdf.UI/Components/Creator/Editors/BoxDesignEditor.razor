@@ -1,0 +1,70 @@
+@* Design tab: margin, padding, background, border, radius and position of any box; text overrides for modules. *@
+@using AllInOnePdf.Core.Documents
+@inject CreatorState State
+
+<SpacingBox Label="Margin" Get="() => Design.Margin" />
+<SpacingBox Label="Padding" Get="() => Design.Padding" />
+<ColorField Label="Background" InheritLabel="None" NullText="None" Inherited="() => State.Working?.Theme.Page.Background" Get="() => Design.Background" Set="v => Design.Background = v" />
+
+<div class="cr-subhead">Border</div>
+<NumberField Label="Border width" Key="box-border" Unit="pt" Min="0" Max="12" InputMax="20" Step="0.25" Get="() => Design.BorderWidthPt" Set="v => Design.BorderWidthPt = v" />
+@if (Design.BorderWidthPt > 0)
+{
+    <ColorField Label="Border colour" InheritLabel="Theme border colour" Inherited="() => State.Working?.Theme.Colors.Border" Get="() => Design.BorderColor" Set="v => Design.BorderColor = v" />
+}
+<NumberField Label="Corner radius" Hint="Rounds the box" Key="box-radius" Unit="pt" Min="0" Max="40" InputMax="60" Step="0.5" Get="() => Design.CornerRadiusPt" Set="v => Design.CornerRadiusPt = v" />
+
+@if (ShowPosition)
+{
+    <div class="cr-subhead">Position</div>
+    <NumberField Label="Offset X" Key="box-offset-x" Unit="pt" Min="-200" Max="200" InputMin="@(-BoxDesign.MaxOffsetPt)" InputMax="@BoxDesign.MaxOffsetPt" Step="1"
+                 Hint="Moves the box without moving its neighbours" Get="() => Design.OffsetXPt" Set="v => Design.OffsetXPt = v" />
+    <NumberField Label="Offset Y" Key="box-offset-y" Unit="pt" Min="-200" Max="200" InputMin="@(-BoxDesign.MaxOffsetPt)" InputMax="@BoxDesign.MaxOffsetPt" Step="1"
+                 Hint="Moves the box without moving its neighbours" Get="() => Design.OffsetYPt" Set="v => Design.OffsetYPt = v" />
+    <NumberField Label="Z level" Key="box-z" Min="0" Max="@BoxDesign.MaxZIndex" Step="1" Hint="Higher levels paint over lower ones"
+                 Get="() => Design.ZIndex" Set="v => Design.ZIndex = (int)Math.Round(v)" />
+}
+
+@if (Design is ModuleDesign module)
+{
+    <div class="cr-subhead">Text</div>
+    <div class="cr-field">
+        <div class="cr-field-head"><span class="cr-label" id="@_alignId">Alignment</span></div>
+        <div class="cr-seg" role="radiogroup" aria-labelledby="@_alignId">
+            @foreach (var (value, text) in Alignments)
+            {
+                var on = module.Alignment == value;
+                <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="cr-seg-btn @(on ? "is-on" : null)"
+                        @onclick="() => SetAlignment(module, value)">@text</button>
+            }
+        </div>
+    </div>
+    <ColorField Label="Text colour" InheritLabel="Theme colours" Inherited="() => State.Working?.Theme.Colors.Text" Get="() => module.TextColor" Set="v => module.TextColor = v" />
+    <NumberField Label="Text size" Unit="×" Min="0.5" Max="3" Step="0.05" Get="() => module.FontScale" Set="v => module.FontScale = v" Hint="Scales the theme's sizes" />
+}
+
+@code {
+    /// <summary>The box design being edited (a <see cref="ModuleDesign"/> adds the text controls).</summary>
+    [Parameter, EditorRequired] public BoxDesign Design { get; set; } = default!;
+
+    /// <summary>Show the Position group (offsets and Z level); hidden for free-flow items, whose box already places them.</summary>
+    [Parameter] public bool ShowPosition { get; set; } = true;
+
+    private static readonly (TextAlignment? Value, string Text)[] Alignments =
+    [
+        (null, "Theme"), (TextAlignment.Left, "Left"), (TextAlignment.Center, "Centre"), (TextAlignment.Right, "Right"), (TextAlignment.Justify, "Justify"),
+    ];
+
+    private readonly string _alignId = "cra-" + Guid.NewGuid().ToString("N")[..8];
+
+    private void SetAlignment(ModuleDesign design, TextAlignment? value)
+    {
+        if (design.Alignment == value)
+        {
+            return;
+        }
+
+        design.Alignment = value;
+        State.Commit();
+    }
+}

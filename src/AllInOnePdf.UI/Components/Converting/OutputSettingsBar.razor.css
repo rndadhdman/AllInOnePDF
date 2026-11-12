@@ -1,0 +1,50 @@
+.aio-output {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 32px;
+  padding: 16px;
+  background: var(--neutral-layer-1);
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-md, 8px);
+}
+
+.aio-output-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aio-output-folder {
+  flex: 1 1 320px;
+}
+
+.aio-output-label {
+  font-weight: 600;
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-output-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aio-output-path {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-output-web {
+  flex: 1 1 320px;
+  flex-direction: row;
+  align-items: center;
+  color: var(--neutral-foreground-hint);
+}

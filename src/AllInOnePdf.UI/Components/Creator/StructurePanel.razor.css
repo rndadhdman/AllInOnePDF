@@ -1,0 +1,313 @@
+.cr-left-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.cr-ltabs {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 2px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.cr-ltab {
+    flex: 1 1 0;
+    min-height: 40px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.cr-ltab:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-ltab.is-on {
+    border-bottom-color: var(--accent-fill-rest);
+    color: var(--accent-foreground-rest);
+}
+
+.cr-ltab:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: -2px;
+}
+
+.cr-lbody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.cr-lbody[hidden] {
+    display: none;
+}
+
+/* ---- tree --------------------------------------------------------------- */
+.cr-tree {
+    padding: 8px 6px 16px;
+}
+
+.cr-tlist {
+    margin: 0;
+    padding: 0 0 0 12px;
+    list-style: none;
+}
+
+.cr-tree > .cr-tlist {
+    padding-left: 0;
+}
+
+.cr-tnode {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 32px;
+    border-radius: 4px;
+    color: var(--neutral-foreground-rest);
+}
+
+.cr-tnode:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-tnode.is-on {
+    background: var(--neutral-fill-stealth-active, var(--neutral-fill-secondary-rest));
+    box-shadow: inset 2px 0 0 var(--accent-fill-rest);
+}
+
+.cr-tnode.is-hidden .cr-tlabel {
+    opacity: .55;
+    font-style: italic;
+}
+
+.cr-tnode[draggable=true] {
+    cursor: grab;
+}
+
+.cr-tmain,
+.cr-tnode-doc {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    min-height: 32px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.cr-tnode-doc {
+    width: 100%;
+    margin-bottom: 2px;
+}
+
+.cr-tnode-doc.is-on {
+    background: var(--neutral-fill-stealth-active, var(--neutral-fill-secondary-rest));
+    box-shadow: inset 2px 0 0 var(--accent-fill-rest);
+}
+
+.cr-tnode-doc:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-tmain:focus-visible,
+.cr-tnode-doc:focus-visible,
+.cr-tact:focus-visible,
+.cr-tile:focus-visible,
+.cr-layout:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: -2px;
+}
+
+.cr-tnode-section .cr-tlabel {
+    font-weight: 600;
+}
+
+.cr-tlabel {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cr-tmeta {
+    flex: 0 0 auto;
+    font-size: 11px;
+    color: var(--neutral-foreground-hint);
+}
+
+/* Where the PDF starts a new page: a dotted rule with the page number, continuing the tree below it. */
+.cr-tpage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 2px;
+    padding: 0 4px;
+    color: var(--accent-foreground-rest);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.cr-tpage::before,
+.cr-tpage::after {
+    content: "";
+    flex: 1 1 auto;
+    border-top: 1px dotted var(--accent-fill-rest);
+}
+
+.cr-tacts {
+    flex: 0 0 auto;
+    display: none;
+    align-items: center;
+    gap: 0;
+    padding-right: 2px;
+}
+
+.cr-tnode:hover .cr-tacts,
+.cr-tnode.is-on .cr-tacts,
+.cr-tnode:focus-within .cr-tacts {
+    display: inline-flex;
+}
+
+.cr-tact {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    cursor: pointer;
+}
+
+.cr-tact:hover:not(:disabled) {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-tact:disabled {
+    opacity: .35;
+    cursor: default;
+}
+
+.cr-tempty {
+    margin: 8px 6px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-tfoot {
+    padding: 12px 6px 0;
+}
+
+/* ---- insert ------------------------------------------------------------- */
+.cr-insert {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+}
+
+.cr-insert-hint {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--neutral-foreground-hint);
+}
+
+.cr-insert-head {
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--neutral-foreground-rest);
+}
+
+.cr-tiles {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.cr-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 64px;
+    padding: 6px 4px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 6px;
+    background: var(--neutral-layer-1);
+    color: var(--neutral-foreground-rest);
+    font-size: 12px;
+    text-align: center;
+    cursor: grab;
+    user-select: none;
+}
+
+.cr-tile:hover {
+    border-color: var(--accent-fill-rest);
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.cr-layouts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.cr-layout {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 6px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 6px;
+    background: var(--neutral-layer-1);
+    cursor: pointer;
+}
+
+.cr-layout:hover {
+    border-color: var(--accent-fill-rest);
+}
+
+/* A tile that cannot go where a click would insert it (a page break on a free-flow canvas). */
+.cr-tile.is-disabled,
+.cr-tile.is-disabled:hover {
+    opacity: .45;
+    cursor: not-allowed;
+    border-color: var(--neutral-stroke-rest);
+    background: transparent;
+}
+
+.cr-twarn {
+    color: var(--warning, #C25400);
+    font-weight: 600;
+}
+
+.cr-tempty-item {
+    padding: 2px 0 4px 28px;
+}

@@ -1,0 +1,15 @@
+@* A miniature of a column split: one bar per fraction, for the layout pickers. *@
+<span class="cr-glyph @(Current ? "is-current" : null)" aria-hidden="true">
+    @foreach (var f in Fractions)
+    {
+        <span class="cr-glyph-col" style="@($"flex:{f.ToString("0.####", CultureInfo.InvariantCulture)} 1 0")"></span>
+    }
+</span>
+
+@code {
+    /// <summary>Column fractions to draw.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<double> Fractions { get; set; } = [];
+
+    /// <summary>Marks the glyph as the current layout.</summary>
+    [Parameter] public bool Current { get; set; }
+}

@@ -1,0 +1,29 @@
+@* A titled settings section (Intune-style card). Rows go inside as SettingRow. *@
+<section id="@Id" class="aio-settings-card" aria-labelledby="@($"{Id}-title")">
+    <header class="aio-settings-card-header">
+        @if (Icon is not null)
+        {
+            <span class="aio-settings-card-icon" aria-hidden="true">
+                <FluentIcon Value="@Icon" Color="Color.Custom" CustomColor="currentColor" />
+            </span>
+        }
+        <div>
+            <h2 id="@($"{Id}-title")" class="aio-settings-card-title">@Title</h2>
+            @if (!string.IsNullOrWhiteSpace(Description))
+            {
+                <p class="aio-settings-card-description">@Description</p>
+            }
+        </div>
+    </header>
+    <div class="aio-settings-card-body">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public Icon? Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

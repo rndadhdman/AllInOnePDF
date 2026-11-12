@@ -1,0 +1,30 @@
+@* One setting: label + help text on the left, control on the right (stacks on narrow widths). *@
+<div class="aio-setting-row @(Stacked ? "is-stacked" : null)">
+    <div class="aio-setting-text">
+        <div id="@LabelId" class="aio-setting-label">@Label</div>
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <div class="aio-setting-description">@Description</div>
+        }
+    </div>
+    @if (ChildContent is not null)
+    {
+        <div class="aio-setting-control" role="group" aria-labelledby="@LabelId">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    private static int _counter;
+    private readonly string _generatedId = $"aio-setting-{Interlocked.Increment(ref _counter)}";
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    /// <summary>Puts the control below the text (for wide controls such as swatches and previews).</summary>
+    [Parameter] public bool Stacked { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string LabelId => (Id ?? _generatedId) + "-label";
+}

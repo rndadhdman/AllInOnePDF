@@ -1,0 +1,35 @@
+@* On/off property of the working publication. *@
+@inject CreatorState State
+
+<div class="cr-field cr-field-switch">
+    <FluentSwitch Value="@Get()" ValueChanged="@((bool v) => Apply(v))" Label="@Label" />
+    @if (!string.IsNullOrEmpty(Hint))
+    {
+        <div class="cr-hint">@Hint</div>
+    }
+</div>
+
+@code {
+    /// <summary>Visible label.</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Reads the current value.</summary>
+    [Parameter, EditorRequired] public Func<bool> Get { get; set; } = () => false;
+
+    /// <summary>Writes a new value (the field commits afterwards).</summary>
+    [Parameter, EditorRequired] public Action<bool> Set { get; set; } = _ => { };
+
+    /// <summary>Optional hint below the switch.</summary>
+    [Parameter] public string? Hint { get; set; }
+
+    private void Apply(bool value)
+    {
+        if (value == Get())
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit();
+    }
+}

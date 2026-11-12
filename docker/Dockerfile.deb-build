@@ -1,0 +1,5 @@
+# Packaging tools for build/linux/build-packages.ps1: dpkg-deb (part of the base image) and Pillow to scale the icon.
+FROM ubuntu:24.04
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends python3-pil \
+ && rm -rf /var/lib/apt/lists/*

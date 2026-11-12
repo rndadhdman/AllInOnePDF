@@ -1,0 +1,387 @@
+@* One file in the Convert list: identity, target picker, live status and actions.
+   Wording: "Download" on the web, "Open" / "Show in folder" on the desktop. Icons: Dismiss removes from the list,
+   Delete would destroy data (not used here). Icon-only buttons carry both Title and aria-label. *@
+@inject ConvertWorkspace Workspace
+@inject IHostServices Host
+@inject AppState AppState
+@inject NavigationManager Nav
+@inject IToastService Toasts
+
+<article class="aio-row is-@Item.State.ToString().ToLowerInvariant()" aria-label="@Item.FileName">
+    <div class="aio-row-icon" aria-hidden="true">
+        <FluentIcon Value="@ConvertFormatting.FileIcon(Item.Importer?.Format)" Color="@(Item.IsSupported ? Color.Accent : Color.Neutral)" />
+    </div>
+
+    <div class="aio-row-info">
+        <div class="aio-row-name" title="@(Host.Kind == HostKind.Desktop ? Item.SourcePath ?? Item.FileName : Item.FileName)">@Item.FileName</div>
+        @* Type and size: in the meta line when the row stacks, in their own columns when the list is wide. *@
+        <div class="aio-row-meta">
+            <span class="aio-row-meta-type" title="@Item.Importer?.Format.Description">@TypeName</span>
+            <span class="aio-row-meta-size">@ConvertFormatting.Bytes(Item.Size)</span>
+            @if (Item.Importer is { Status: ConverterStatus.Preview } preview)
+            {
+                <FluentBadge Appearance="Appearance.Accent" title="@(preview.StatusMessage ?? "Reading this format works, with limited fidelity")">Preview</FluentBadge>
+            }
+            @if (Item.IsUpload && Workspace.WritesToDisk)
+            {
+                <span class="aio-row-hint" title="Dropped files have no folder of their own">saves to the output folder</span>
+            }
+        </div>
+    </div>
+
+    <div class="aio-row-type" title="@Item.Importer?.Format.Description">@TypeName</div>
+    <div class="aio-row-size">@ConvertFormatting.Bytes(Item.Size)</div>
+
+    <div class="aio-row-target">
+        @if (Item.IsSupported)
+        {
+            <FluentSelect TOption="string" Value="@Item.TargetFormatId" ValueChanged="@((string? v) => OnTargetChanged(v))"
+                          Disabled="@Item.IsBusy" aria-label="@($"Target format for {Item.FileName}")" Width="100%" Position="SelectPosition.Below">
+                @foreach (var target in Targets)
+                {
+                    @* The title doubles as the accessible name, so it must start with the format name. Icon and
+                       extension sit in the option's slots; the extension is drawn by CSS so the closed select still
+                       shows only the name. *@
+                    <FluentOption TOption="string" Value="@target.Format.Id" Disabled="@(target.Status == ConverterStatus.Planned)"
+                                  Title="@(target.StatusMessage ?? (target.Format.Description is { } d ? $"{target.Format.DisplayName}: {d}" : target.Format.DisplayName))">
+                        <FluentIcon Value="@ConvertFormatting.FileIcon(target.Format)" Slot="start" Color="Color.Neutral" Width="16px" />
+                        @ConvertFormatting.TargetName(target)
+                        <span slot="end" class="aio-ext" data-ext="@target.Format.PrimaryExtension" aria-hidden="true"></span>
+                    </FluentOption>
+                }
+            </FluentSelect>
+            @if (Item.TargetRemembered && Item.State == ConvertItemState.Ready && Item.Importer is { } source)
+            {
+                <span class="aio-row-hint aio-row-remembered">Last used for @source.Format.DisplayName files</span>
+            }
+        }
+        else
+        {
+            <span class="aio-row-hint">No target: .@Item.Extension.ToLowerInvariant() files cannot be read</span>
+        }
+    </div>
+
+    <div class="aio-row-status" aria-live="polite">
+        @switch (Item.State)
+        {
+            case ConvertItemState.Ready:
+                var errors = Workspace.GetBlockingErrors(Item);
+                @if (errors.Count > 0)
+                {
+                    <span class="aio-row-state is-warn" title="@string.Join("\n", errors)">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" />
+                        @errors[0]
+                    </span>
+                }
+                else if (Item.Size == 0)
+                {
+                    <span class="aio-row-state is-warn" title="@ConvertRules.EmptyFileError">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" />
+                        Ready · empty file (0 bytes)
+                    </span>
+                }
+                else
+                {
+                    <span class="aio-row-state is-muted" title="@DestinationHint">Ready</span>
+                }
+                break;
+
+            case ConvertItemState.Unsupported:
+                <span class="aio-row-state is-muted" title="AllInOne PDF cannot read this type of file">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" />
+                    Unsupported
+                </span>
+                break;
+
+            case ConvertItemState.Queued:
+                <div class="aio-row-progress">
+                    <FluentProgress Width="100%" aria-label="@($"{Item.FileName} is waiting")" />
+                    <span class="aio-row-state is-muted">Waiting</span>
+                </div>
+                break;
+
+            case ConvertItemState.Running:
+                var progress = Item.Job?.Progress ?? new ConversionProgress(ConversionStage.Queued, 0);
+                var percent = (int)Math.Round(progress.Overall * 100);
+                @* is-working: a light sweep runs over the bar, so a long step (laying out a big PDF can sit at one
+                   percentage for several seconds) still shows that the work goes on. *@
+                <div class="aio-row-progress is-working">
+                    <FluentProgress Min="0" Max="100" Value="@percent" Width="100%" aria-label="@($"Converting {Item.FileName}")" />
+                    <span class="aio-row-state is-muted">@(progress.Message ?? progress.Stage.ToString())… @percent%</span>
+                </div>
+                break;
+
+            case ConvertItemState.Succeeded when Item.Outcome is { } done:
+                <span class="aio-row-state is-ok" title="@(Workspace.WritesToDisk ? done.PrimaryPath : done.PrimaryFile?.FileName)">
+                    <FluentIcon Value="@(new Icons.Filled.Size16.CheckmarkCircle())" Color="Color.Success" />
+                    @ConvertRules.ConvertedText(done.Elapsed, done.TotalBytes, done.Files.Count, done.Downloaded)
+                </span>
+                @if (done.Warnings.Count > 0)
+                {
+                    <span class="aio-row-state is-warn" title="@string.Join("\n", done.Warnings)">
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" />
+                        @(done.Warnings.Count == 1 ? done.Warnings[0] : $"{done.Warnings.Count} warnings")
+                    </span>
+                }
+                break;
+
+            case ConvertItemState.Succeeded:
+                <span class="aio-row-state is-ok">
+                    <FluentIcon Value="@(new Icons.Filled.Size16.CheckmarkCircle())" Color="Color.Success" />
+                    Converted
+                </span>
+                break;
+
+            case ConvertItemState.Failed:
+                <span class="aio-row-state is-error" title="@Error">
+                    <FluentIcon Value="@(new Icons.Filled.Size16.ErrorCircle())" Color="Color.Error" />
+                    @(ConvertRules.RowError(Error, Item.Size) ?? "The conversion failed. Retry, or check the file in the app that made it.")
+                </span>
+                @if (Details is not null)
+                {
+                    <span class="aio-row-links">
+                        <button type="button" class="aio-link" aria-expanded="@(Item.ShowDetails ? "true" : "false")"
+                                @onclick="() => Item.ShowDetails = !Item.ShowDetails">
+                            @(Item.ShowDetails ? "Hide details" : "Show details")
+                        </button>
+                        <button type="button" class="aio-link" @onclick="CopyDetailsAsync">Copy details</button>
+                    </span>
+                }
+                break;
+
+            case ConvertItemState.Cancelled:
+                <span class="aio-row-state is-muted">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.DismissCircle())" Color="Color.Neutral" />
+                    Cancelled
+                </span>
+                break;
+        }
+    </div>
+
+    <div class="aio-row-actions" role="group" aria-label="@($"Actions for {Item.FileName}")">
+        @switch (Item.State)
+        {
+            case ConvertItemState.Ready:
+                <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.ArrowSwap())"
+                              Disabled="@(!Workspace.CanConvert(Item))" OnClick="() => OnConvert.InvokeAsync(Item)">Convert</FluentButton>
+                break;
+
+            case ConvertItemState.Queued:
+            case ConvertItemState.Running:
+                <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Stop())"
+                              OnClick="() => Workspace.Cancel(Item)">Cancel</FluentButton>
+                break;
+
+            case ConvertItemState.Failed:
+            case ConvertItemState.Cancelled:
+                <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.ArrowClockwise())"
+                              Disabled="@(!Workspace.CanConvert(Item))" OnClick="() => OnConvert.InvokeAsync(Item)">Retry</FluentButton>
+                break;
+
+            case ConvertItemState.Succeeded when Item.Outcome is { } r:
+                @if (Workspace.WritesToDisk && r.PrimaryPath is { } primary)
+                {
+                    @if (Host.SupportsShellOpen)
+                    {
+                        <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Open())"
+                                      Title="@($"Open {Path.GetFileName(primary)}")" OnClick="() => OpenAsync(primary)">Open</FluentButton>
+                        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.FolderOpen())"
+                                      Title="Show in folder" aria-label="@($"Show {Path.GetFileName(primary)} in folder")" OnClick="() => RevealAsync(primary)" />
+                    }
+                }
+                else if (r.Downloads is { Count: > 0 } downloads)
+                {
+                    @* One button that says what it downloads: the file, "Download 7 files" (one image per page) or
+                       "Download zip" (a main file plus its images folder, which a browser cannot recreate). *@
+                    var label = ConvertDownloads.Label(downloads);
+                    <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.ArrowDownload())"
+                                  OnClick="() => DownloadAsync(downloads)" Title="@DownloadTitle(downloads)" aria-label="@label">@label</FluentButton>
+                }
+                @if (r.Document is not null)
+                {
+                    <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.BookOpen())"
+                                  OnClick="Read" Title="Open the document in the Reader" aria-label="Read">Read</FluentButton>
+                }
+                @if (r.Downloaded)
+                {
+                    <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.ArrowRepeatAll())"
+                                  Title="Convert again to download the file again" aria-label="Convert again" Disabled="@(!Workspace.CanConvert(Item))"
+                                  OnClick="() => OnConvert.InvokeAsync(Item)">Convert again</FluentButton>
+                }
+                else
+                {
+                    <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowRepeatAll())"
+                                  Title="Convert again" aria-label="@($"Convert {Item.FileName} again")" Disabled="@(!Workspace.CanConvert(Item))"
+                                  OnClick="() => OnConvert.InvokeAsync(Item)" />
+                }
+                break;
+        }
+
+        @if (Item.IsSupported)
+        {
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Options())"
+                          Title="Options" aria-label="@($"Options for {Item.FileName}")" OnClick="() => OnOptions.InvokeAsync(Item)" />
+        }
+        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.Dismiss())"
+                      Title="@(Item.IsBusy ? "Cancel and remove from the list" : "Remove from the list (files on disk are not touched)")"
+                      aria-label="@($"Remove {Item.FileName} from the list")"
+                      OnClick="() => Workspace.Remove(Item)" />
+    </div>
+
+    @if (Item.State == ConvertItemState.Failed && Item.ShowDetails && Details is { } details)
+    {
+        <pre class="aio-row-details" tabindex="0" aria-label="Error details">@details</pre>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public ConvertItem Item { get; set; } = default!;
+
+    /// <summary>Convert (or retry) this file; the page handles overwrite confirmation.</summary>
+    [Parameter] public EventCallback<ConvertItem> OnConvert { get; set; }
+
+    [Parameter] public EventCallback<ConvertItem> OnOptions { get; set; }
+
+    private IReadOnlyList<IExporter> Targets => Workspace.GetTargets(Item);
+
+    // A list of 15+ rows re-rendered every row on every progress tick and every click anywhere on the page (the
+    // page re-renders on each workspace change). A row now renders only when something it shows has changed.
+    private string? _renderedSignature;
+
+    protected override void OnInitialized() => _renderedSignature = Signature();
+
+    protected override bool ShouldRender()
+    {
+        var signature = Signature();
+        if (signature == _renderedSignature)
+        {
+            return false;
+        }
+
+        _renderedSignature = signature;
+        return true;
+    }
+
+    /// <summary>Everything the row shows that can change; equal signatures render the same markup.</summary>
+    private string Signature()
+    {
+        var progress = Item.Job?.Progress;
+        var outcome = Item.Outcome;
+        var errors = string.Join("|", Workspace.GetBlockingErrors(Item));
+        return string.Join('\u001f',
+            Item.State,
+            Item.TargetFormatId,
+            Item.TargetRemembered,
+            Item.ShowDetails,
+            Item.HasSource,
+            progress is not { } p ? "" : $"{(int)Math.Round(p.Overall * 100)}:{p.Message}:{p.Stage}",
+            outcome is null ? "" : System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(outcome).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            outcome?.Downloaded,
+            outcome?.Downloads?.Count,
+            outcome?.Document is null,
+            errors,
+            Item.State == ConvertItemState.Ready ? Workspace.ResolveOutputDirectory(Item) : null);
+    }
+
+    private string? Error => Item.Outcome?.Error ?? Item.Job?.Result?.Error;
+
+    /// <summary>Stack trace and type: desktop only (the outcome omits them on the web host).</summary>
+    private string? Details => Item.Outcome?.ErrorDetails;
+
+    private string? DestinationHint
+    {
+        get
+        {
+            var dir = Workspace.ResolveOutputDirectory(Item);
+            return dir is null ? "The converted file is offered as a download" : $"Saves to {dir}";
+        }
+    }
+
+    /// <summary>The source type ("Markdown"), or the bare extension when no importer reads it.</summary>
+    private string TypeName => Item.Importer?.Format.DisplayName
+        ?? (string.IsNullOrEmpty(Item.Extension) ? "Unknown type" : $".{Item.Extension.ToLowerInvariant()} file");
+
+    private void OnTargetChanged(string? value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            Workspace.SetTarget(Item, value);
+        }
+    }
+
+    private async Task OpenAsync(string path)
+    {
+        if (!File.Exists(path))
+        {
+            Toasts.ShowWarning("The file was moved or deleted.");
+            return;
+        }
+
+        await Host.OpenWithDefaultAppAsync(path);
+    }
+
+    private async Task RevealAsync(string path) => await Host.RevealInFolderAsync(path);
+
+    private static string DownloadTitle(IReadOnlyList<OutputFile> files)
+    {
+        var primary = files.FirstOrDefault(f => f.IsPrimary) ?? files[0];
+        if (files.Count == 1)
+        {
+            return $"Download {primary.FileName}";
+        }
+
+        return ConvertDownloads.NeedsZip(files)
+            ? $"Download {primary.FileName} and its {files.Count - 1} linked {(files.Count == 2 ? "file" : "files")} as one zip, keeping the folder"
+            : $"Download all {files.Count} files ({string.Join(", ", files.Take(3).Select(f => f.FileName))}{(files.Count > 3 ? ", …" : "")})";
+    }
+
+    private async Task DownloadAsync(IReadOnlyList<OutputFile> outputs)
+    {
+        var files = ConvertDownloads.Prepare(outputs);
+        foreach (var file in files)
+        {
+            try
+            {
+                await Host.SaveFileAsync(file.FileName, file.Content, file.MediaType);
+            }
+            catch (Exception ex) when (ex is IOException or InvalidOperationException or Microsoft.JSInterop.JSException or TaskCanceledException)
+            {
+                Toasts.ShowError($"{file.FileName} could not be downloaded. Try again.");
+                return;
+            }
+        }
+
+        // Everything this run produced is downloaded: release the bytes (convert again to download again).
+        await Workspace.MarkDownloadedAsync(Item);
+    }
+
+    private async Task CopyDetailsAsync()
+    {
+        if (Details is not { } details)
+        {
+            return;
+        }
+
+        try
+        {
+            await Host.CopyToClipboardAsync($"{Item.FileName}: {Error}{Environment.NewLine}{details}");
+            Toasts.ShowInfo("Error details copied");
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or Microsoft.JSInterop.JSException)
+        {
+            Toasts.ShowError("The details could not be copied.");
+        }
+    }
+
+    private void Read()
+    {
+        if (Item.Outcome?.Document is not { } document)
+        {
+            return;
+        }
+
+        // Uploads have no path (null): never hand the Reader the output file or a temporary copy.
+        AppState.SetDocument(document, Item.SourcePath);
+        Nav.NavigateTo("/read");
+    }
+}

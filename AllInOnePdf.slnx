@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AllInOnePdf.Core/AllInOnePdf.Core.csproj" />
+    <Project Path="src/AllInOnePdf.Desktop/AllInOnePdf.Desktop.csproj" />
+    <Project Path="src/AllInOnePdf.Launcher/AllInOnePdf.Launcher.csproj" />
+    <Project Path="src/AllInOnePdf.Layout/AllInOnePdf.Layout.csproj" />
+    <Project Path="src/AllInOnePdf.Publishing/AllInOnePdf.Publishing.csproj" />
+    <Project Path="src/AllInOnePdf.UI/AllInOnePdf.UI.csproj" />
+    <Project Path="src/AllInOnePdf.Web/AllInOnePdf.Web.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/AllInOnePdf.LayoutCompare/AllInOnePdf.LayoutCompare.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AllInOnePdf.Core.Tests/AllInOnePdf.Core.Tests.csproj" />
+    <Project Path="tests/AllInOnePdf.Layout.Tests/AllInOnePdf.Layout.Tests.csproj" />
+    <Project Path="tests/AllInOnePdf.Publishing.Tests/AllInOnePdf.Publishing.Tests.csproj" />
+  </Folder>
+</Solution>

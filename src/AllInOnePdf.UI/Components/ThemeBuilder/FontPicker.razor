@@ -1,0 +1,120 @@
+@* Font family picker: bundled (portable) fonts first, then installed system fonts. Each option previews itself. *@
+@inject ThemeBuilderState State
+
+<div class="tb-field tb-font" @onkeydown="OnKeyDown">
+    <div class="tb-field-head">
+        <span class="tb-label" id="@($"{_id}-l")">@Label</span>
+        @if (Get() is null && AllowNull)
+        {
+            <span class="tb-hint">@NullLabel</span>
+        }
+    </div>
+    <button type="button" class="tb-font-btn" aria-haspopup="listbox" aria-expanded="@(_open ? "true" : "false")"
+            aria-labelledby="@($"{_id}-l {_id}-v")" @onclick="Toggle">
+        <span class="tb-font-name" id="@($"{_id}-v")" style="@StyleFor(Get() ?? Inherited?.Invoke())">@(Get() ?? (AllowNull ? NullLabel : "Inter"))</span>
+        @if (ThemeBuilderFonts.IsPortable(Get()))
+        {
+            <span class="tb-badge tb-badge-ok">Portable</span>
+        }
+        else
+        {
+            <span class="tb-badge tb-badge-warn">System</span>
+        }
+        <FluentIcon Value="@(new Icons.Regular.Size16.ChevronDown())" Color="Color.Neutral" />
+    </button>
+    @if (_open)
+    {
+        <div class="tb-font-pop">
+            <FluentSearch @bind-Value="_query" Immediate="true" ImmediateDelay="150"
+                          Placeholder="Search fonts" AriaLabel="Search fonts" Style="width:100%" autofocus />
+            <div class="tb-font-list" role="listbox" aria-label="@Label">
+                @if (AllowNull && Matches(NullLabel))
+                {
+                    <button type="button" role="option" aria-selected="@(Get() is null ? "true" : "false")" class="tb-font-opt @(Get() is null ? "is-on" : null)" @onclick="() => Pick(null)">
+                        <span>@NullLabel</span>
+                    </button>
+                }
+                <div class="tb-font-group" role="presentation">Bundled with the app: same PDF on every computer</div>
+                @foreach (var f in ThemeBuilderFonts.Bundled.Where(f => Matches(f.Name)))
+                {
+                    var on = string.Equals(f.Name, Get(), StringComparison.OrdinalIgnoreCase);
+                    <button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="tb-font-opt @(on ? "is-on" : null)" @onclick="() => Pick(f.Name)" title="@f.Description">
+                        <span style="@StyleFor(f.Name)">@f.Name</span>
+                        <span class="tb-badge tb-badge-ok">Portable</span>
+                    </button>
+                }
+                @{
+                    var system = ThemeBuilderFonts.System.Where(Matches).Take(MaxSystem).ToList();
+                }
+                @if (system.Count > 0)
+                {
+                    <div class="tb-font-group" role="presentation">Installed on this computer</div>
+                    @foreach (var name in system)
+                    {
+                        var on = string.Equals(name, Get(), StringComparison.OrdinalIgnoreCase);
+                        <button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="tb-font-opt @(on ? "is-on" : null)" @onclick="() => Pick(name)">
+                            <span style="@StyleFor(name)">@name</span>
+                        </button>
+                    }
+                }
+                @if (ThemeBuilderFonts.System.Count(Matches) > MaxSystem)
+                {
+                    <div class="tb-font-more">Type to find more fonts.</div>
+                }
+            </div>
+        </div>
+    }
+    @if (!ThemeBuilderFonts.IsPortable(Get()))
+    {
+        <div class="tb-warn" role="status">
+            <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" />
+            <span>This font is installed on this computer only. On a computer without it, PDFs use Inter instead.</span>
+        </div>
+    }
+</div>
+
+@code {
+    private const int MaxSystem = 150;
+
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+    [Parameter, EditorRequired] public Action<string?> Set { get; set; } = _ => { };
+    [Parameter] public bool AllowNull { get; set; }
+    [Parameter] public string NullLabel { get; set; } = "Same as body";
+    [Parameter] public Func<string?>? Inherited { get; set; }
+
+    private readonly string _id = "tbf-" + Guid.NewGuid().ToString("N")[..8];
+    private bool _open;
+    private string? _query;
+
+    private void Toggle()
+    {
+        _open = !_open;
+        _query = null;
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && _open)
+        {
+            _open = false;
+        }
+    }
+
+    private bool Matches(string name) => string.IsNullOrWhiteSpace(_query) || name.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    private void Pick(string? name)
+    {
+        _open = false;
+        if (string.Equals(name, Get(), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Set(name);
+        State.Commit();
+    }
+
+    private static string StyleFor(string? family) =>
+        string.IsNullOrWhiteSpace(family) ? string.Empty : "font-family:" + ThemeBuilderCssGenerator.FontStack(family);
+}

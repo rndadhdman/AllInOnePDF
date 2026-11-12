@@ -1,0 +1,478 @@
+.tb-panel-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.tb-panel-search {
+    flex: 0 0 auto;
+    padding: 12px 12px 8px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.tb-panel-groups {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-bottom: 24px;
+}
+
+.tb-panel-empty {
+    padding: 16px;
+    color: var(--neutral-foreground-hint);
+    font-size: 13px;
+}
+
+.tb-group {
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.tb-group-title {
+    margin: 0;
+    font: inherit;
+}
+
+.tb-group-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 0;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tb-group-head:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.tb-group-head:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: -2px;
+}
+
+.tb-group.is-open .tb-group-head {
+    color: var(--accent-foreground-rest);
+}
+
+.tb-group-name {
+    flex: 1 1 auto;
+}
+
+.tb-group-body {
+    padding: 4px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ---- shared field styles for every control inside the panel ---- */
+.tb-panel-inner ::deep .tb-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.tb-panel-inner ::deep .tb-field-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.tb-panel-inner ::deep .tb-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--neutral-foreground-rest);
+}
+
+.tb-panel-inner ::deep .tb-hint {
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+.tb-panel-inner ::deep .tb-warn {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--neutral-foreground-rest);
+    background: var(--neutral-fill-secondary-rest, rgba(127, 127, 127, .1));
+    border-left: 3px solid var(--warning, #BC4B09);
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+.tb-panel-inner ::deep .tb-group-intro {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--neutral-foreground-hint);
+}
+
+.tb-panel-inner ::deep .tb-subhead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--neutral-stroke-divider-rest);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--neutral-foreground-rest);
+}
+
+.tb-panel-inner ::deep .tb-num {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tb-panel-inner ::deep .tb-num-slider {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tb-panel-inner ::deep .tb-num-box {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tb-panel-inner ::deep .tb-num-input {
+    width: 76px;
+    min-width: 76px;
+}
+
+.tb-panel-inner ::deep .tb-unit {
+    min-width: 24px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+/* Segmented control, Windows style: one outlined group of joined buttons; the chosen one is filled and marked by an
+   accent line under its text (same look as the Fast / Exact switch above the preview). */
+.tb-panel-inner ::deep .tb-seg {
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tb-panel-inner ::deep .tb-seg-btn {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 32px;
+    padding: 4px 8px;
+    border: 0;
+    border-left: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-fill-rest, var(--neutral-layer-1));
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.tb-panel-inner ::deep .tb-seg-btn:first-child {
+    border-left: 0;
+}
+
+.tb-panel-inner ::deep .tb-seg-btn:hover {
+    background: var(--neutral-fill-hover, var(--neutral-fill-stealth-hover));
+}
+
+.tb-panel-inner ::deep .tb-seg-btn.is-on {
+    background: var(--neutral-fill-stealth-active, var(--neutral-fill-secondary-rest));
+    font-weight: 600;
+}
+
+.tb-panel-inner ::deep .tb-seg-btn.is-on::after {
+    content: "";
+    position: absolute;
+    left: 25%;
+    right: 25%;
+    bottom: 2px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-fill-rest);
+}
+
+.tb-panel-inner ::deep .tb-seg-btn:focus-visible {
+    outline-offset: -3px;
+}
+
+.tb-panel-inner ::deep .tb-seg-btn:focus-visible,
+.tb-panel-inner ::deep .tb-tab:focus-visible,
+.tb-panel-inner ::deep .tb-font-btn:focus-visible,
+.tb-panel-inner ::deep .tb-font-opt:focus-visible,
+.tb-panel-inner ::deep .tb-palette-chip:focus-visible,
+.tb-panel-inner ::deep .tb-token:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: 1px;
+}
+
+.tb-panel-inner ::deep .tb-tabs {
+    display: flex;
+    gap: 2px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    margin-top: 4px;
+}
+
+.tb-panel-inner ::deep .tb-tab {
+    flex: 1 1 0;
+    min-height: 34px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tb-panel-inner ::deep .tb-tabs-tight .tb-tab {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 0 2px;
+    font-size: 12px;
+}
+
+.tb-panel-inner ::deep .tb-tab:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.tb-panel-inner ::deep .tb-tab.is-on {
+    border-bottom-color: var(--accent-fill-rest);
+    color: var(--accent-foreground-rest);
+}
+
+.tb-panel-inner ::deep .tb-tabpanel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* colour field */
+.tb-panel-inner ::deep .tb-color {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tb-panel-inner ::deep .tb-swatch {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 32px;
+    padding: 2px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+    background: var(--neutral-layer-1);
+    cursor: pointer;
+}
+
+.tb-panel-inner ::deep .tb-hex {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-family: var(--aio-font-mono);
+}
+
+.tb-panel-inner ::deep .tb-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--neutral-stroke-divider-rest);
+    border-radius: 6px;
+    background: var(--neutral-layer-2);
+}
+
+.tb-panel-inner ::deep .tb-palette-chip {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* font picker */
+.tb-panel-inner ::deep .tb-font {
+    position: relative;
+}
+
+.tb-panel-inner ::deep .tb-font-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 4px 10px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+    background: var(--neutral-fill-input-rest, var(--neutral-layer-1));
+    color: var(--neutral-foreground-rest);
+    font-size: 15px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tb-panel-inner ::deep .tb-font-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tb-panel-inner ::deep .tb-badge {
+    flex: 0 0 auto;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-family: var(--aio-font-ui);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.tb-panel-inner ::deep .tb-badge-ok {
+    background: var(--neutral-fill-secondary-rest, rgba(127, 127, 127, .14));
+    color: var(--accent-foreground-rest);
+}
+
+.tb-panel-inner ::deep .tb-badge-warn {
+    background: var(--neutral-fill-secondary-rest, rgba(127, 127, 127, .14));
+    color: var(--warning, #BC4B09);
+}
+
+.tb-panel-inner ::deep .tb-font-pop {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 6px;
+    background: var(--neutral-layer-floating, var(--neutral-layer-1));
+    box-shadow: var(--aio-shadow-8);
+}
+
+.tb-panel-inner ::deep .tb-font-list {
+    max-height: 280px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.tb-panel-inner ::deep .tb-font-group {
+    padding: 8px 6px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--neutral-foreground-hint);
+}
+
+.tb-panel-inner ::deep .tb-font-opt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 34px;
+    padding: 4px 8px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--neutral-foreground-rest);
+    font-size: 15px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tb-panel-inner ::deep .tb-font-opt:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+.tb-panel-inner ::deep .tb-font-opt.is-on {
+    background: var(--neutral-fill-stealth-active, rgba(127, 127, 127, .16));
+    color: var(--accent-foreground-rest);
+}
+
+.tb-panel-inner ::deep .tb-font-more {
+    padding: 6px 8px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+}
+
+/* template field */
+.tb-panel-inner ::deep .tb-template-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.tb-panel-inner ::deep .tb-tokens {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.tb-panel-inner ::deep .tb-token {
+    min-height: 28px;
+    padding: 2px 8px;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 12px;
+    background: var(--neutral-layer-1);
+    color: var(--neutral-foreground-rest);
+    font-family: var(--aio-font-mono);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.tb-panel-inner ::deep .tb-token:hover {
+    background: var(--neutral-fill-stealth-hover);
+}
+
+/* ---- wide windows (1600 px and up): the section list is its own column, so this panel shows the open group only ---- */
+.tb-group-split-title,
+.tb-panel-pick {
+    display: none;
+}
+
+@media (min-width: 1600px) {
+    .tb-panel-search,
+    .tb-group-title,
+    .tb-group:not(.is-open) {
+        display: none;
+    }
+
+    .tb-group {
+        border-bottom: 0;
+    }
+
+    .tb-group-split-title {
+        display: block;
+        margin: 0;
+        padding: 14px 16px 6px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .tb-panel-pick {
+        display: block;
+    }
+
+    .tb-group-body {
+        padding: 4px 16px 16px;
+    }
+}

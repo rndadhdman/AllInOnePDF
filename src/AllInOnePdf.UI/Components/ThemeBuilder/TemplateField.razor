@@ -1,0 +1,51 @@
+@* Header/footer template text with a token picker ({title}, {page} ...) and a message for unclosed or unknown tokens. *@
+@inject ThemeBuilderState State
+
+<div class="tb-field tb-template">
+    <div class="tb-template-row">
+        <FluentTextField Value="@(Get() ?? string.Empty)" ValueChanged="@((string? v) => Apply(v))" Label="@Label"
+                         Placeholder="Empty" Immediate="true" ImmediateDelay="250" Style="flex:1 1 auto;min-width:0" />
+        <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size16.Add())" Title="Insert a token"
+                      aria-label="@($"{Label}: insert a token")" aria-expanded="@(_open ? "true" : "false")" OnClick="() => _open = !_open" Class="tb-template-btn" />
+    </div>
+    @if (ThemeBuilderValidation.Template(Get()) is { } warning)
+    {
+        <div class="tb-warn" role="status"><FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" /><span>@warning</span></div>
+    }
+    @if (_open)
+    {
+        <div class="tb-tokens" role="group" aria-label="Tokens">
+            @foreach (var (token, description) in ThemeBuilderPreview.Tokens)
+            {
+                <button type="button" class="tb-token" title="@description" @onclick="() => Insert(token)">@token</button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<string?> Get { get; set; } = () => null;
+    [Parameter, EditorRequired] public Action<string?> Set { get; set; } = _ => { };
+
+    private bool _open;
+
+    private void Insert(string token)
+    {
+        var current = Get() ?? string.Empty;
+        Apply(current.Length == 0 || current.EndsWith(' ') ? current + token : current + " " + token);
+        _open = false;
+    }
+
+    private void Apply(string? value)
+    {
+        value = string.IsNullOrEmpty(value) ? null : value;
+        if (string.Equals(value, Get(), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        Set(value);
+        State.Commit("template:" + Label);
+    }
+}

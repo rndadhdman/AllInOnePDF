@@ -1,0 +1,50 @@
+@* Design tab, first group for a module on a free-flow canvas: where its box sits (X, Y), its size, its Z level and
+   whether resizing keeps the aspect. Typing commits like any number field (one undo step per field while typing). *@
+@inject CreatorState State
+
+@{
+    var theme = State.Working?.Theme;
+    var canvasW = theme is null ? 500 : CreatorFreeFlow.CanvasWidthPt(theme, Section);
+    var canvasH = theme is null ? 700 : CreatorFreeFlow.CanvasHeightPt(theme, Section);
+}
+<div class="cr-subhead">Box</div>
+<NumberField Label="X" Key="item-x" Unit="pt" Min="0" Max="@Math.Round(canvasW)" InputMin="@(-PlacedModule.MaxPt)" InputMax="@PlacedModule.MaxPt" Step="1"
+             Hint="From the canvas's left edge" Get="() => Item.XPt" Set="v => Item.XPt = v" />
+<NumberField Label="Y" Key="item-y" Unit="pt" Min="0" Max="@Math.Round(canvasH)" InputMin="@(-PlacedModule.MaxPt)" InputMax="@PlacedModule.MaxPt" Step="1"
+             Hint="From the canvas's top edge" Get="() => Item.YPt" Set="v => Item.YPt = v" />
+<NumberField Label="Width" Key="item-w" Unit="pt" Min="@PlacedModule.MinSizePt" Max="@Math.Round(canvasW)" InputMax="@PlacedModule.MaxPt" Step="1"
+             Get="() => Item.WidthPt" Set="SetWidth" />
+<NumberField Label="Height" Key="item-h" Unit="pt" Min="@PlacedModule.MinSizePt" Max="@Math.Round(canvasH)" InputMax="@PlacedModule.MaxPt" Step="1"
+             Hint="Content that does not fit is cut off" Get="() => Item.HeightPt" Set="SetHeight" />
+<NumberField Label="Z level" Key="item-z" Min="0" Max="@BoxDesign.MaxZIndex" Step="1" Hint="Higher levels paint over lower ones"
+             Get="() => Item.Z" Set="v => Item.Z = (int)Math.Round(v)" />
+<SwitchField Label="Lock aspect" Get="() => Item.LockAspect" Set="v => Item.LockAspect = v"
+             Hint="Corner handles and the size fields keep the width-to-height ratio. Shift while dragging a corner does the opposite." />
+
+@code {
+    /// <summary>The placement being edited.</summary>
+    [Parameter, EditorRequired] public PlacedModule Item { get; set; } = default!;
+
+    /// <summary>The free-flow section the item is on (for the canvas size).</summary>
+    [Parameter, EditorRequired] public Section Section { get; set; } = default!;
+
+    private void SetWidth(double width)
+    {
+        if (Item.LockAspect && Item.WidthPt > 0 && Item.HeightPt > 0)
+        {
+            Item.HeightPt = Math.Round(Math.Clamp(width * Item.HeightPt / Item.WidthPt, PlacedModule.MinSizePt, PlacedModule.MaxPt), 2);
+        }
+
+        Item.WidthPt = width;
+    }
+
+    private void SetHeight(double height)
+    {
+        if (Item.LockAspect && Item.WidthPt > 0 && Item.HeightPt > 0)
+        {
+            Item.WidthPt = Math.Round(Math.Clamp(height * Item.WidthPt / Item.HeightPt, PlacedModule.MinSizePt, PlacedModule.MaxPt), 2);
+        }
+
+        Item.HeightPt = height;
+    }
+}

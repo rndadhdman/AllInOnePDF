@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Publication model, package format, store, templates and module mapping for the AllInOne PDF Creator (a visual page builder for PDFs).</Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AllInOnePdf.Layout\AllInOnePdf.Layout.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AllInOnePdf.Core\AllInOnePdf.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AllInOnePdf.Publishing.Tests" />
+  </ItemGroup>
+
+</Project>

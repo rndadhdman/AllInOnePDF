@@ -1,0 +1,200 @@
+@* 48 px app header: product mark and name on the left, global actions on the right. In the desktop app it is also
+   the window's title bar (IHostServices.SupportsWindowControls): caption buttons on the far right, and its empty
+   parts move the window (aio.titleBar in app.js). *@
+@implements IAsyncDisposable
+@inject ThemeService Theme
+@inject NavigationManager Navigation
+@inject IHostServices Host
+@inject IJSRuntime JS
+
+<header class="aio-header @(_titleBar ? "is-titlebar" : null) @(_maximized ? "is-maximized" : null)" @ref="_element">
+    @if (_titleBar && !_maximized)
+    {
+        @* The top edge resizes the window (the OS frame there is given over to the title bar). *@
+        <div class="aio-resize-edge is-top" data-aio-resize="ResizeTop" aria-hidden="true"></div>
+        <div class="aio-resize-edge is-top-left" data-aio-resize="ResizeTopLeft" aria-hidden="true"></div>
+        <div class="aio-resize-edge is-top-right" data-aio-resize="ResizeTopRight" aria-hidden="true"></div>
+    }
+
+    <a class="aio-brand" href="" aria-label="AllInOne PDF, go to Convert">
+        <span class="aio-brand-mark" aria-hidden="true">
+            <FluentIcon Value="@(new Icons.Filled.Size20.DocumentPdf())" Color="Color.Custom" CustomColor="var(--foreground-on-accent-rest, #fff)" />
+        </span>
+        <span class="aio-brand-name">AllInOne PDF</span>
+    </a>
+
+    <div class="aio-header-end">
+        <div class="aio-header-actions" role="toolbar" aria-label="Global actions">
+            <FluentButton Id="aio-theme-menu-button"
+                          Appearance="Appearance.Stealth"
+                          IconStart="@ModeIcon(Theme.ThemeMode)"
+                          Title="@($"Colour mode: {ModeLabel(Theme.ThemeMode)}")"
+                          aria-label="@($"Colour mode: {ModeLabel(Theme.ThemeMode)}. Change colour mode")"
+                          aria-haspopup="menu"
+                          aria-expanded="@(_menuOpen ? "true" : "false")"
+                          OnClick="ToggleMenu" />
+            <FluentMenu Anchor="aio-theme-menu-button" @bind-Open="_menuOpen" HorizontalPosition="HorizontalPosition.End" Width="180px">
+                @foreach (var mode in Modes)
+                {
+                    var current = mode;
+                    <FluentMenuItem Role="MenuItemRole.MenuItemRadio"
+                                    Checked="@(Theme.ThemeMode == current)"
+                                    OnClick="@(() => SetModeAsync(current))">
+                        <span slot="start"><FluentIcon Value="@ModeIcon(current)" Color="Color.Neutral" /></span>
+                        @ModeLabel(current)
+                    </FluentMenuItem>
+                }
+            </FluentMenu>
+
+            <FluentButton Appearance="Appearance.Stealth"
+                          IconStart="@(new Icons.Regular.Size20.Settings())"
+                          Title="Settings"
+                          aria-label="Settings"
+                          OnClick="@(() => Navigation.NavigateTo("settings"))" />
+        </div>
+
+        @if (_titleBar)
+        {
+            <div class="aio-caption-buttons" role="group" aria-label="Window">
+                <button type="button" class="aio-caption-button" aria-label="Minimize" @onclick="Host.MinimizeWindowAsync">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Subtract())" Color="Color.Custom" CustomColor="currentColor" />
+                </button>
+                <button type="button" class="aio-caption-button" aria-label="@(_maximized ? "Restore" : "Maximize")" @onclick="Host.ToggleMaximizeWindowAsync">
+                    @if (_maximized)
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size16.SquareMultiple())" Color="Color.Custom" CustomColor="currentColor" />
+                    }
+                    else
+                    {
+                        <FluentIcon Value="@(new Icons.Regular.Size16.Maximize())" Color="Color.Custom" CustomColor="currentColor" />
+                    }
+                </button>
+                <button type="button" class="aio-caption-button is-close" aria-label="Close" @onclick="Host.CloseWindowAsync">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.Dismiss())" Color="Color.Custom" CustomColor="currentColor" />
+                </button>
+            </div>
+        }
+    </div>
+</header>
+
+@code {
+    private static readonly AppThemeMode[] Modes = [AppThemeMode.System, AppThemeMode.Light, AppThemeMode.Dark];
+    private readonly string _titleBarKey = $"titlebar-{Guid.NewGuid():N}";
+    private ElementReference _element;
+    private DotNetObjectReference<AppHeader>? _selfRef;
+    private bool _menuOpen;
+    private bool _titleBar;
+    private bool _maximized;
+    private bool _attached;
+    private bool _disposed;
+
+    protected override void OnInitialized()
+    {
+        Theme.Changed += OnThemeChanged;
+        Host.WindowStateChanged += OnWindowStateChanged;
+        ReadWindowState();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Attach the drag handling while the header is a title bar, detach when the system title bar is switched on.
+        if (_titleBar == _attached || _disposed)
+        {
+            return;
+        }
+
+        try
+        {
+            if (_titleBar)
+            {
+                _selfRef ??= DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("aio.titleBar.attach", _element, _selfRef, _titleBarKey);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("aio.titleBar.detach", _titleBarKey);
+            }
+
+            _attached = _titleBar;
+        }
+        catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+        {
+        }
+    }
+
+    // ---- Called from aio.titleBar (app.js) ----
+
+    /// <summary>The pointer moved while pressed on an empty part of the bar or a resize edge.</summary>
+    [JSInvokable]
+    public Task<bool> BeginWindowDrag(string operation) =>
+        Enum.TryParse<WindowDragOperation>(operation, out var op) ? Host.BeginWindowDragAsync(op) : Task.FromResult(false);
+
+    /// <summary>Fallback when the host cannot hand the drag to the OS: deltas in device pixels, one call per frame.</summary>
+    [JSInvokable]
+    public Task MoveWindowBy(int dx, int dy) => Host.MoveWindowByAsync(dx, dy);
+
+    [JSInvokable]
+    public Task ToggleMaximize() => Host.ToggleMaximizeWindowAsync();
+
+    // ----
+
+    private void ReadWindowState()
+    {
+        _titleBar = Host.SupportsWindowControls;
+        _maximized = _titleBar && Host.IsMaximized;
+    }
+
+    private void OnWindowStateChanged() => _ = InvokeAsync(() =>
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        ReadWindowState();
+        StateHasChanged();
+    });
+
+    private void ToggleMenu() => _menuOpen = !_menuOpen;
+
+    private async Task SetModeAsync(AppThemeMode mode)
+    {
+        _menuOpen = false;
+        await Theme.SetModeAsync(mode);
+    }
+
+    private static string ModeLabel(AppThemeMode mode) => mode switch
+    {
+        AppThemeMode.Light => "Light",
+        AppThemeMode.Dark => "Dark",
+        _ => "System",
+    };
+
+    private static Icon ModeIcon(AppThemeMode mode) => mode switch
+    {
+        AppThemeMode.Light => new Icons.Regular.Size20.WeatherSunny(),
+        AppThemeMode.Dark => new Icons.Regular.Size20.WeatherMoon(),
+        _ => new Icons.Regular.Size20.Desktop(),
+    };
+
+    private void OnThemeChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        Theme.Changed -= OnThemeChanged;
+        Host.WindowStateChanged -= OnWindowStateChanged;
+        if (_attached)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("aio.titleBar.detach", _titleBarKey);
+            }
+            catch (Exception ex) when (ex is JSException or JSDisconnectedException or InvalidOperationException)
+            {
+            }
+        }
+
+        _selfRef?.Dispose();
+    }
+}

@@ -1,0 +1,8 @@
+<!-- English strings for the AllInOne PDF installer (the WixUI dialogs bring their own). -->
+<WixLocalization Culture="en-US" Codepage="1252" xmlns="http://wixtoolset.org/schemas/v4/wxl">
+  <String Id="DowngradeError" Value="A newer version of [ProductName] is already installed. Uninstall it first from Settings &gt; Apps if you want this older version." />
+  <String Id="ShortcutDescription" Value="Convert, read and create PDF files" />
+  <String Id="DesktopShortcutCheckbox" Value="Add a shortcut to the desktop" />
+  <String Id="LaunchCheckbox" Value="Launch AllInOne PDF" />
+  <String Id="WebView2Missing" Value="AllInOne PDF needs the Microsoft Edge WebView2 Runtime, which this PC does not seem to have. Windows Update usually installs it; you can also get it from https://go.microsoft.com/fwlink/p/?LinkId=2124703" />
+</WixLocalization>

@@ -1,0 +1,281 @@
+.aio-history {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.aio-history ::deep .aio-page-header {
+  margin-bottom: 4px;
+}
+
+.aio-history-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aio-history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.aio-history-filters ::deep .aio-history-search {
+  flex: 1 1 240px;
+  max-width: 420px;
+}
+
+.aio-history-count {
+  color: var(--neutral-foreground-hint);
+}
+
+/* ---- Table: a details view whose columns share the window's width ---- */
+
+.aio-history-frame {
+  container-type: inline-size;
+  background: var(--neutral-layer-1);
+  border: 1px solid var(--neutral-stroke-divider-rest);
+  border-radius: var(--aio-radius-md, 8px);
+}
+
+.aio-history-table {
+  display: grid;
+  /* File | Target | When | Result | Theme | Duration | Size | Actions */
+  grid-template-columns:
+    minmax(240px, 3fr) minmax(88px, .8fr) minmax(128px, 1fr) minmax(112px, .8fr)
+    minmax(88px, .8fr) minmax(76px, .5fr) minmax(76px, .5fr) auto;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.aio-history-table thead,
+.aio-history-table tbody {
+  display: contents;
+}
+
+.aio-history-table tr {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+}
+
+.aio-history-table th,
+.aio-history-table td {
+  min-width: 0;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.aio-history-table th.is-end,
+.aio-history-table td.aio-hc-duration,
+.aio-history-table td.aio-hc-size {
+  text-align: right;
+  justify-self: stretch;
+}
+
+.aio-history-head {
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+  color: var(--neutral-foreground-hint);
+  font-weight: 600;
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+}
+
+.aio-history-head th {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-weight: 600;
+}
+
+.aio-history-th {
+  display: inline-block;
+  padding: 6px 0;
+}
+
+.aio-history-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  margin: 0 -4px;
+  border: none;
+  border-radius: var(--aio-radius-sm, 4px);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.is-end .aio-history-sort {
+  flex-direction: row-reverse;
+}
+
+.aio-history-sort:hover {
+  background: var(--neutral-fill-stealth-hover);
+  color: var(--neutral-foreground-rest);
+}
+
+.aio-history-sort:focus-visible {
+  outline: 2px solid var(--focus-stroke-outer);
+  outline-offset: 1px;
+}
+
+.aio-history-row {
+  border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.aio-history-row:last-child {
+  border-bottom: none;
+}
+
+.aio-history-row:hover {
+  background: var(--neutral-fill-stealth-hover);
+}
+
+.aio-history-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.aio-history-source-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.aio-history-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.aio-history-note,
+.aio-history-error {
+  font-size: var(--type-ramp-minus-1-font-size, 12px);
+  line-height: 16px;
+  color: var(--neutral-foreground-hint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aio-history-error {
+  color: var(--error, #C50F1F);
+}
+
+.aio-history-muted {
+  color: var(--neutral-foreground-hint);
+}
+
+.aio-history-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aio-history-status.is-error {
+  color: var(--error, #C50F1F);
+}
+
+.aio-history-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.aio-history-nomatch {
+  grid-column: 1 / -1;
+  padding: 24px;
+  text-align: center !important;
+  color: var(--neutral-foreground-hint);
+}
+
+/* ---- Narrow: every row stacks into the name with its actions, then one wrapping line of details ---- */
+
+@container (max-width: 860px) {
+  .aio-history-table {
+    display: block;
+  }
+
+  .aio-history-head {
+    display: none !important;
+  }
+
+  .aio-history-table tr.aio-history-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  /* Forces the details onto their own line after the name and the actions. */
+  .aio-history-table tr.aio-history-row::after {
+    content: "";
+    order: 1;
+    flex-basis: 100%;
+  }
+
+  .aio-history-table tr.aio-history-row > td {
+    padding: 0 12px;
+  }
+
+  .aio-history-row > .aio-hc-file {
+    order: 0;
+    flex: 1 1 0;
+  }
+
+  .aio-history-row > .aio-hc-actions {
+    order: 1;
+  }
+
+  .aio-history-row > .aio-hc-target,
+  .aio-history-row > .aio-hc-when,
+  .aio-history-row > .aio-hc-result,
+  .aio-history-row > .aio-hc-theme,
+  .aio-history-row > .aio-hc-duration,
+  .aio-history-row > .aio-hc-size {
+    order: 2;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 !important;
+    font-size: var(--type-ramp-minus-1-font-size, 12px);
+    line-height: 20px;
+    color: var(--neutral-foreground-hint);
+  }
+
+  /* Lines the details up under the file name (cell padding + icon + gap). */
+  .aio-history-row > .aio-hc-target {
+    margin-left: 40px;
+  }
+
+  .aio-history-row > .aio-hc-when::before,
+  .aio-history-row > .aio-hc-result::before,
+  .aio-history-row > .aio-hc-theme::before,
+  .aio-history-row > .aio-hc-duration::before,
+  .aio-history-row > .aio-hc-size:not(:empty)::before {
+    content: "·";
+    margin: 0 6px;
+  }
+
+  .aio-history-row > .aio-hc-theme::before {
+    content: "· Theme:";
+    margin-right: 4px;
+  }
+
+  .aio-history-row > .aio-hc-size:empty {
+    display: none;
+  }
+
+  .aio-history-row .aio-history-status.is-ok {
+    color: var(--neutral-foreground-rest);
+  }
+
+  .aio-history-row .aio-history-status {
+    gap: 4px;
+  }
+}

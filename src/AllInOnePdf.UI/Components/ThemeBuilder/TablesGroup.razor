@@ -1,0 +1,18 @@
+@inherits SettingsGroupBase
+
+<EnumSetting TEnum="TableStyle" Label="Style" Segmented="true" Get="() => T.Tables.Style" Set="v => T.Tables.Style = v" />
+<ColorField Label="Header background" AllowNull="true" InheritLabel="@(T.Tables.Style is TableStyle.Grid or TableStyle.Striped ? "Surface colour" : "None")"
+            Inherited="() => T.Tables.Style is TableStyle.Grid or TableStyle.Striped ? T.Colors.Surface : T.Page.Background"
+            Get="() => T.Tables.HeaderBackground" Set="v => T.Tables.HeaderBackground = v" />
+<ColorField Label="Header text colour" AllowNull="true" InheritLabel="Text colour" Inherited="() => T.Colors.Text" Get="() => T.Tables.HeaderTextColor" Set="v => T.Tables.HeaderTextColor = v" />
+<EnumSetting TEnum="ThemeFontWeight" Label="Header weight" Segmented="true" Get="() => T.Tables.HeaderWeight" Set="v => T.Tables.HeaderWeight = v" />
+<ColorField Label="Border colour" AllowNull="true" InheritLabel="Border colour" Inherited="() => T.Colors.Border" Get="() => T.Tables.BorderColor" Set="v => T.Tables.BorderColor = v" />
+<NumberSetting Label="Border width" Unit="pt" Min="0" Max="3" Step="0.25" Key="tbl-bw" Get="() => T.Tables.BorderWidthPt" Set="v => T.Tables.BorderWidthPt = v" />
+@if (T.Tables.Style == TableStyle.Striped)
+{
+    <ColorField Label="Stripe colour" AllowNull="true" InheritLabel="Surface colour" Inherited="() => T.Colors.Surface" Get="() => T.Tables.StripeColor" Set="v => T.Tables.StripeColor = v" />
+}
+<NumberSetting Label="Cell padding" Unit="pt" Min="0" Max="20" Step="0.5" Key="tbl-pad" Get="() => T.Tables.CellPaddingPt" Set="v => T.Tables.CellPaddingPt = v" />
+<NumberSetting Label="Text size" Unit="%" Min="60" Max="120" Step="1" Key="tbl-scale" Get="() => Math.Round(T.Tables.FontScale * 100)" Set="v => T.Tables.FontScale = v / 100" />
+<SwitchSetting Label="Show captions" Get="() => T.Tables.ShowCaptions" Set="v => T.Tables.ShowCaptions = v" />
+<SwitchSetting Label="Repeat header row on new pages" Get="() => T.Tables.RepeatHeaderOnNewPage" Set="v => T.Tables.RepeatHeaderOnNewPage = v" />

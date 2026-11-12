@@ -1,0 +1,359 @@
+@* Preview mode: the real PDF (draft quality; exactly the pages Export PDF makes, so an empty image module takes no
+   space) rasterised page by page. Renders off the UI thread, debounced and cancellable, like the theme builder's
+   exact preview. Pages turn with the strip, the
+   previous and next buttons, Page Up and Page Down, the left and right arrows, Home and End, and a wheel that keeps
+   going past the bottom or top of a page (CreatorPreview.razor.js). *@
+@implements IAsyncDisposable
+@inject CreatorState State
+@inject CreatorThumbnailCache Renderer
+@inject IPdfRasterizer Rasterizer
+@inject IJSRuntime JS
+
+<div class="cr-prev" @ref="_root">
+    <div class="cr-prev-strip" role="listbox" aria-label="Pages">
+        @for (var i = 0; i < _pageCount; i++)
+        {
+            var index = i;
+            var on = index == _page;
+            <button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="cr-prev-thumb @(on ? "is-on" : null)"
+                    title="@($"Page {index + 1}")" @onclick="() => ShowPage(index)">
+                @if (_thumbs.TryGetValue(index, out var thumb))
+                {
+                    <img src="@thumb" alt="@($"Page {index + 1}")" />
+                }
+                else
+                {
+                    <span class="cr-prev-thumb-ph" style="@ThumbRatio"></span>
+                }
+                <span class="cr-prev-num">@(index + 1)</span>
+            </button>
+        }
+    </div>
+    <div class="cr-prev-main">
+        <div class="cr-prev-status" aria-live="polite">
+            @if (_busy)
+            {
+                <FluentProgressRing Width="16px" />
+                <span>Rendering…</span>
+            }
+            else if (_pageCount > 0)
+            {
+                <button type="button" class="cr-prev-btn" title="Previous page (Page Up, Left arrow)" aria-label="Previous page" disabled="@(_page <= 0)"
+                        @onclick="PreviousAsync">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronLeft())" Color="Color.Custom" CustomColor="currentColor" />
+                </button>
+                <span>Page @(_page + 1) of @_pageCount</span>
+                <button type="button" class="cr-prev-btn" title="Next page (Page Down, Right arrow)" aria-label="Next page" disabled="@(_page >= _pageCount - 1)"
+                        @onclick="NextAsync">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.ChevronRight())" Color="Color.Custom" CustomColor="currentColor" />
+                </button>
+            }
+        </div>
+        @if (_error is not null)
+        {
+            <div class="cr-prev-error">
+                <FluentMessageBar Intent="MessageIntent.Error" AllowDismiss="false" Title="The PDF preview could not be rendered">
+                    @_error Switch back to Design to keep working; your changes are not affected.
+                </FluentMessageBar>
+            </div>
+        }
+        <div class="cr-prev-view" @ref="_view" tabindex="0" aria-label="PDF page. Page Up and Page Down, the left and right arrows and the wheel turn pages.">
+            @if (_main is not null)
+            {
+                <img class="cr-prev-page @(_busy ? "is-stale" : null)" src="@_main" alt="@($"Page {_page + 1} of the PDF preview")" style="@MainStyle" @onload="OnMainLoadedAsync" />
+            }
+            else if (_error is null)
+            {
+                <FluentSkeleton Shape="SkeletonShape.Rect" Width="@($"{MainWidthPx():0}px")" Height="@($"{MainWidthPx() * _ratio:0}px")" Shimmer="true" />
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private const int MainDpi = 110;
+    private const int ThumbDpi = 24;
+    private const int MaxBackgroundThumbs = 60;
+
+    /// <summary>The publication snapshot JSON (<see cref="CreatorState.CurrentJson"/>); a change re-renders.</summary>
+    [Parameter] public string Json { get; set; } = string.Empty;
+
+    /// <summary>"fit" or a scale factor.</summary>
+    [Parameter] public string Zoom { get; set; } = "fit";
+
+    private readonly Dictionary<string, string> _imageCache = new(StringComparer.Ordinal);
+    private readonly Dictionary<int, string> _thumbs = [];
+    private ElementReference _root;
+    private ElementReference _view;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<CreatorPreview>? _self;
+    private CancellationTokenSource? _cts;
+    private string? _requested;
+    private string? _hash;
+    private byte[]? _pdf;
+    private int _pageCount;
+    private int _page;
+    private string? _main;
+    private bool _busy;
+    private string? _error;
+    private string? _pendingScroll;
+    private bool _revealPending;
+    private double _ratio = 297.0 / 210.0;
+    private double _pageWidthMm = 210;
+    private bool _disposed;
+
+    private string ThumbRatio => $"aspect-ratio:1 / {_ratio.ToString("0.###", CultureInfo.InvariantCulture)}";
+
+    private string MainStyle => Zoom == "fit"
+        ? "width:100%;max-width:" + MainWidthPx().ToString("0", CultureInfo.InvariantCulture) + "px"
+        : "width:" + MainWidthPx().ToString("0", CultureInfo.InvariantCulture) + "px";
+
+    private double MainWidthPx()
+    {
+        var basePx = _pageWidthMm * 96 / 25.4;
+        return Zoom == "fit" ? basePx * 1.25 : basePx * (double.TryParse(Zoom, NumberStyles.Float, CultureInfo.InvariantCulture, out var z) ? z : 1);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (State.Working is null || string.IsNullOrEmpty(Json))
+        {
+            return;
+        }
+
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(Json)))[..32];
+        if (hash == _requested)
+        {
+            return;
+        }
+
+        _requested = hash;
+        _ = RenderAsync(hash, State.Working.Clone(), debounce: _hash is not null);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (firstRender)
+        {
+            try
+            {
+                _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/AllInOnePdf.UI/Components/Creator/CreatorPreview.razor.js");
+                _self = DotNetObjectReference.Create(this);
+                await _module.InvokeVoidAsync("initPreview", _root, _view, _self);
+            }
+            catch (JSDisconnectedException)
+            {
+                return;
+            }
+            catch (JSException)
+            {
+                // Keyboard and wheel paging are an enhancement; the strip and the buttons still work.
+                return;
+            }
+        }
+
+        if (_revealPending && _module is not null)
+        {
+            _revealPending = false;
+            try
+            {
+                await _module.InvokeVoidAsync("revealActive", _root);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+    }
+
+    private async Task RenderAsync(string hash, Publication publication, bool debounce)
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        var cts = _cts = new CancellationTokenSource();
+        var ct = cts.Token;
+        try
+        {
+            // The state renders the same content for its page map; reuse that PDF when it is ready.
+            var ready = State.PageMap is { } map && string.Equals(map.Json, Json, StringComparison.Ordinal) ? map : null;
+            if (debounce && ready is null)
+            {
+                await Task.Delay(400, ct);
+            }
+
+            _busy = true;
+            await InvokeAsync(StateHasChanged);
+
+            var (widthMm, heightMm) = publication.Theme.Page.GetSizeMm();
+            _pageWidthMm = widthMm;
+            _ratio = heightMm / Math.Max(1, widthMm);
+            byte[] pdf;
+            int count;
+            if (ready is not null)
+            {
+                pdf = ready.Pdf;
+                count = ready.PageCount;
+            }
+            else
+            {
+                pdf = await Renderer.RenderPdfAsync(publication, new PublicationRenderOptions { Draft = true, ShowPlaceholders = false, EmbedMetadata = false }, ct);
+                ct.ThrowIfCancellationRequested();
+                count = await Task.Run(() => Rasterizer.GetPageCount(pdf), ct);
+            }
+            _pdf = pdf;
+            _hash = hash;
+            _pageCount = count;
+            _page = Math.Clamp(_page, 0, Math.Max(0, count - 1));
+            _thumbs.Clear();
+            _error = null;
+
+            _main = count > 0 ? await GetImageAsync(pdf, hash, _page, MainDpi, ct) : null;
+            _busy = false;
+            _revealPending = true;
+            await InvokeAsync(StateHasChanged);
+
+            for (var i = 0; i < Math.Min(count, MaxBackgroundThumbs); i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                _thumbs[i] = await GetImageAsync(pdf, hash, i, ThumbDpi, ct);
+                if (i % 4 == 3 || i == count - 1)
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            if (ct.IsCancellationRequested || _disposed)
+            {
+                return;
+            }
+
+            _busy = false;
+            _error = ex is CreatorRendererMissingException
+                ? "The PDF renderer is not available in this build."
+                : ex.Message;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>Turns the page by <paramref name="delta"/> (clamped to the document) from the keyboard or the wheel; <paramref name="where"/> is "top" or "bottom", where the new page is scrolled to.</summary>
+    [JSInvokable]
+    public Task TurnPage(int delta, string where) => InvokeAsync(async () =>
+    {
+        await TurnAsync(delta, where);
+        StateHasChanged();
+    });
+
+    private Task PreviousAsync() => TurnAsync(-1, "top");
+
+    private Task NextAsync() => TurnAsync(1, "top");
+
+    private async Task TurnAsync(int delta, string where)
+    {
+        var target = (int)Math.Clamp((long)_page + delta, 0, Math.Max(0, _pageCount - 1));
+        if (target == _page)
+        {
+            return;
+        }
+
+        _pendingScroll = where;
+        await ShowPage(target);
+    }
+
+    private async Task ShowPage(int index)
+    {
+        if (_pdf is null || _hash is null || index == _page)
+        {
+            return;
+        }
+
+        _page = index;
+        _revealPending = true;
+        StateHasChanged(); // the strip and the counter move at once; the page image follows
+        try
+        {
+            _main = await GetImageAsync(_pdf, _hash, index, MainDpi, _cts?.Token ?? CancellationToken.None);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task OnMainLoadedAsync()
+    {
+        if (_pendingScroll is null || _module is null)
+        {
+            return;
+        }
+
+        var where = _pendingScroll;
+        _pendingScroll = null;
+        try
+        {
+            await _module.InvokeVoidAsync("scrollView", _view, where);
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+
+    private async Task<string> GetImageAsync(byte[] pdf, string hash, int page, int dpi, CancellationToken ct)
+    {
+        var key = $"{hash}:{page}:{dpi}";
+        if (_imageCache.TryGetValue(key, out var url))
+        {
+            return url;
+        }
+
+        var image = await Rasterizer.RasterizePageAsync(pdf, page, new RasterizeOptions
+        {
+            Dpi = dpi,
+            Encoding = dpi >= MainDpi ? ImageEncoding.Png : ImageEncoding.Jpeg,
+            JpegQuality = 80,
+            WithAnnotations = false,
+        }, ct);
+        url = image.ToDataUrl();
+        if (_imageCache.Count > 300)
+        {
+            _imageCache.Clear();
+        }
+
+        _imageCache[key] = url;
+        return url;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        _cts?.Cancel();
+        _cts?.Dispose();
+        if (_module is not null)
+        {
+            try
+            {
+                await _module.InvokeVoidAsync("dispose", _root);
+                await _module.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
+        _self?.Dispose();
+    }
+}

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata for the Linux packages (deb, rpm, Flatpak). {VERSION} and {DATE} are filled in by the build scripts. -->
+<component type="desktop-application">
+  <id>com.therandomadmin.AllInOnePdf</id>
+  <name>AllInOne PDF</name>
+  <summary>Convert, read, style and lay out PDFs, all offline</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="com.therandomadmin">
+    <name>The Random Admin</name>
+  </developer>
+  <description>
+    <p>
+      AllInOne PDF turns files into PDFs and PDFs into files: Markdown, HTML, Word, Excel, PowerPoint, RTF, EPUB,
+      plain text, images, CSV, JSON and source code in; PDF, Markdown, HTML, Word, Excel, PowerPoint, EPUB, text and
+      page images out. Every conversion goes through one document model, so any source becomes any target.
+    </p>
+    <p>
+      It also reads any of those formats in a comfortable reflowable view, styles PDFs with 28 built-in themes and a
+      theme builder, and lays out publications in the Creator, a page builder with structured rows and columns or a
+      free-flow canvas. Everything runs offline in pure .NET: no network, no telemetry, no external programs.
+    </p>
+  </description>
+  <launchable type="desktop-id">com.therandomadmin.AllInOnePdf.desktop</launchable>
+  <provides>
+    <binary>allinonepdf</binary>
+  </provides>
+  <url type="homepage">https://therandomadmin.com</url>
+  <url type="bugtracker">https://github.com/rndadhdman/AllInOnePDF/issues</url>
+  <url type="vcs-browser">https://github.com/rndadhdman/AllInOnePDF</url>
+  <content_rating type="oars-1.1" />
+  <categories>
+    <category>Office</category>
+    <category>Publishing</category>
+  </categories>
+  <keywords>
+    <keyword>PDF</keyword>
+    <keyword>Convert</keyword>
+    <keyword>Markdown</keyword>
+    <keyword>EPUB</keyword>
+  </keywords>
+  <releases>
+    <release version="{VERSION}" date="{DATE}" />
+  </releases>
+</component>

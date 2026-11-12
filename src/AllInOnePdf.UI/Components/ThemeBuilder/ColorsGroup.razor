@@ -1,0 +1,9 @@
+@inherits SettingsGroupBase
+
+<p class="tb-group-intro">Elements without a colour of their own use these colours.</p>
+<ColorField Label="Accent" Get="() => T.Colors.Accent" Set="v => T.Colors.Accent = v ?? T.Colors.Accent" />
+<ColorField Label="Text" Get="() => T.Colors.Text" Set="v => T.Colors.Text = v ?? T.Colors.Text" Warning="@ThemeBuilderValidation.TextContrast(T)" />
+<ColorField Label="Muted text" Get="() => T.Colors.Muted" Set="v => T.Colors.Muted = v ?? T.Colors.Muted" />
+<ColorField Label="Surface (code, table headers, callouts)" Get="() => T.Colors.Surface" Set="v => T.Colors.Surface = v ?? T.Colors.Surface" />
+<ColorField Label="Border" Get="() => T.Colors.Border" Set="v => T.Colors.Border = v ?? T.Colors.Border" />
+<ColorField Label="Page background" Get="() => T.Page.Background" Set="v => T.Page.Background = v ?? T.Page.Background" />

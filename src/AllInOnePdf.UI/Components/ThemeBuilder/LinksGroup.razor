@@ -1,0 +1,6 @@
+@inherits SettingsGroupBase
+
+<ColorField Label="Colour" AllowNull="true" InheritLabel="Accent colour" Inherited="() => T.Colors.Accent" Get="() => T.Links.Color" Set="v => T.Links.Color = v" />
+<SwitchSetting Label="Underline" Get="() => T.Links.Underline" Set="v => T.Links.Underline = v" />
+<EnumSetting TEnum="ThemeFontWeight" Label="Weight" Segmented="true" Get="() => T.Links.Weight" Set="v => T.Links.Weight = v" />
+<SwitchSetting Label="Print the address after the link" Hint="Adds the web address in brackets after each link to a website, so it can be read on paper." Get="() => T.Links.ShowUrl" Set="v => T.Links.ShowUrl = v" />

@@ -1,0 +1,300 @@
+/* Reader start page. The drop zone mirrors the Convert page's (FileDropZone.razor.css) so both entry points look
+   the same; below it, Recent and File types stack in narrow windows and sit side by side from 1400 px of content
+   width. Layout follows the space this component gets (container query), not the window, because the nav can be
+   collapsed or expanded. */
+.rd-start {
+    container: rd-start / inline-size;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.rd-start ::deep .rd-drop-zone {
+    width: 100%;
+    min-height: clamp(200px, 28vh, 300px);
+    border-radius: var(--aio-radius-lg, 12px);
+    border: 2px dashed var(--neutral-stroke-rest);
+    background: var(--neutral-layer-2);
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.rd-start ::deep .rd-drop-zone:hover,
+.rd-start ::deep .rd-drop-zone[drop-files] {
+    border-color: var(--accent-fill-rest);
+    background: var(--neutral-fill-stealth-hover, var(--neutral-layer-3));
+}
+
+.rd-start ::deep .rd-drop-zone .inputfile-content {
+    align-self: stretch;
+    justify-self: stretch;
+}
+
+.rd-drop-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+}
+
+.rd-drop-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--neutral-layer-1);
+    box-shadow: var(--aio-shadow-2);
+}
+
+.rd-drop-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rd-drop-title {
+    font-size: var(--type-ramp-plus-2-font-size, 20px);
+    line-height: var(--type-ramp-plus-2-line-height, 28px);
+    font-weight: 600;
+    color: var(--neutral-foreground-rest);
+}
+
+.rd-drop-hint {
+    color: var(--neutral-foreground-hint);
+}
+
+/* Buttons sit above FluentInputFile's invisible <input> so they get their own clicks. */
+.rd-drop-actions {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* ---- Recent and File types ---------------------------------------------------------------------------------- */
+.rd-start-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    align-items: start;
+}
+
+@container rd-start (min-width: 1400px) {
+    .rd-start-columns {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+        gap: 40px;
+    }
+}
+
+.rd-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin: 0 0 12px;
+}
+
+.rd-section-title {
+    margin: 0;
+    font-size: var(--type-ramp-plus-1-font-size, 16px);
+    line-height: var(--type-ramp-plus-1-line-height, 22px);
+    font-weight: 600;
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+.rd-section-hint {
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+/* Recent: one list surface, rows like Office's Recent (icon, name over folder, time at the end, remove). */
+.rd-recent-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--neutral-stroke-divider-rest, #E0E0E0);
+    border-radius: var(--aio-radius-md, 8px);
+    background: var(--neutral-layer-1, #FFFFFF);
+    overflow: hidden;
+}
+
+.rd-recent-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-right: 6px;
+}
+
+.rd-recent-item + .rd-recent-item {
+    border-top: 1px solid var(--neutral-stroke-divider-rest, #E0E0E0);
+}
+
+.rd-recent-open {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border: 0;
+    background: transparent;
+    color: var(--neutral-foreground-rest, #242424);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.rd-recent-open:hover:not(:disabled) {
+    background: var(--neutral-fill-stealth-hover, rgba(0, 0, 0, .04));
+}
+
+.rd-recent-open:focus-visible,
+.rd-type-row:focus-visible {
+    outline: 2px solid var(--accent-fill-rest, #0F6CBD);
+    outline-offset: -2px;
+}
+
+.rd-recent-open:disabled,
+.rd-type-row:disabled {
+    opacity: .6;
+    cursor: default;
+}
+
+.rd-recent-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.rd-recent-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rd-recent-path {
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rd-recent-time {
+    flex: 0 0 auto;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+    font-variant-numeric: tabular-nums;
+}
+
+.rd-recent-empty {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 12px 16px;
+    border: 1px dashed var(--neutral-stroke-rest, #D1D1D1);
+    border-radius: var(--aio-radius-md, 8px);
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+/* File types: Windows Settings "Default apps" rows under short group headings. The groups flow into as many
+   columns as fit (up to three) and never split across columns. */
+.rd-type-groups {
+    columns: 3 280px;
+    column-gap: 24px;
+}
+
+.rd-type-group {
+    break-inside: avoid;
+    padding-bottom: 16px;
+}
+
+.rd-type-group-name {
+    margin: 0 0 6px;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    color: var(--neutral-foreground-rest, #242424);
+}
+
+.rd-type-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.rd-type-row {
+    box-sizing: border-box;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 12px 8px 14px;
+    border: 1px solid var(--neutral-stroke-divider-rest, #E0E0E0);
+    border-radius: var(--aio-radius-sm, 4px);
+    background: var(--neutral-layer-2, #FAFAFA);
+    color: var(--neutral-foreground-rest, #242424);
+    font: inherit;
+    text-align: left;
+}
+
+/* Web: the rows only describe what Browse accepts, so they drop the card chrome that would make them look clickable. */
+.rd-type-row.is-static {
+    min-height: 44px;
+    padding: 4px 8px 4px 4px;
+    border-color: transparent;
+    background: transparent;
+}
+
+button.rd-type-row {
+    cursor: pointer;
+    transition: background-color .12s ease, border-color .12s ease;
+}
+
+button.rd-type-row:hover:not(:disabled) {
+    background: var(--neutral-fill-stealth-hover, var(--neutral-layer-3));
+    border-color: var(--neutral-stroke-rest, #D1D1D1);
+}
+
+.rd-type-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.rd-type-name {
+    font-weight: 600;
+}
+
+.rd-type-ext {
+    font-size: 12px;
+    color: var(--neutral-foreground-hint, #616161);
+    overflow-wrap: anywhere;
+}
+
+.rd-type-row ::deep .rd-type-chevron {
+    flex: 0 0 auto;
+    color: var(--neutral-foreground-hint, #616161);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rd-start ::deep .rd-drop-zone,
+    button.rd-type-row {
+        transition: none;
+    }
+}

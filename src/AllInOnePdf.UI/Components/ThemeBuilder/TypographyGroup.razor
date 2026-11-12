@@ -1,0 +1,25 @@
+@inherits SettingsGroupBase
+
+<FontPicker Label="Body font" Get="() => T.Typography.BodyFont" Set="v => T.Typography.BodyFont = v ?? BundledFonts.Sans" />
+<NumberSetting Label="Size" Unit="pt" Min="6" Max="24" InputMax="48" Step="0.5" Key="typo-size" Get="() => T.Typography.BodySizePt" Set="v => T.Typography.BodySizePt = v" />
+<NumberSetting Label="Line height" Unit="×" Min="1" Max="2.5" Step="0.05" Key="typo-lh" Get="() => T.Typography.LineHeight" Set="v => T.Typography.LineHeight = v" />
+<NumberSetting Label="Paragraph spacing" Unit="pt" Min="0" Max="30" Step="0.5" Key="typo-sp" Get="() => T.Typography.ParagraphSpacingPt" Set="v => T.Typography.ParagraphSpacingPt = v" />
+<NumberSetting Label="First-line indent" Unit="pt" Min="0" Max="48" Step="0.5" Key="typo-indent" Get="() => T.Typography.FirstLineIndentPt" Set="v => T.Typography.FirstLineIndentPt = v"
+               Warning="@(T.Typography.FirstLineIndentPt > 0 && T.Typography.ParagraphSpacingPt > 4 ? "Paragraphs have both a first-line indent and space between them. Either one already marks a new paragraph." : null)" />
+<EnumSetting TEnum="ThemeTextAlign" Label="Alignment" Segmented="true" Options="Alignments" Text="AlignText" Get="() => T.Typography.Alignment" Set="v => T.Typography.Alignment = v" />
+<NumberSetting Label="Letter spacing" Unit="em" Min="-0.05" Max="0.2" Step="0.005" Key="typo-ls" Get="() => T.Typography.LetterSpacingEm" Set="v => T.Typography.LetterSpacingEm = v" />
+<SwitchSetting Label="Hyphenate" Get="() => T.Typography.Hyphenate" Set="v => T.Typography.Hyphenate = v" />
+<SwitchSetting Label="Orphan control" Hint="Moves a paragraph to the next page rather than leaving one line at the bottom."
+               Get="() => T.Typography.OrphanControl" Set="v => T.Typography.OrphanControl = v" />
+
+@code {
+    private static readonly ThemeTextAlign[] Alignments = [ThemeTextAlign.Left, ThemeTextAlign.Center, ThemeTextAlign.Right, ThemeTextAlign.Justify];
+
+    private static string AlignText(ThemeTextAlign a) => a switch
+    {
+        ThemeTextAlign.Center => "Centre",
+        ThemeTextAlign.Right => "Right",
+        ThemeTextAlign.Justify => "Justify",
+        _ => "Left",
+    };
+}

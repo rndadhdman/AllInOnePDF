@@ -1,0 +1,9 @@
+@inherits SettingsGroupBase
+
+<ColorField Label="Border colour" AllowNull="true" InheritLabel="Accent colour" Inherited="() => T.Colors.Accent" Get="() => T.Quotes.BorderColor" Set="v => T.Quotes.BorderColor = v" />
+<NumberSetting Label="Border width" Unit="pt" Min="0" Max="10" Step="0.25" Key="q-bw" Get="() => T.Quotes.BorderWidthPt" Set="v => T.Quotes.BorderWidthPt = v" />
+<ColorField Label="Background" AllowNull="true" InheritLabel="None" Inherited="() => T.Page.Background" Get="() => T.Quotes.Background" Set="v => T.Quotes.Background = v" />
+<ColorField Label="Text colour" AllowNull="true" InheritLabel="Text colour" Inherited="() => T.Colors.Text" Get="() => T.Quotes.TextColor" Set="v => T.Quotes.TextColor = v" />
+<SwitchSetting Label="Italic" Get="() => T.Quotes.Italic" Set="v => T.Quotes.Italic = v" />
+<NumberSetting Label="Padding" Unit="pt" Min="0" Max="30" Step="0.5" Key="q-pad" Get="() => T.Quotes.PaddingPt" Set="v => T.Quotes.PaddingPt = v" />
+<NumberSetting Label="Text size" Unit="%" Min="70" Max="150" Step="1" Key="q-scale" Get="() => Math.Round(T.Quotes.FontScale * 100)" Set="v => T.Quotes.FontScale = v / 100" />

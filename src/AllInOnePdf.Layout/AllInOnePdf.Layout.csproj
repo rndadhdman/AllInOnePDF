@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>AllInOne PDF's own page layout engine: a fluent document model (columns, rows, tables, text, images) laid out across pages and written as PDF through SkiaSharp, with HarfBuzz text shaping. Replaces QuestPDF; MIT.</Description>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>AllInOnePdf.Layout</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+    <PackageReference Include="HarfBuzzSharp" />
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" />
+  </ItemGroup>
+
+</Project>

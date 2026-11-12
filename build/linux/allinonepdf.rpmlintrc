@@ -1,0 +1,8 @@
+# rpmlint filters for allinonepdf (rpmlint -r build/linux/allinonepdf.rpmlintrc allinonepdf-*.rpm).
+# A self-contained .NET application installed as add-on software under /opt, shipped exactly as published.
+addFilter("dir-or-file-in-opt")
+addFilter("unstripped-binary-or-object")
+# The .NET host libraries find their siblings through RUNPATH $ORIGIN, which stays inside /opt/allinonepdf.
+addFilter("binary-or-shlib-defines-rpath .*RUNPATH: \$ORIGIN")
+# "reflowable" (the reader's reflowable view) is not in the spelling dictionary.
+addFilter("spelling-error .*reflowable")

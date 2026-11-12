@@ -1,0 +1,24 @@
+# Runs the Blazor Server web host on Linux.
+#   docker build -f docker/Dockerfile.web -t allinonepdf-web .
+#   docker run --rm -p 5180:5180 -v allinonepdf-data:/data allinonepdf-web
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ENV DOTNET_NOLOGO=1 DOTNET_CLI_TELEMETRY_OPTOUT=1
+WORKDIR /src
+COPY . .
+RUN dotnet publish src/AllInOnePdf.Web -c Release -o /app
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+# The base image already provides the non-root user "app".
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libfontconfig1 libfreetype6 \
+ && rm -rf /var/lib/apt/lists/* \
+ && mkdir -p /data && chown app:app /data
+WORKDIR /app
+COPY --from=build /app .
+# The container is the trust boundary; expose on all interfaces inside it and let the host decide the port mapping.
+ENV ASPNETCORE_URLS=http://0.0.0.0:5180 \
+    XDG_CONFIG_HOME=/data
+VOLUME ["/data"]
+EXPOSE 5180
+USER app
+ENTRYPOINT ["dotnet", "AllInOnePdf.Web.dll"]

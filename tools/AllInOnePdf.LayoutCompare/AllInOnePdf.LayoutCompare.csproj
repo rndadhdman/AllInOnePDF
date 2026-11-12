@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Description>Renders the fidelity corpus (every built-in theme × the samples, every Creator template) to page images and compares them with a reference set, so a layout-engine change can be measured pixel by pixel.</Description>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);CA1303;CA1305;CA1307;CA1861;CA2000</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AllInOnePdf.Core\AllInOnePdf.Core.csproj" />
+    <ProjectReference Include="..\..\src\AllInOnePdf.Publishing\AllInOnePdf.Publishing.csproj" />
+    <PackageReference Include="SkiaSharp" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,89 @@
+@* Content tab of the inspector for one module: an editor per module type, then label and visibility. *@
+@using AllInOnePdf.Core.Highlighting
+@inject CreatorState State
+
+@switch (Module)
+{
+    case TextModule text:
+        <MarkdownEditor Label="Text" Id="@text.Id" Get="() => text.Markdown" Set="v => text.Markdown = v" Rows="14"
+                        Placeholder="Write here. **Bold**, *italic*, - lists, [links](https://example.com)" />
+        break;
+
+    case HeadingModule heading:
+        <TextField Label="Heading text" Get="() => heading.Text" Set="v => heading.Text = v ?? string.Empty" AllowNull="false"
+                   Hint="Inline Markdown works: **bold**, *italic*, [links](https://example.com)." />
+        <IntSegment Label="Level" Min="1" Max="6" Prefix="H" Get="() => heading.Level" Set="v => heading.Level = v" />
+        break;
+
+    case ImageModule image:
+        <ImageEditor Module="image" />
+        break;
+
+    case DividerModule divider:
+        <EnumField TEnum="DividerStyle" Label="Style" Segmented="true" Get="() => divider.Style" Set="v => divider.Style = v" />
+        <ColorField Label="Colour" InheritLabel="Theme border colour" Inherited="() => State.Working?.Theme.Colors.Border" Get="() => divider.Color" Set="v => divider.Color = v" />
+        <NumberField Label="Thickness" Unit="pt" Min="0.25" Max="6" Step="0.25" Get="() => divider.ThicknessPt" Set="v => divider.ThicknessPt = v" />
+        <NumberField Label="Width" Unit="%" Min="5" Max="100" Step="1" Get="() => divider.WidthPercent" Set="v => divider.WidthPercent = v" />
+        <EnumField TEnum="BlockAlign" Label="Alignment" Segmented="true" Get="() => divider.Align" Set="v => divider.Align = v" />
+        break;
+
+    case SpacerModule spacer:
+        <NumberField Label="Height" Unit="pt" Min="0" Max="200" InputMax="600" Step="1" Get="() => spacer.HeightPt" Set="v => spacer.HeightPt = v" />
+        break;
+
+    case QuoteModule quote:
+        <MarkdownEditor Label="Quote" Id="@quote.Id" Get="() => quote.Markdown" Set="v => quote.Markdown = v" Rows="6" />
+        <TextField Label="Attribution" Get="() => quote.Attribution" Set="v => quote.Attribution = v" Placeholder="Who said it" />
+        break;
+
+    case CalloutModule callout:
+        <EnumField TEnum="CalloutKind" Label="Kind" Segmented="true" Get="() => callout.Kind" Set="v => callout.Kind = v" />
+        <TextField Label="Title" Get="() => callout.Title" Set="v => callout.Title = v"
+                   Placeholder="@(State.Working?.Theme.Callouts.Kind(callout.Kind).Label ?? callout.Kind.ToString())" Hint="Leave empty to use the theme's label." />
+        <MarkdownEditor Label="Text" Id="@callout.Id" Get="() => callout.Markdown" Set="v => callout.Markdown = v" Rows="6" />
+        break;
+
+    case CodeModule codeModule:
+        <SelectField Label="Language" EmptyText="Plain text (no highlighting)" Options="Languages" Get="() => codeModule.Language" Set="v => codeModule.Language = v" />
+        <TextField Label="Caption" Get="() => codeModule.Caption" Set="v => codeModule.Caption = v" Placeholder="File name or description" />
+        <MarkdownEditor Label="Code" Id="@codeModule.Id" Code="true" Rows="14" Get="() => codeModule.Code" Set="v => codeModule.Code = v" />
+        break;
+
+    case TableModule table:
+        <TableEditor Module="table" />
+        break;
+
+    case ButtonModule button:
+        <TextField Label="Text" Get="() => button.Text" Set="v => button.Text = v ?? string.Empty" AllowNull="false" />
+        <TextField Label="Link" Type="TextFieldType.Url" Spellcheck="false" Get="() => button.Url" Set="v => button.Url = v" Placeholder="https://example.com"
+                   Hint="Readers can click the button in the PDF." />
+        <EnumField TEnum="ButtonStyle" Label="Style" Segmented="true" Get="() => button.Style" Set="v => button.Style = v" />
+        <EnumField TEnum="BlockAlign" Label="Alignment" Segmented="true" Get="() => button.Align" Set="v => button.Align = v" />
+        <ColorField Label="Colour" InheritLabel="Theme accent" Inherited="() => State.Working?.Theme.Colors.Accent" Get="() => button.Color" Set="v => button.Color = v" />
+        <NumberField Label="Corner radius" Unit="pt" Min="0" Max="30" Step="0.5" Get="() => button.CornerRadiusPt" Set="v => button.CornerRadiusPt = v" />
+        break;
+
+    case ContentsModule contents:
+        <TextField Label="Title" Get="() => contents.Title" Set="v => contents.Title = v ?? string.Empty" AllowNull="false" />
+        <IntSegment Label="Deepest heading level" Min="1" Max="6" Prefix="H" Get="() => contents.Depth" Set="v => contents.Depth = v" />
+        <SwitchField Label="Page numbers" Get="() => contents.ShowPageNumbers" Set="v => contents.ShowPageNumbers = v" />
+        <p class="cr-note">The entries come from the heading modules. Page numbers appear in the PDF.</p>
+        break;
+
+    case PageBreakModule:
+        <p class="cr-note">Everything after this module starts on a new page. There is nothing to set.</p>
+        break;
+}
+
+<div class="cr-subhead">Module</div>
+<TextField Label="Name in the Structure panel" Get="() => Module.Label" Set="v => Module.Label = v" Placeholder="@CreatorModuleCatalog.NameOf(Module)" />
+<SwitchField Label="Hide in the output" Get="() => Module.Hidden" Set="v => Module.Hidden = v"
+             Hint="Hidden modules stay in the publication but are left out of the PDF and exports." />
+
+@code {
+    /// <summary>The module being edited (re-resolved by the inspector on every change).</summary>
+    [Parameter, EditorRequired] public Module Module { get; set; } = default!;
+
+    private static readonly IReadOnlyList<(string Value, string Text)> Languages =
+        [.. SyntaxHighlighter.SupportedLanguages.Select(l => (l, l))];
+}

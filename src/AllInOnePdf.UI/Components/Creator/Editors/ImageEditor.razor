@@ -1,0 +1,207 @@
+﻿@* Image module content: choose an image (desktop dialog or upload), reuse one already in the publication, alt text,
+   caption, size and placement. *@
+@inject CreatorState State
+@inject IHostServices Host
+@inject IToastService Toasts
+
+@{
+    var asset = State.Working?.FindAsset(Module.AssetId);
+}
+<div class="cr-field">
+    <div class="cr-field-head">
+        <span class="cr-label">Image</span>
+        @if (asset is not null)
+        {
+            <span class="cr-hint">@asset.FileName@(asset.PixelWidth is { } w && asset.PixelHeight is { } h ? $" · {w} × {h}" : null)</span>
+        }
+    </div>
+    <div class="cr-img-pick">
+        @if (asset is { Data.Length: > 0 })
+        {
+            <img class="cr-img-thumb" src="@ThumbUrl(asset)" alt="@(Module.Alt ?? string.Empty)" />
+        }
+        else
+        {
+            <div class="cr-img-thumb cr-img-none"><FluentIcon Value="@(new Icons.Regular.Size24.Image())" Color="Color.Neutral" /><span>No image yet</span></div>
+        }
+        <div class="cr-img-actions">
+            <FluentButton Id="@_pickId" Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size16.Image())" Disabled="@_busy"
+                          OnClick="ChooseAsync">@(asset is null ? "Choose image…" : "Replace…")</FluentButton>
+            @if (asset is not null)
+            {
+                <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size16.Delete())" OnClick="Remove">Remove</FluentButton>
+            }
+        </div>
+    </div>
+    <div class="cr-hint">PNG, JPEG, WebP, GIF or SVG, up to @UploadLimits.Describe(CreatorImages.MaxImageBytes).</div>
+    @if (!Host.SupportsNativeDialogs)
+    {
+        <FluentInputFile AnchorId="@_pickId" DragDropZoneVisible="false" Accept="@CreatorImages.Accept" Multiple="false"
+                         MaximumFileSize="@((int)CreatorImages.MaxImageBytes)" OnCompleted="OnUploadedAsync" />
+    }
+</div>
+
+@{
+    var others = (State.Working?.Assets ?? []).Where(a => a.Data.Length > 0 && a.Id != Module.AssetId && !a.MediaType.Contains("svg", StringComparison.OrdinalIgnoreCase)).Take(12).ToList();
+}
+@if (others.Count > 0)
+{
+    <div class="cr-field">
+        <span class="cr-label">Images in this publication</span>
+        <div class="cr-img-reuse" role="group" aria-label="Use an image already in this publication">
+            @foreach (var other in others)
+            {
+                <button type="button" class="cr-img-reuse-btn" title="@($"Use {other.FileName}")" aria-label="@($"Use {other.FileName}")" @onclick="() => Use(other.Id)">
+                    <img src="@ThumbUrl(other)" alt="" />
+                </button>
+            }
+        </div>
+    </div>
+}
+
+<TextField Label="Alternative text" Get="() => Module.Alt" Set="v => Module.Alt = v" Placeholder="Describe the image for screen readers" />
+<TextField Label="Caption" Get="() => Module.Caption" Set="v => Module.Caption = v" />
+<NumberField Label="Width" Unit="%" Min="5" Max="100" Step="1" Get="() => Module.WidthPercent" Set="v => Module.WidthPercent = v" />
+<EnumField TEnum="BlockAlign" Label="Alignment" Segmented="true" Get="() => Module.Align" Set="v => Module.Align = v" />
+<NumberField Label="Corner radius" Hint="Rounds the picture" Key="img-radius" Unit="pt" Min="0" Max="40" Step="0.5" Get="() => Module.CornerRadiusPt" Set="v => Module.CornerRadiusPt = v" />
+<SwitchField Label="Limit the height" Get="() => Module.MaxHeightPt is not null" Set="v => Module.MaxHeightPt = v ? 200 : null" />
+@if (Module.MaxHeightPt is not null)
+{
+    <NumberField Label="Maximum height" Unit="pt" Min="20" Max="600" Step="1" Get="() => Module.MaxHeightPt ?? 200" Set="v => Module.MaxHeightPt = v" />
+}
+
+@code {
+    /// <summary>The image module being edited.</summary>
+    [Parameter, EditorRequired] public ImageModule Module { get; set; } = default!;
+
+    private readonly string _pickId = "cr-img-" + Guid.NewGuid().ToString("N")[..8];
+    private bool _busy;
+
+    // Inspector thumbnails embed the bytes; images over 4 MB show a placeholder icon there instead (the canvas still shows them).
+    private readonly Dictionary<string, string> _thumbs = new(StringComparer.Ordinal);
+
+    private string ThumbUrl(PublicationAsset asset)
+    {
+        if (!_thumbs.TryGetValue(asset.Id, out var url))
+        {
+            url = asset.Data.Length <= 4 * 1024 * 1024 ? $"data:{asset.MediaType};base64,{Convert.ToBase64String(asset.Data)}" : string.Empty;
+            _thumbs[asset.Id] = url;
+        }
+
+        return url;
+    }
+
+    private async Task ChooseAsync()
+    {
+        if (!Host.SupportsNativeDialogs)
+        {
+            // The FluentInputFile anchored to the button opens the browser's file picker.
+            return;
+        }
+
+        var paths = await Host.PickFilesAsync("Choose an image", CreatorImages.Filters, multiSelect: false);
+        if (paths.Count == 0)
+        {
+            return;
+        }
+
+        var path = paths[0];
+        try
+        {
+            var info = new FileInfo(path);
+            if (info.Length > CreatorImages.MaxImageBytes)
+            {
+                Toasts.ShowError($"{info.Name} is larger than {UploadLimits.Describe(CreatorImages.MaxImageBytes)}. Choose a smaller image or resize it first.");
+                return;
+            }
+
+            await AcceptAsync(await File.ReadAllBytesAsync(path), info.Name);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Toasts.ShowError($"The image could not be read: {ex.Message}");
+        }
+    }
+
+    private async Task OnUploadedAsync(IEnumerable<FluentInputFileEventArgs> files)
+    {
+        var file = files.FirstOrDefault();
+        if (file is null)
+        {
+            return;
+        }
+
+        try
+        {
+            if (file.Size > CreatorImages.MaxImageBytes)
+            {
+                Toasts.ShowError($"{file.Name} is larger than {UploadLimits.Describe(CreatorImages.MaxImageBytes)}. Choose a smaller image or resize it first.");
+                return;
+            }
+
+            if (file.ErrorMessage is { Length: > 0 } error || file.LocalFile is null)
+            {
+                Toasts.ShowError($"{file.Name} could not be uploaded{(file.ErrorMessage is { Length: > 0 } ? ": " + file.ErrorMessage : ".")} Try again.");
+                return;
+            }
+
+            await AcceptAsync(await File.ReadAllBytesAsync(file.LocalFile.FullName), file.Name);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Toasts.ShowError($"The image could not be read: {ex.Message}");
+        }
+        finally
+        {
+            try
+            {
+                file.LocalFile?.Delete();
+            }
+            catch (IOException)
+            {
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
+    private async Task AcceptAsync(byte[] bytes, string fileName)
+    {
+        var mediaType = CreatorImages.DetectMediaType(bytes, fileName);
+        if (mediaType is null)
+        {
+            Toasts.ShowError($"{fileName} is not a PNG, JPEG, WebP, GIF or SVG image. Choose another file.");
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var asset = await State.AddAssetAsync(bytes, fileName, mediaType);
+            Module.AssetId = asset.Id;
+            if (string.IsNullOrWhiteSpace(Module.Alt))
+            {
+                Module.Alt = Path.GetFileNameWithoutExtension(fileName).Replace('-', ' ').Replace('_', ' ');
+            }
+
+            State.Commit();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Use(string assetId)
+    {
+        Module.AssetId = assetId;
+        State.Commit();
+    }
+
+    private void Remove()
+    {
+        Module.AssetId = null;
+        State.Commit();
+    }
+}

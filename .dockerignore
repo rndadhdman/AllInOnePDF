@@ -1,0 +1,14 @@
+.git
+.worktrees
+.claude
+.vs
+.idea
+**/bin
+**/obj
+**/TestResults
+publish
+artifacts
+docker
+*.md
+!README.md
+!THIRD-PARTY-NOTICES.md

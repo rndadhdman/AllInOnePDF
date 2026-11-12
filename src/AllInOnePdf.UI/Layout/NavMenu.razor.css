@@ -1,0 +1,159 @@
+.aio-nav {
+  --aio-nav-rail: 48px;
+  flex: 0 0 auto;
+  width: var(--aio-nav-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--aio-nav-padding) 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--neutral-layer-2);
+  border-right: 1px solid var(--neutral-stroke-divider-rest);
+  transition: width 200ms cubic-bezier(.1, .9, .2, 1), margin 200ms cubic-bezier(.1, .9, .2, 1);
+  position: relative;
+  z-index: 2;
+}
+
+.aio-nav.is-collapsed {
+  width: var(--aio-nav-rail);
+}
+
+/* Narrow windows: the expanded nav floats over the content instead of pushing it. */
+.aio-nav.is-overlay {
+  margin-right: calc(var(--aio-nav-rail) - var(--aio-nav-width));
+  z-index: 6;
+  box-shadow: var(--aio-shadow-16);
+}
+
+.aio-nav-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(0, 0, 0, .28);
+}
+
+.aio-nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: 0 6px 6px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--aio-radius-sm);
+  background: transparent;
+  color: var(--neutral-foreground-rest);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.aio-nav-toggle:hover {
+  background: var(--neutral-fill-stealth-hover);
+}
+
+.aio-nav-toggle:active {
+  background: var(--neutral-fill-stealth-active);
+}
+
+.aio-nav-toggle:focus-visible {
+  outline: 2px solid var(--focus-stroke-outer, var(--accent-fill-rest));
+  outline-offset: -2px;
+}
+
+.aio-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aio-nav-list-bottom {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--neutral-stroke-divider-rest);
+  margin-left: 6px;
+  margin-right: 6px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.aio-nav ::deep .aio-nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--aio-nav-item-height);
+  padding: 0 10px 0 6px;
+  border-radius: var(--aio-radius-sm);
+  color: var(--neutral-foreground-rest);
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  outline: none;
+}
+
+.aio-nav ::deep .aio-nav-link:hover {
+  background: var(--neutral-fill-stealth-hover);
+}
+
+.aio-nav ::deep .aio-nav-link:active {
+  background: var(--neutral-fill-stealth-active);
+}
+
+.aio-nav ::deep .aio-nav-link:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus-stroke-outer, var(--accent-fill-rest));
+}
+
+.aio-nav ::deep .aio-nav-link.active {
+  background: var(--neutral-fill-stealth-selected, var(--neutral-fill-secondary-rest));
+  font-weight: 600;
+}
+
+.aio-nav ::deep .aio-nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: 2px;
+  background: var(--accent-fill-rest);
+  transform: translateY(-50%);
+  transition: height 150ms ease-out;
+}
+
+.aio-nav ::deep .aio-nav-link.active .aio-nav-indicator {
+  height: 18px;
+}
+
+.aio-nav ::deep .aio-nav-link.active .aio-nav-icon {
+  color: var(--accent-foreground-rest);
+}
+
+.aio-nav ::deep .aio-nav-icon {
+  display: inline-flex;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-left: 2px;
+}
+
+.aio-nav ::deep .aio-nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 150ms ease-out;
+}
+
+.aio-nav.is-collapsed ::deep .aio-nav-label {
+  opacity: 0;
+  width: 0;
+}
+
+@media print {
+  .aio-nav, .aio-nav-scrim { display: none; }
+}

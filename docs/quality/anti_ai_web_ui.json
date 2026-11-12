@@ -1,0 +1,855 @@
+{
+  "profile": {
+    "id": "anti-ai-web-ui",
+    "name": "Product-Specific Web and Application UI Quality",
+    "version": "1.0.0",
+    "revision_date": "2026-07-20",
+    "purpose": "Produce functional, accessible, product-specific web and application interfaces without treating visual fashion or authorship guesses as quality criteria.",
+    "compatibility": [
+      "Instruction-following systems that accept JSON context",
+      "Design and implementation workflows for web interfaces",
+      "Design and implementation workflows for native and cross-platform application GUIs"
+    ],
+    "changelog_note": "Initial product-grounded web and application UI profile with accessibility, platform, state, integrity, testing, and qualitative visual-review guidance."
+  },
+  "portable_prompt": {
+    "instruction": "Treat this JSON as an instruction profile for web and application UI work. Select one declared task mode explicitly, apply only relevant rules by priority, use the target platform and product evidence, verify interaction and accessibility behavior, report only observed results, and stop when the requested interface and verification are complete.",
+    "not_a_goal": "Do not optimize for an AI-authorship impression, ban ordinary visual patterns, add arbitrary novelty, conceal tool use, or trade product fit, accessibility, platform conventions, and working behavior for cosmetic differentiation."
+  },
+  "instruction_priority": [
+    "Factual accuracy, safety, security, law, and explicit source constraints",
+    "The user's current request and required output format",
+    "Product, user, content, accessibility, and target-platform requirements",
+    "This web and application UI quality profile",
+    "Optional visual style and differentiation within the validated product system"
+  ],
+  "operating_principles": [
+    "Design from the product's actual users, jobs, content, environment, platform, brand, and constraints rather than from a generic page or dashboard shell.",
+    "Treat accessibility and working interaction as product requirements from the start, not as polish after visual design.",
+    "Prefer native elements, system components, and established product-system components when they provide the required semantics and behavior.",
+    "Use authentic or explicitly labeled representative content, including adverse lengths, missing values, permissions, failures, and slow or offline conditions.",
+    "Distinguish normative requirements from platform recommendations, research evidence, and qualitative practitioner observations.",
+    "Treat gradients, glass, cards, pills, radii, hero patterns, and layout repetition as contextual review prompts, never as proof of authorship or automatic defects.",
+    "Test representative tasks with real interaction, assistive technology, resizing, zoom, content variation, and target-platform input methods.",
+    "Never present fabricated trust signals, decorative controls, unimplemented paths, or unrun checks as real or complete."
+  ],
+  "evidence_policy": {
+    "authoritative_requirements": "Apply W3C Recommendations and applicable official platform or legal guidance to the products and conformance targets they govern. Preserve stated levels, exceptions, platform scope, and advisory-versus-normative status.",
+    "research_evidence": "Use peer-reviewed findings at the scope of the studied participants, stimuli, methods, and outcomes. Research may motivate testing or contextual review but does not turn a correlated visual property into a universal rule.",
+    "qualitative_observations": "Use community discussions and practitioner articles only to generate review questions about hierarchy, density, consistency, platform fit, content, edge states, and functionality. They do not establish authorship or justify a blanket visual ban."
+  },
+  "visual_pattern_context": [
+    {
+      "pattern": "Purple, blue, neon, radial, mesh, or text gradients",
+      "classification": "contextual_review_only",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-004", "SRC-UI-005"],
+      "review_question": "Does the gradient carry a product or brand purpose while preserving legibility, contrast, hierarchy, and state clarity, or is it an unexplained default?",
+      "valid_examples": ["Brand artwork with verified foreground contrast.", "A data scale whose color mapping is labeled and perceptually usable.", "A platform material or game environment where depth and atmosphere support the experience."]
+    },
+    {
+      "pattern": "Glass, translucency, glow, blur, shadow, and depth materials",
+      "classification": "contextual_review_only",
+      "source_ids": ["SRC-UI-002", "SRC-UI-005"],
+      "review_question": "Does the material distinguish layers or controls without obscuring content, weakening contrast, adding motion discomfort, or contradicting the target platform?",
+      "valid_examples": ["A system material used according to the platform guidance.", "A transient overlay whose layer relationship needs emphasis.", "A visualization in which depth is meaningful and remains accessible."]
+    },
+    {
+      "pattern": "Cards, pills, badges, status dots, and large corner radii",
+      "classification": "contextual_review_only",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-004", "SRC-UI-005"],
+      "review_question": "Does each container or shape express grouping, action type, selection, status, or platform convention, or does it add nested chrome and erase hierarchy?",
+      "valid_examples": ["A card represents a movable or independently actionable object.", "A pill distinguishes a compact filter, token, or status with text as well as color.", "Rounded geometry follows a verified brand or platform component system."]
+    },
+    {
+      "pattern": "Centered oversized hero, eyebrow label, headline, subheadline, and call-to-action composition",
+      "classification": "contextual_review_only",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-004"],
+      "review_question": "Does this composition answer a real visitor's first decision with specific, supportable content, or could the copy and structure be swapped unchanged into unrelated products?",
+      "valid_examples": ["A focused campaign page with one genuine primary action.", "A new-category product that needs a concise orientation before use.", "An editorial introduction whose hierarchy matches the reading task."]
+    },
+    {
+      "pattern": "Uniform grids, repeated feature blocks, evenly weighted panels, and decorative charts",
+      "classification": "contextual_review_only",
+      "source_ids": ["SRC-UI-002", "SRC-UI-003", "SRC-UI-004", "SRC-UI-005", "SRC-UI-014"],
+      "review_question": "Does repetition support comparison and scanning of truly parallel information, or does it flatten priority, hide task sequence, and decorate invented or irrelevant data?",
+      "valid_examples": ["A comparison table with shared fields.", "A monitoring surface where repeated modules represent equally important resources.", "A verified chart that answers a user question better than a number or sentence."]
+    }
+  ],
+  "rules": [
+    {
+      "id": "UI-INTEGRITY-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Do not fabricate or present as real any testimonial, review, customer logo, partner, certification, award, user count, revenue, conversion rate, rating, avatar, activity item, analytics value, social-media indicator, case study, research result, or other trust signal. Use verified material, clearly labeled synthetic fixtures, or an honest empty state.",
+      "reason": "Invented social proof and metrics mislead users and can violate consumer-protection requirements; visual plausibility does not make a claim true.",
+      "avoid": ["Five-star reviews attributed to invented customers.", "A logo wall populated with recognizable companies that have not approved the claim.", "A dashboard filled with plausible random values presented as live production data.", "A prototype activity feed that is indistinguishable from actual user activity."],
+      "prefer": ["Content supplied by and traceable to the product owner.", "A fixture visibly labeled Sample data in a prototype or demo.", "A structurally useful empty state when evidence is unavailable.", "A documented source, owner, date, and refresh behavior for published metrics."],
+      "exceptions": ["Clearly fictional teaching examples, story worlds, wireframes, and test fixtures may use invented content when the context cannot reasonably be mistaken for a real claim or live product state."],
+      "check": "Trace every trust signal and quantitative claim to approved evidence; verify that synthetic content is unmistakably labeled and cannot leak into a production representation.",
+      "source_ids": ["SRC-UI-013"]
+    },
+    {
+      "id": "UI-INTEGRITY-002",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Do not claim that an interface, flow, accessibility target, responsive behavior, platform convention, or test has been completed or passed unless that exact behavior was implemented and freshly verified in the stated environment.",
+      "reason": "False completion evidence hides broken paths and blocks informed release decisions.",
+      "avoid": ["Calling a static mockup a working checkout.", "Reporting keyboard access from an automated contrast scan.", "Saying every breakpoint works after inspecting one desktop screenshot.", "Representing placeholder links or no-op buttons as complete."],
+      "prefer": ["Name the exact implementation and build inspected.", "Report the device, window, input method, browser or platform, assistive technology, and result as applicable.", "Separate implemented, visually reviewed, interactively tested, and not tested states."],
+      "exceptions": ["A clearly labeled design intention or acceptance criterion may describe future behavior, but it must not be worded as a completed result."],
+      "check": "Match every completion statement to fresh observable evidence and list material unverified paths without softening them.",
+      "source_ids": ["SRC-UI-003", "SRC-UI-004"]
+    },
+    {
+      "id": "UI-PRODUCT-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review"],
+      "instruction": "Ground design decisions in the identified users, jobs, content, operating environment, trust stakes, product maturity, brand constraints, and target platforms before choosing the page structure or component composition.",
+      "reason": "A polished generic shell can solve the wrong task, obscure the product's differentiator, and create affordances unsupported by actual behavior.",
+      "avoid": ["Starting every product as a sidebar dashboard or marketing hero.", "Inventing personas or research findings to rationalize a preferred layout.", "Choosing desktop, mobile, or touch assumptions without a target-platform decision."],
+      "prefer": ["A short evidence map from user task to content, action, state, and platform constraint.", "Explicit assumptions where research is unavailable.", "A structure derived from the highest-value and highest-risk user journeys."],
+      "exceptions": ["A disposable exploration can use provisional assumptions when they are labeled, isolated from production claims, and scheduled for validation before commitment."],
+      "check": "For each major region and action, identify the user need, product capability, content source, and platform constraint that justifies it.",
+      "source_ids": ["SRC-UI-003", "SRC-UI-004"]
+    },
+    {
+      "id": "UI-ARCH-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "design_review"],
+      "instruction": "Organize information around user tasks and meaningful relationships, with a discernible primary path, stable terminology, progressive disclosure, and hierarchy that remains understandable without decorative styling.",
+      "reason": "Dense, repetitive, or equally weighted regions make users reconstruct the product's model and can disguise missing prioritization.",
+      "avoid": ["Giving every message, metric, and action equal size and emphasis.", "Repeating the same explanatory copy in cards, tooltips, and side panels.", "Using boxes and color as the only indication of hierarchy."],
+      "prefer": ["A clear page or window purpose and primary task.", "Headings and grouping that reflect the content model.", "Secondary detail disclosed when it becomes relevant.", "Hierarchy proven with representative content and grayscale or unstyled inspection."],
+      "exceptions": ["Expert operational interfaces may need sustained high density; preserve scan paths, grouping, prioritization, and user-configurable views instead of forcing consumer-site spaciousness."],
+      "check": "Ask a representative user to identify the current location, primary task, next action, and important exception without prompting.",
+      "source_ids": ["SRC-UI-002", "SRC-UI-004", "SRC-UI-018"]
+    },
+    {
+      "id": "UI-DENSITY-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa"],
+      "instruction": "Set content density, spacing, and disclosure from task frequency, comparison needs, reading length, device, input precision, and user expertise; do not maximize either whitespace or filled space by default.",
+      "reason": "Excessive density impairs scanning and target separation, while excessive spacing increases travel, hides relationships, and slows expert work.",
+      "avoid": ["Filling every available region with a card or tip.", "Stretching a small form across a large dashboard.", "Applying one spacing interval to unrelated content and control relationships.", "Removing useful data solely to make a screenshot look minimal."],
+      "prefer": ["Semantic spacing tokens that distinguish tight, related, section, and page-level relationships.", "Compact and comfortable density options when the product warrants them.", "Representative long, short, missing, and localized content in layout decisions."],
+      "exceptions": ["Kiosks, control rooms, creative canvases, and accessibility modes can require atypical density; validate against their actual viewing distance, task, and input constraints."],
+      "check": "Review the interface with realistic volume and adverse content at each target size; confirm grouping, scan order, reachability, and task time.",
+      "source_ids": ["SRC-UI-002", "SRC-UI-014"]
+    },
+    {
+      "id": "UI-NAV-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Provide predictable navigation, current-location cues, back or dismissal behavior, deep-link and refresh continuity where applicable, and a recoverable route out of every transient or nested state using conventions of the target platform.",
+      "reason": "Users can become lost when custom gestures, hidden state, browser-history breaks, or inconsistent back behavior replace a coherent navigation model.",
+      "avoid": ["Swipe-only page changes with no visible location or alternative control.", "A browser application that loses state or exits unexpectedly on Back.", "A modal whose close action competes with navigation.", "Moving primary destinations unpredictably between pages."],
+      "prefer": ["Persistent or appropriately adaptive navigation for peer destinations.", "A visible current location and meaningful titles.", "Back that reverses the user's navigation or dismisses transient UI according to platform convention.", "State restoration across resize, rotation, refresh, and configuration changes where required."],
+      "exceptions": ["Immersive, kiosk, game, and single-purpose flows may use specialized navigation when exit, recovery, accessibility, and platform requirements remain explicit and tested."],
+      "check": "Traverse primary and interrupted flows using pointer, keyboard, platform Back, deep links, refresh or relaunch, and narrow or wide layouts as applicable; verify location and recovery at each step.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-010", "SRC-UI-012", "SRC-UI-019"]
+    },
+    {
+      "id": "UI-RESPONSIVE-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "responsive_qa", "accessibility_review"],
+      "instruction": "Make layout and interaction adapt to the available viewport or app window, text and display scaling, orientation, safe areas, input method, and content needs; do not merely shrink, clip, or stack a desktop composition.",
+      "reason": "Real windows vary continuously, and a layout that only matches named device screenshots can lose content, state, sequence, and functionality under resizing or zoom.",
+      "avoid": ["Fixed-width content that requires two-dimensional scrolling at the conformance target.", "Hiding a primary action on small screens without an alternative.", "Switching layout from device identity rather than available window and content constraints.", "Losing unsaved state when the window class or orientation changes."],
+      "prefer": ["Content-driven transition points and platform size classes where appropriate.", "Recomposition that preserves task order, navigation, focus, and state.", "Safe-area and display-feature accommodation.", "Testing between canonical widths, not only at endpoints."],
+      "exceptions": ["Interfaces whose task intrinsically requires a two-dimensional canvas, large table, map, timeline, or image may use scoped scrolling or pan-and-zoom, while surrounding navigation and controls still adapt and remain accessible."],
+      "check": "Exercise the full supported size range, orientation and window changes, and long content with each supported input method. Test 200 percent text resize separately from WCAG reflow at 320 CSS pixels, which is typically equivalent to 400 percent browser zoom from a 1280 CSS-pixel viewport, when those web criteria apply; record clipping, overlap, two-dimensional scrolling, hidden functionality, focus loss, and state loss.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-009", "SRC-UI-010", "SRC-UI-018"]
+    },
+    {
+      "id": "UI-ACCESS-SEMANTICS-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Expose correct programmatic structure and accessible names, roles, values, states, relationships, instructions, reading order, headings or landmarks, text alternatives, and status updates through native semantics or the target platform accessibility API.",
+      "reason": "A visually complete interface can be unusable or misleading when assistive technology receives missing, duplicate, stale, or incorrect semantics.",
+      "avoid": ["A clickable generic container with no button role or name.", "An icon-only control whose tooltip is its only label.", "A static text element exposed as an editable field.", "A success toast or loading change invisible to assistive technology."],
+      "prefer": ["Native HTML and platform controls before custom roles.", "Visible labels that also form the accessible name.", "Programmatic error, description, and group relationships.", "Polite status announcements that do not steal focus unless the context truly changes."],
+      "exceptions": ["Pure decoration should be excluded from the accessibility tree; custom widgets are acceptable only when their complete interaction and accessibility contracts are implemented and tested."],
+      "check": "Inspect the accessibility tree and traverse the interface with representative screen readers or platform assistive technology, confirming announced purpose, state, value, order, updates, and control behavior.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-008", "SRC-UI-009", "SRC-UI-011", "SRC-UI-016"]
+    },
+    {
+      "id": "UI-ACCESS-KEYBOARD-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Make every applicable user action operable without a pointer, with logical and predictable focus order, standard activation keys, appropriate composite-widget navigation, no keyboard trap, and discoverable shortcuts where the platform expects them.",
+      "reason": "Pointer-only interaction excludes keyboard, switch, voice, and assistive-technology users and often exposes incomplete control semantics.",
+      "avoid": ["A div activated only by a mouse click.", "Drag as the only way to reorder or set a value.", "Positive tabindex values used to patch a visually reordered DOM.", "A modal that allows focus behind it or cannot be escaped."],
+      "prefer": ["Native controls and document order aligned with the visual order.", "Tab between components and documented arrow-key behavior within composites.", "Equivalent buttons or commands for gestures and drag operations.", "Focus moved deliberately after dialogs, navigation, deletion, and dynamic insertion."],
+      "exceptions": ["A freehand drawing or continuous pointer task may require pointer input, but all surrounding commands, configuration, saving, cancellation, and non-pointer alternatives required by the product or standard remain accessible."],
+      "check": "Complete every primary and destructive flow with keyboard alone in both directions, including overlays, menus, validation, scrolling, dynamic updates, and recovery; confirm the focus sequence and key behavior against the control pattern.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-007", "SRC-UI-009", "SRC-UI-011"]
+    },
+    {
+      "id": "UI-ACCESS-FOCUS-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Keep keyboard focus visibly identifiable, sufficiently contrasted, unobscured, singular, and distinct from selection, hover, validation, and active states across themes and responsive layouts.",
+      "reason": "Without a reliable focus indicator, keyboard users cannot track the active control or predict where an action will occur.",
+      "avoid": ["Removing outlines with no equivalent.", "Using the same appearance for selected and focused items.", "Allowing sticky headers, cookie banners, or bottom sheets to cover the focused control.", "Moving focus offscreen after responsive recomposition."],
+      "prefer": ["A focus treatment tested on every background and theme.", "Automatic scrolling that keeps the focused item visible.", "Distinct but harmonious hover, selected, active, and focus tokens.", "Focus restoration to the invoking control or the next logical target."],
+      "exceptions": ["A pointer-specific focus indication may be reduced only when the platform and conformance target allow it and keyboard focus remains reliably visible."],
+      "check": "Traverse every interactive element in all supported themes and window sizes; inspect contrast, clipping, occlusion, focus restoration, and separation from selected state.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-007", "SRC-UI-011"]
+    },
+    {
+      "id": "UI-ACCESS-CONTRAST-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Meet the applicable contrast and non-color information requirements for text, icons, controls, states, focus indicators, and meaningful graphics across themes, gradients, images, translucency, hover, disabled, and forced or high-contrast conditions.",
+      "reason": "Low contrast and color-only meaning can make content and interaction unavailable even when the default screenshot appears polished.",
+      "avoid": ["Low-opacity gray text used for essential instructions.", "Red and green as the only distinction between error and success.", "Text whose contrast varies below target over an image or animated gradient.", "Hard-coded colors that defeat system high-contrast modes."],
+      "prefer": ["Measured contrast at the declared conformance level.", "Text, shape, icon, pattern, or position in addition to color.", "Theme tokens that preserve system settings.", "Testing of actual rendered states rather than palette swatches alone."],
+      "exceptions": ["Apply the explicit exceptions of the governing accessibility standard, such as logos or inactive incidental content, without expanding them to ordinary labels or controls."],
+      "check": "Measure rendered foreground and adjacent-color pairs for every meaningful state, then inspect color independence and forced or high-contrast behavior with platform tools.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-009", "SRC-UI-011"]
+    },
+    {
+      "id": "UI-ACCESS-SCALE-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "responsive_qa", "accessibility_review"],
+      "instruction": "Support the applicable text resize, browser zoom, display scaling, Dynamic Type or system text settings without loss of content, controls, reading order, labels, or task completion.",
+      "reason": "Fixed typography and containers can turn larger text into clipping, overlap, truncation, or missing actions for users who need magnification.",
+      "avoid": ["Fixed-height buttons that cut off enlarged labels.", "Disabling browser zoom.", "Truncating critical values with no accessible full-text path.", "Replacing text with an unlabeled icon at large type sizes."],
+      "prefer": ["Layout that reflows and grows with content.", "Platform text styles and relative units.", "Representative localization and long-label tests.", "Alternate composition when enlargement makes the default arrangement unusable."],
+      "exceptions": ["Intrinsic two-dimensional content can use accessible zoom or scoped scrolling as permitted by the applicable standard, while its labels and controls still scale and remain operable."],
+      "check": "Run the product at the declared maximum text and display settings and web zoom target, then complete primary flows and inspect every content and control boundary.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-009", "SRC-UI-011"]
+    },
+    {
+      "id": "UI-ACCESS-MOTION-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Use motion only for feedback, continuity, orientation, or a validated experience; avoid prohibited flashing, provide controls for applicable moving or auto-updating content, do not encode essential meaning only in motion, and honor system or web reduced-motion preferences.",
+      "reason": "Uncontrolled motion can distract, obstruct reading, trigger discomfort or seizures, and make state changes inaccessible.",
+      "avoid": ["Auto-playing marquees or decorative parallax with no reduction path.", "A looping glow or bounce used solely to attract attention.", "A success state communicated only by an animation.", "Replacing reduced motion with an equally intense blur or zoom effect."],
+      "prefer": ["Brief motion tied to a user action and a comprehensible state transition.", "A reduced or absent motion variant that preserves feedback.", "Pause, stop, or hide controls when the applicable criterion requires them.", "Static text, icon, or haptic alternatives for important information."],
+      "exceptions": ["Motion essential to a game mechanic, simulation, or instructional demonstration may remain when essential, but nonessential surrounding motion and applicable safety controls still need review."],
+      "check": "Enable reduced motion, inspect flash frequency and auto-updating regions, complete the task without relying on animation, and verify pause or stop behavior where required.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-009"]
+    },
+    {
+      "id": "UI-ACCESS-TARGET-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Meet the applicable target-size and spacing requirement or platform recommendation for the supported input methods, and provide alternatives to complex, path-based, or precision gestures.",
+      "reason": "Small or crowded controls and gesture-only actions create preventable errors and can make core tasks inaccessible to people with limited dexterity.",
+      "avoid": ["Tiny playback, close, or destructive icons with no enlarged hit area.", "Adjacent targets whose interactive regions overlap.", "Swipe, drag, long press, or hover as the only path to an action.", "Applying a touch target number unchanged to precise desktop pointer controls without platform analysis."],
+      "prefer": ["At least the applicable WCAG target or a documented exception on the web.", "Platform-recommended touch areas such as Android's 48 dp minimum recommendation where applicable.", "Visible action alternatives to gestures.", "Target sizing verified from interactive bounds, not icon artwork."],
+      "exceptions": ["Use only exceptions stated by the governing criterion or platform guidance, such as inline text links or equivalent adjacent controls, and document why the exception applies."],
+      "check": "Measure actual interactive bounds and separation on representative devices, test with touch and precision input, and verify a non-gesture route for every core action.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-009", "SRC-UI-016"]
+    },
+    {
+      "id": "UI-STATE-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Design and implement every reachable material state of a flow, including initial, loading, progressive or long-running, empty, partial, validation error, service error, permission denied, offline, stale, disabled, hover, focus, pressed, selected, success, and cancellation states as applicable.",
+      "reason": "A happy-path screen is not a complete product; absent states produce dead ends, ambiguity, inaccessible updates, and data loss under real conditions.",
+      "avoid": ["A permanent skeleton when a request fails.", "A blank table with no explanation or next step.", "A generic Something went wrong message when recovery depends on the cause.", "A disabled control with no discoverable reason when explanation is needed."],
+      "prefer": ["State copy that identifies what happened, preserved data, and the next available action.", "Progress appropriate to known or unknown duration.", "Retry, reconnect, edit, request access, cancel, or contact paths where meaningful.", "Programmatic announcements that preserve focus."],
+      "exceptions": ["Do not invent impossible states; derive the inventory from the actual data, permissions, network, lifecycle, and component contracts."],
+      "check": "Create a state matrix for each material flow and force every applicable state in the running product, including slow, empty, malformed, denied, interrupted, and offline conditions.",
+      "source_ids": ["SRC-UI-003", "SRC-UI-004", "SRC-UI-008"]
+    },
+    {
+      "id": "UI-STATE-002",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Make status, success, progress, and error feedback timely, truthful, specific to the completed or failed operation, programmatically available, and persistent long enough to perceive without unnecessarily moving focus.",
+      "reason": "Generic or purely visual feedback leaves users unsure whether an action occurred, whether data is safe, and how to recover.",
+      "avoid": ["Saved when only a local optimistic update occurred and the server write failed.", "A color flash with no text or accessible status.", "An error toast that disappears before it can be read.", "Moving focus to routine background status and interrupting the task."],
+      "prefer": ["State the affected object and actual result.", "Differentiate queued, syncing, saved, failed, and partially completed states.", "Use the appropriate status or alert semantics.", "Keep recovery adjacent to the problem and preserve entered data."],
+      "exceptions": ["Routine status may be visually subtle or announced politely, while urgent destructive or safety-critical conditions can require interruptive alerts."],
+      "check": "Trigger each asynchronous outcome with sight, sound, and pointer assumptions removed; verify timing, wording, programmatic announcement, focus behavior, and consistency with actual persisted state.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-008"]
+    },
+    {
+      "id": "UI-DESTRUCTIVE-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Differentiate destructive actions, communicate their concrete scope and consequence, prevent accidental activation in proportion to risk, and provide confirmation, undo, recovery, or review when the loss cannot be trivially reversed.",
+      "reason": "Generic confirmations and visually adjacent destructive controls can cause irreversible loss, especially under keyboard, touch, or assistive-technology use.",
+      "avoid": ["Are you sure? with no object or consequence.", "Delete placed beside Save with the same visual weight and focus behavior.", "Closing a dirty editor without warning or recovery.", "Reporting completion before the destructive operation actually succeeds."],
+      "prefer": ["Delete 18 invoices with a clear explanation of permanence or retention.", "Undo for low-latency reversible changes.", "Review and explicit confirmation for high-impact batch actions.", "Focus management and error recovery that retain context."],
+      "exceptions": ["Frequent, low-impact, easily reversible actions may use immediate execution plus undo instead of a blocking confirmation."],
+      "check": "Test accidental, repeated, keyboard, touch, slow, partial-failure, cancel, undo, and relaunch scenarios; confirm that the user can predict and recover from the outcome.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-012"]
+    },
+    {
+      "id": "UI-CONTROL-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Every control, link, form action, menu item, tab, filter, sort, search field, disclosure, navigation element, and apparent interactive affordance must perform its stated action in all supported input modes or be clearly excluded from the deliverable.",
+      "reason": "Dead calls to action and decorative controls make an interface deceptive and prevent task completion.",
+      "avoid": ["A clickable-looking card with no behavior.", "A Learn more link pointing to #.", "Tabs that only change styling without changing or identifying content.", "A search field that accepts text but never runs or reports results."],
+      "prefer": ["Wire controls to real routes and state transitions.", "Remove unavailable affordances from production surfaces.", "Mark a prototype control as noninteractive in the prototype context.", "Test repeated activation, disabled behavior, loading locks, errors, and persistence."],
+      "exceptions": ["Static mockups may depict future controls when the artifact is unmistakably labeled noninteractive and no completion claim is made."],
+      "check": "Enumerate every perceived affordance and activate it with each supported input method; verify the visible, programmatic, navigation, persistence, error, and repeat-use results.",
+      "source_ids": ["SRC-UI-002", "SRC-UI-003"]
+    },
+    {
+      "id": "UI-FORM-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Give form controls persistent labels and necessary instructions, accept valid input without arbitrary restriction, validate at useful times, identify errors in text and programmatically, preserve entered data, and provide actionable correction or prevention for consequential submissions.",
+      "reason": "Placeholder-only labels, vague errors, destructive validation, and inaccessible relationships make forms hard or impossible to complete.",
+      "avoid": ["Using placeholder text as the only label.", "Error in field without naming the rule or correction.", "Clearing the entire form after one invalid value or service failure.", "Blocking paste or password managers without a justified security requirement."],
+      "prefer": ["Explicit labels, formats, units, optional status, and examples when needed.", "Inline summary and field-level errors linked programmatically.", "Server and client validation that agree and preserve user work.", "Review, confirmation, and correction for legal, financial, or destructive data."],
+      "exceptions": ["A visually hidden label can be appropriate for an established compact control when its accessible name remains unambiguous and adjacent context is sufficient for all supported users."],
+      "check": "Complete the form with keyboard and assistive technology using valid, empty, malformed, long, localized, duplicate, expired, interrupted, and server-rejected input; verify preservation and recovery.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-011"]
+    },
+    {
+      "id": "UI-PLATFORM-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Adopt the target platform's current conventions for navigation, windowing, bars, menus, dialogs, selection, back behavior, keyboard commands, system settings, materials, safe areas, typography, and standard controls unless a tested product need justifies a deliberate departure.",
+      "reason": "Platform conventions transfer learned behavior, accessibility support, input handling, and system adaptation that a generic cross-platform shell can lose.",
+      "avoid": ["Making a native mobile app navigate like a desktop marketing site without a product reason.", "Recreating a system control visually while omitting its keyboard or accessibility behavior.", "Applying one platform's material, navigation, and spacing unchanged to every other platform.", "Using a new platform fashion as decoration without understanding its layer and legibility guidance."],
+      "prefer": ["System and maintained framework components.", "Platform-specific composition over pixel-identical cross-platform output.", "A documented divergence with user evidence and a complete accessibility contract.", "Current official guidance for the exact target and version."],
+      "exceptions": ["Games, creative tools, immersive experiences, branded instruments, and cross-platform products may establish a specialized interaction language when it remains learnable, consistent, accessible, and compatible with required system behavior."],
+      "check": "Compare primary flows and components with current official guidance for each supported platform, then test with platform navigation, settings, input, windowing, and assistive technology.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-010", "SRC-UI-011", "SRC-UI-012", "SRC-UI-018", "SRC-UI-019"]
+    },
+    {
+      "id": "UI-SYSTEM-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "component", "design_review"],
+      "instruction": "Reuse the product's maintained components, tokens, patterns, and content terminology before inventing parallel styles or one-off controls; extend the system only for a demonstrated semantic or behavioral need.",
+      "reason": "Locally plausible custom elements can fragment interaction, accessibility, maintenance, and visual language across a real product.",
+      "avoid": ["Copying the appearance of an existing button with new custom classes instead of using the component.", "Creating a new radius, shadow, icon style, and spacing scale for one page.", "Forcing a component into a role its semantics do not support."],
+      "prefer": ["Inspect the implemented design system and usage examples.", "Add a documented variant when an existing component nearly fits.", "Create a new component only when its reusable contract is clear.", "Remove duplicate patterns during an in-scope redesign migration."],
+      "exceptions": ["A contained prototype may explore an alternative system, but it must not silently enter production or masquerade as an established component."],
+      "check": "Map each component and token to the maintained system or document the requirement, accessibility contract, owner, and reuse case for a new addition.",
+      "source_ids": ["SRC-UI-002", "SRC-UI-004"]
+    },
+    {
+      "id": "UI-ICON-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Use a coherent icon source, optical size, stroke or fill treatment, alignment, and semantic vocabulary; pair unfamiliar or consequential icons with text and never use emoji or color dots as unexplained substitutes for product icons and labels.",
+      "reason": "Mismatched or ambiguous icons weaken recognition, hierarchy, brand coherence, and accessibility.",
+      "avoid": ["Mixing outlined, filled, hand-drawn, and emoji icons without a defined purpose.", "Using a sparkle icon for unrelated actions because it looks modern.", "Representing status only with an unlabeled colored dot.", "Scaling every icon to the same box while ignoring optical alignment."],
+      "prefer": ["Platform or product icon sets with documented meanings.", "Visible labels for novel, high-risk, or low-frequency actions.", "Text plus shape or icon for status.", "Mirroring and localization behavior appropriate to direction and meaning."],
+      "exceptions": ["Playful, expressive, or user-generated contexts may intentionally mix visual vocabularies when meaning remains clear and accessible."],
+      "check": "Inventory icon sources and meanings, test recognition without tooltips, inspect optical alignment at rendered size, and verify accessible names and non-color status cues.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-005", "SRC-UI-009"]
+    },
+    {
+      "id": "UI-TYPE-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Use a restrained, deliberate typography system whose roles, sizes, weights, line lengths, line heights, casing, numeral styles, and fallback behavior support the product's hierarchy, language, content density, and platform settings.",
+      "reason": "Arbitrary font pairing, tiny low-contrast labels, and too many display treatments create visual inconsistency and reading barriers.",
+      "avoid": ["A decorative serif for every metric regardless of content.", "All-caps eyebrow labels repeated above every heading.", "Essential metadata set too small or faint to read.", "Fixed line heights that clip scripts, accents, or enlarged text."],
+      "prefer": ["Named type roles tied to semantic use.", "Platform text styles or scalable relative units.", "Readable measure and wrapping for real content.", "Font loading and fallback that do not hide or destabilize content."],
+      "exceptions": ["Editorial, expressive, brand, game, and data-display contexts may use broader type palettes when hierarchy, performance, localization, and accessibility are validated."],
+      "check": "Review every type role with representative scripts, long labels, numbers, fallback fonts, zoom or scaling, and target-device rendering; remove roles with no distinct job.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-009", "SRC-UI-011"]
+    },
+    {
+      "id": "UI-COPY-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "component", "design_review"],
+      "instruction": "Write interface and marketing copy from the product's verified capability, user vocabulary, current state, action, consequence, and recovery; remove generic innovation claims, repetitive subtitles, and filler that do not help a decision or task.",
+      "reason": "Generic hero claims and explanatory text on every element can make an interface look complete while obscuring what the product actually does.",
+      "avoid": ["Transform your workflow with the future of intelligent productivity.", "A subtitle under every control that repeats its label.", "Success copy that overstates what was saved or sent.", "A vague error that withholds available recovery information."],
+      "prefer": ["Name the user, object, action, and specific benefit that can be supported.", "Use labels that predict results.", "Reserve explanation for uncertainty, consequence, format, or recovery.", "Reflect domain terminology confirmed with users and product owners."],
+      "exceptions": ["Brand campaigns and expressive products can use evocative language when the functional proposition, truthfulness, and next action remain clear."],
+      "check": "For every line, identify the decision or action it supports and verify each product claim; test labels and errors in context with representative users.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-004"]
+    },
+    {
+      "id": "UI-VISUAL-001",
+      "priority": "contextual",
+      "scope": ["new_product", "redesign", "component", "design_review"],
+      "instruction": "Review gradients, glass, glow, blur, shadow, translucency, neon palettes, and decorative depth for a specific job in brand, hierarchy, layer, data, feedback, or atmosphere; revise them only when they are unexplained, impair function, or conflict with the target platform.",
+      "reason": "Practitioners repeatedly associate these combinations with generic generated interfaces, but the same techniques predate current generators and can be legitimate, platform-native, and effective.",
+      "avoid": ["Removing a useful gradient solely because it is purple.", "Adding glow and glass to imply premium quality with no layer or brand purpose.", "Allowing translucent controls to lose contrast over variable content."],
+      "prefer": ["A documented role and restrained token set.", "Solid or system alternatives when translucency harms legibility.", "Rendered-state contrast and motion testing.", "Keeping an effective established brand treatment despite authorship speculation."],
+      "exceptions": ["Expressive sites, entertainment, games, data visualization, and current platform materials can make extensive use of these treatments when their purpose and accessibility hold."],
+      "check": "State what each treatment communicates, disable it temporarily to test whether hierarchy improves or degrades, and verify contrast, motion, performance, and platform fit.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-005"]
+    },
+    {
+      "id": "UI-VISUAL-002",
+      "priority": "contextual",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa"],
+      "instruction": "Review cards, nested containers, pills, badges, icon boxes, status dots, outlined panels, and oversized radii for semantic grouping and interactive meaning; flatten or differentiate them only when repeated chrome obscures hierarchy or misstates behavior.",
+      "reason": "Qualitative sources flag container overuse and rounded sameness, but cards and compact shapes remain useful patterns when they represent real objects, filters, statuses, or platform components.",
+      "avoid": ["Cards inside cards used to compensate for unclear information architecture.", "Making every button, tab, label, and statistic pill-shaped.", "Treating a status dot without text as sufficient communication.", "Banning rounded corners from an established brand or platform system."],
+      "prefer": ["Grouping first through structure, alignment, spacing, and headings.", "Containers for independently actionable, movable, repeated, or contrasting objects.", "Shapes and labels that predict control behavior.", "A small, consistent geometry scale."],
+      "exceptions": ["Object browsers, commerce catalogs, kanban boards, dashboards, and touch-first platforms may legitimately use many cards or rounded controls when hierarchy, density, and semantics remain clear."],
+      "check": "Name the semantic boundary or behavior represented by each container and shape; remove a sample layer and compare scan order, grouping, density, and affordance.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-004", "SRC-UI-005"]
+    },
+    {
+      "id": "UI-VISUAL-003",
+      "priority": "contextual",
+      "scope": ["new_product", "redesign", "design_review"],
+      "instruction": "Review oversized centered heroes, eyebrow labels, feature grids, three-column counters, uniform panels, and repeated section rhythms for whether they fit the page's real content and decision sequence; vary or retain them based on the task rather than on presumed authorship.",
+      "reason": "Repeated template composition can flatten product differences, but familiar structures can also improve orientation and comparison.",
+      "avoid": ["Inventing three features or metrics to complete a symmetrical row.", "Forcing every section into alternating marketing bands.", "Replacing a clear conventional layout with arbitrary asymmetry to look handmade."],
+      "prefer": ["Composition derived from the number, priority, and relationships of real content items.", "Asymmetry where importance differs and repetition where comparison matters.", "Specific hero copy and evidence aligned to the visitor's next decision."],
+      "exceptions": ["Campaigns, portfolios, editorial work, and straightforward product pages may intentionally use canonical hero or grid structures when their content and brand make the choice appropriate."],
+      "check": "Replace real content with its structural outline, test whether hierarchy matches importance, and verify that item counts and section order arise from content rather than template symmetry.",
+      "source_ids": ["SRC-UI-002", "SRC-UI-004", "SRC-UI-014"]
+    },
+    {
+      "id": "UI-DATA-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Show a chart, map, gauge, metric, counter, or activity visualization only when its data is authentic or clearly labeled representative data, its calculation and freshness are defined, and the representation answers a user question with an accessible nonvisual equivalent.",
+      "reason": "Decorative charts and fake metrics manufacture product capability and trust while adding visual density without supporting a decision.",
+      "avoid": ["An upward trend line with unlabeled axes and generated values.", "Three counters chosen for visual balance rather than user relevance.", "A chart whose status is communicated only by color or hover.", "Live styling applied to stale or sample data."],
+      "prefer": ["A clear user question, metric definition, source, time range, timezone, units, and freshness state.", "Tables, summaries, and accessible names or descriptions that expose the same essential information.", "An honest no-data or unavailable state.", "Removal when a sentence or value communicates the answer better."],
+      "exceptions": ["Explicitly labeled conceptual mockups, simulation outputs, educational examples, and decorative art may use synthetic values when no reasonable user could mistake them for observed product or customer data."],
+      "check": "Trace each value to its source and transformation, test stale and missing data, ask what decision the visual supports, and verify keyboard, screen-reader, zoom, and non-color access.",
+      "source_ids": ["SRC-UI-002", "SRC-UI-003", "SRC-UI-013"]
+    },
+    {
+      "id": "UI-PERFORMANCE-001",
+      "priority": "strong",
+      "scope": ["new_product", "redesign", "component", "responsive_qa", "design_review"],
+      "instruction": "Keep visual assets, fonts, effects, animation, component hydration, and data requests proportionate to the user task and target environment, with progressive rendering and stable layout where practical.",
+      "reason": "A visually polished shell that launches slowly, shifts during interaction, or blocks on decorative assets is functionally poor, especially on constrained devices and networks.",
+      "avoid": ["Large background video or blur effects delaying the primary task.", "Loading every chart before showing usable navigation.", "Font loading that hides essential text.", "Skeletons that shift controls when content arrives."],
+      "prefer": ["Prioritize task-critical content and interaction.", "Reserve stable space for known regions.", "Use platform-native or efficient effects.", "Test cold start, slow network, low-power, and reduced-motion behavior on target hardware."],
+      "exceptions": ["Media, games, visualization, and creative tools may require large assets or computation; disclose loading, stream progressively, permit cancellation where meaningful, and validate the experience on supported hardware."],
+      "check": "Measure task-relevant loading and interaction on representative constrained environments, then identify whether each expensive visual or request contributes to the product outcome.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-003"]
+    },
+    {
+      "id": "UI-USABILITY-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review"],
+      "instruction": "Before presenting a material user flow as production-ready, test representative users or defensible proxies performing realistic tasks with realistic content, record observed success, errors, hesitation, accessibility barriers, and recovery, and revise concrete problems rather than soliciting preference alone.",
+      "reason": "Internal review and screenshot appeal cannot establish that users understand the product model or can complete the task.",
+      "avoid": ["Asking only whether participants like the colors.", "Leading users through the intended path and counting coached completion as success.", "Inventing user-research findings.", "Ignoring failures because the participant eventually succeeded with help."],
+      "prefer": ["Task-based sessions with defined participants and success criteria.", "Observation before explanation.", "Inclusion of relevant disability, expertise, device, and domain contexts.", "A findings log that separates observations, interpretation, severity, and design response."],
+      "exceptions": ["A time-boxed prototype or internal experiment may ship to a controlled audience without prior formal testing when its uncertainty and risk are explicit; do not label it validated or production-ready."],
+      "check": "Provide the study or review record, participant rationale, tasks, build, results, and unresolved limitations; verify that reported findings were observed rather than generated.",
+      "source_ids": ["SRC-UI-017"]
+    },
+    {
+      "id": "UI-QA-001",
+      "priority": "hard",
+      "scope": ["new_product", "redesign", "component", "design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Run visual and interaction QA on the actual implementation across representative and boundary window sizes, themes, scaling, content lengths, locales, input methods, system settings, data states, and supported platforms before claiming the interface is complete.",
+      "reason": "A single ideal screenshot misses overflow, clipping, z-order, focus, state, rendering, and platform defects that emerge only in real combinations.",
+      "avoid": ["Reviewing only the design file.", "Testing one fixed phone and one desktop width.", "Approving a dark theme by inverting palette tokens without inspecting states.", "Calling a visual regression run an accessibility evaluation."],
+      "prefer": ["A risk-based matrix with canonical and in-between sizes.", "Rendered comparison for key screens plus interactive task checks.", "Real and adverse content fixtures.", "Documented browser, OS, device, theme, scale, locale, and assistive-technology coverage."],
+      "exceptions": ["Limit the matrix to the product's declared support policy and change risk; do not imply unsupported combinations were tested."],
+      "check": "Inspect fresh artifacts and logs from the implemented build, reproduce each material issue, and report exact coverage and remaining gaps.",
+      "source_ids": ["SRC-UI-006", "SRC-UI-009", "SRC-UI-010", "SRC-UI-011"]
+    },
+    {
+      "id": "UI-REVIEW-001",
+      "priority": "hard",
+      "scope": ["design_review", "responsive_qa", "accessibility_review"],
+      "instruction": "Report review findings as specific, reachable product, accessibility, platform, integrity, content, interaction, state, or visual-system problems with evidence, consequence, affected context, and a proportionate correction; do not label a design AI-generated or treat authorship suspicion as a defect.",
+      "reason": "Authorship guesses are unreliable and unactionable, while evidence tied to user impact supports correction and verification.",
+      "avoid": ["This looks AI-generated because it uses purple gradients.", "The interface feels off with no affected task or evidence.", "Applying every profile rule regardless of the selected review mode or product scope.", "Presenting an official platform recommendation as a universal legal requirement."],
+      "prefer": ["At 200 percent text resize, the submit label overlaps its error text; let both regions grow and retest WCAG 1.4.4.", "At a 320 CSS-pixel viewport, typically equivalent to 400 percent browser zoom from a 1280 CSS-pixel viewport, the submit button is clipped and horizontal scrolling blocks checkout; reflow the action row and retest WCAG 1.4.10.", "The nested cards give equal emphasis to alerts and tips; flatten the tips and test whether users find the alert faster.", "No finding when a contextual pattern is purposeful and functional."],
+      "exceptions": ["Process provenance may be reviewed when explicitly in scope, but it must remain separate from the interface-quality findings and be based on real evidence."],
+      "check": "For every finding, identify the selected mode, rule ID, observed artifact or behavior, user consequence, applicable source scope, correction, and verification method.",
+      "source_ids": ["SRC-UI-001", "SRC-UI-002", "SRC-UI-004", "SRC-UI-005"]
+    }
+  ],
+  "task_modes": {
+    "new_product": {
+      "instruction": "Define users, jobs, content, trust stakes, target platforms, flows, states, accessibility target, and evidence before selecting an information architecture and visual system; prototype and verify the smallest complete product path.",
+      "focus": ["Product and user grounding.", "Complete state and navigation model.", "Accessible platform-appropriate implementation and task testing."]
+    },
+    "redesign": {
+      "instruction": "Inspect the existing product, user evidence, analytics limitations, design system, platform behavior, accessibility defects, and preserved workflows before changing structure or style; migrate deliberately and compare task outcomes.",
+      "focus": ["Preserved and improved user contracts.", "Evidence for structural and visual changes.", "Migration, regression, and comparative usability testing."]
+    },
+    "component": {
+      "instruction": "Define the component's semantic role, content contract, variants, states, input behavior, responsive behavior, accessibility API, platform fit, and reuse boundary before styling and integration.",
+      "focus": ["Native semantics and complete state model.", "Design-system reuse and justified variants.", "Keyboard, screen-reader, touch, scaling, and content tests."]
+    },
+    "design_review": {
+      "instruction": "Evaluate the supplied design or implementation against its users, product task, authentic content, states, platform, design system, and this profile; report only evidence-based, actionable findings and keep visual-tell observations contextual.",
+      "focus": ["User consequence and severity.", "Functional and state completeness.", "No authorship speculation or cosmetic pattern bans."]
+    },
+    "responsive_qa": {
+      "instruction": "Exercise the implemented interface through its full supported window and content range, including in-between sizes, zoom or scaling, orientations, safe areas, themes, locales, input methods, and state transitions; record reproducible failures and coverage.",
+      "focus": ["Content-driven adaptation and state continuity.", "No clipping, overlap, hidden actions, or focus loss.", "Fresh rendered and interactive evidence."]
+    },
+    "accessibility_review": {
+      "instruction": "Declare the applicable standard, level, platform, version, scope, and primary flows, then combine automated checks with keyboard, accessibility-tree, screen-reader or platform assistive-technology, zoom, contrast, motion, target, and cognitive walkthroughs.",
+      "focus": ["Applicable normative requirements and documented exceptions.", "End-to-end task completion with assistive technology.", "Manual evidence beyond automated scans."]
+    }
+  },
+  "workflow": {
+    "name": "product_grounded_interface_delivery",
+    "steps": [
+      {
+        "step": 1,
+        "instruction": "Select exactly one declared task mode that best matches the current request, state it in the working context, apply that mode's focus, and ignore mode-specific instructions from the other modes unless the user explicitly expands scope."
+      },
+      {
+        "step": 2,
+        "instruction": "Identify the real users, jobs, content sources, product capabilities, trust and safety stakes, target platforms and versions, support matrix, design system, accessibility target, constraints, and available evidence; label unresolved assumptions."
+      },
+      {
+        "step": 3,
+        "instruction": "Inspect the existing product or source material and map the primary and high-risk journeys, information hierarchy, navigation, data lifecycle, permissions, state transitions, recovery paths, and input methods."
+      },
+      {
+        "step": 4,
+        "instruction": "Define the smallest complete structure and component contracts using authentic or clearly labeled representative content, applicable platform conventions, and native semantics before adding visual treatment."
+      },
+      {
+        "step": 5,
+        "instruction": "Implement or specify every reachable material state, working control, responsive transition, keyboard and focus behavior, accessible name and relationship, contrast and motion behavior, destructive safeguard, persistence rule, and recovery path."
+      },
+      {
+        "step": 6,
+        "instruction": "Review visual hierarchy, density, typography, iconography, spacing, alignment, data display, and contextual patterns against the product purpose; keep useful conventions and revise unexplained defaults or concrete defects rather than styling to avoid an authorship impression."
+      },
+      {
+        "step": 7,
+        "instruction": "Run focused usability, interaction, accessibility, responsive, state, platform, and visual QA in proportion to risk on the actual implementation; retain exact evidence and correct failures within scope."
+      },
+      {
+        "step": 8,
+        "instruction": "Report what was designed or changed, the selected mode, the exact verification performed and observed results, unresolved limitations, and any contextual visual decisions retained with reasons."
+      },
+      {
+        "step": 9,
+        "instruction": "Stop when the requested deliverable and its required verification are complete. Do not append speculative features, decorative sections, generic redesign suggestions, unsupported completion claims, or a cosmetic anti-AI pass."
+      }
+    ]
+  },
+  "quality_checks": [
+    {
+      "id": "UI-QC-001",
+      "name": "mode_and_scope",
+      "test": "Was exactly one declared mode selected, and is every decision or finding necessary for that mode and the user's requested scope?"
+    },
+    {
+      "id": "UI-QC-002",
+      "name": "product_grounding",
+      "test": "Can each major region, action, and visual priority be traced to an actual user, job, capability, content source, platform constraint, or labeled assumption?"
+    },
+    {
+      "id": "UI-QC-003",
+      "name": "integrity",
+      "test": "Are all testimonials, logos, avatars, metrics, ratings, analytics, activity, and completion claims verified or unmistakably labeled as synthetic?"
+    },
+    {
+      "id": "UI-QC-004",
+      "name": "working_behavior",
+      "test": "Does every perceived control and route work through its full stated action, failure, repeat, cancellation, navigation, and persistence behavior?"
+    },
+    {
+      "id": "UI-QC-005",
+      "name": "state_completeness",
+      "test": "Were all reachable loading, empty, partial, validation, error, offline, permission, stale, success, disabled, selected, destructive, and recovery states forced and reviewed?"
+    },
+    {
+      "id": "UI-QC-006",
+      "name": "accessibility_contract",
+      "test": "Does the actual implementation meet the declared standard and platform scope for semantics, names, keyboard, focus, contrast, non-color meaning, scaling, motion, targets, status, and error handling, including documented exceptions?"
+    },
+    {
+      "id": "UI-QC-007",
+      "name": "responsive_and_platform_fit",
+      "test": "Does the task remain complete and familiar across the supported window range, scaling, orientation, safe areas, locales, inputs, themes, and platform navigation conventions without state or focus loss?"
+    },
+    {
+      "id": "UI-QC-008",
+      "name": "hierarchy_and_density",
+      "test": "Do information hierarchy, grouping, density, and disclosure reflect task priority and content relationships under realistic volume rather than template symmetry or empty-space pressure?"
+    },
+    {
+      "id": "UI-QC-009",
+      "name": "system_consistency",
+      "test": "Are typography, icons, spacing, geometry, materials, components, terminology, and states drawn from a coherent maintained system, with each intentional divergence justified?"
+    },
+    {
+      "id": "UI-QC-010",
+      "name": "contextual_visual_review",
+      "test": "Were gradients, glass, cards, pills, radii, hero patterns, repeated grids, and charts judged by product purpose and measurable consequences instead of being banned or added because of authorship stereotypes?"
+    },
+    {
+      "id": "UI-QC-011",
+      "name": "user_and_visual_evidence",
+      "test": "Are production-readiness claims supported by realistic task observation and fresh QA artifacts from the actual build, with exact coverage and limitations?"
+    },
+    {
+      "id": "UI-QC-012",
+      "name": "stop_condition",
+      "test": "Is the requested deliverable complete without speculative screens, filler copy, decorative metrics, arbitrary novelty, or an extra cosmetic anti-AI pass?"
+    }
+  ],
+  "examples": [
+    {
+      "rule_ids": ["UI-INTEGRITY-001", "UI-DATA-001"],
+      "avoid": "Fill the landing page with five invented customer logos, a 4.9 rating, 12,000 users, and an upward chart so it feels established.",
+      "prefer": "Use approved customer evidence with its source and scope; otherwise omit the trust strip and show the actual product capability or a clearly labeled sample-data demo.",
+      "why": "Trust signals must be true. Symmetry and visual credibility never justify fabricated social proof or metrics."
+    },
+    {
+      "rule_ids": ["UI-CONTROL-001", "UI-INTEGRITY-002", "UI-STATE-001"],
+      "avoid": "Ship a polished dashboard where Export, Invite, search, and profile menus are visual placeholders, then report the screen complete.",
+      "prefer": "Implement and test each in-scope action with loading, success, error, cancellation, and permission behavior; remove or clearly exclude out-of-scope affordances and report the exact tested paths.",
+      "why": "A working product is defined by behavior and states, not by the completeness of a screenshot."
+    },
+    {
+      "rule_ids": ["UI-ACCESS-KEYBOARD-001", "UI-ACCESS-FOCUS-001", "UI-ACCESS-SEMANTICS-001"],
+      "avoid": "Make a custom card clickable by mouse, remove its outline, and expose its icon as unlabeled image content.",
+      "prefer": "Use the appropriate native control or complete the button or link semantics, accessible name, keyboard activation, visible focus, and post-action focus behavior.",
+      "why": "Visual interactivity without an input and accessibility contract is a hard failure."
+    },
+    {
+      "rule_ids": ["UI-RESPONSIVE-001", "UI-NAV-001", "UI-QA-001"],
+      "avoid": "At mobile width, hide the sidebar and its only Create action, stack every desktop panel, and validate only at 390 and 1440 pixels.",
+      "prefer": "Move primary destinations and Create into an appropriate compact navigation pattern, preserve state and focus, and test continuous in-between widths, zoom, long content, and orientation changes.",
+      "why": "Responsive behavior preserves the task and navigation model; it is not a screenshot resizing exercise."
+    },
+    {
+      "rule_ids": ["UI-VISUAL-001", "UI-ACCESS-CONTRAST-001"],
+      "avoid": "Remove every purple gradient because users may associate it with generated design.",
+      "prefer": "Keep a verified brand gradient when it supports the composition and passes rendered contrast; replace it only if it is unexplained, inaccessible, distracting, or inconsistent with the product.",
+      "why": "A visual association is a contextual prompt, not proof of authorship or a universal defect."
+    },
+    {
+      "rule_ids": ["UI-VISUAL-002", "UI-ARCH-001", "UI-DENSITY-001"],
+      "avoid": "Put every heading, statistic, hint, and action in a nested rounded card to make the dashboard feel organized.",
+      "prefer": "Use headings, alignment, and spacing for page structure; reserve cards for independent objects or actions and tune density to the operators' scan and comparison tasks.",
+      "why": "Containers should express real boundaries rather than compensate for missing information architecture."
+    },
+    {
+      "rule_ids": ["UI-PLATFORM-001", "UI-ACCESS-TARGET-001"],
+      "avoid": "Port a web navigation shell pixel-for-pixel to iOS, Android, and Windows, including tiny icon targets and custom back behavior.",
+      "prefer": "Preserve the product identity while composing with each platform's navigation, window, target, input, system-setting, and accessibility conventions.",
+      "why": "Cross-platform consistency is consistency of product meaning, not identical pixels or lost native behavior."
+    },
+    {
+      "rule_ids": ["UI-REVIEW-001", "UI-VISUAL-003"],
+      "avoid": "The centered hero and three feature cards look AI-generated, so redesign the whole page asymmetrically.",
+      "prefer": "The hero claim is not supported by the product and the three equal cards hide that setup is the required first step; make the claim specific, lead with setup, and retain the grid only for genuinely parallel features.",
+      "why": "The actionable finding is product truth and hierarchy, not speculative authorship."
+    }
+  ],
+  "research_provenance": [
+    {
+      "id": "SRC-UI-001",
+      "url": "https://www.reddit.com/r/iosdev/comments/1ua360i/what_are_the_obvious_tells_that_a_swiftui_app_was/",
+      "source_type": "Qualitative practitioner and community discussion",
+      "confidence": "contextual",
+      "claims_supported": [
+        "Participants mentioned gradients, cards, rounded geometry, emojis, copy patterns, inconsistent component styling, launch performance, tiny controls, and weak platform fit as review prompts.",
+        "A detailed exchange connected usability concerns to unclear help mode, buried actions, small playback controls, missing location cues, and navigation that did not follow expected iOS conventions.",
+        "Other participants explicitly challenged gradients, cards, and purple as reliable tells because these choices predate current generative tools and can be ordinary design decisions."
+      ],
+      "limitations": "A self-selected, informal, time-specific discussion with anecdotes, jokes, unsupported claims, disagreement, and no controlled evaluation. It cannot establish authorship, prevalence, causation, or universal iOS requirements."
+    },
+    {
+      "id": "SRC-UI-002",
+      "url": "https://www.reddit.com/r/UI_Design/comments/1uchh8o/how_can_you_tell_a_design_is_ai/",
+      "source_type": "Qualitative practitioner and community discussion",
+      "confidence": "contextual",
+      "claims_supported": [
+        "Participants raised small text, mismatched icons, excessive emoji, rounded corners, large shadows, gradients, poor hierarchy, inconsistent spacing, density, repeated layouts, nested boxes, dead calls to action, and design-system divergence as things worth inspecting.",
+        "Several comments emphasized that the individual visual features are not problems by themselves and that similar generic templates and poor design long predate generative tools.",
+        "The discussion contains a concrete accessibility concern about low-contrast colored text and a maintenance concern about mimicking instead of reusing an existing design system."
+      ],
+      "limitations": "A self-selected community thread, not empirical research or an accessibility standard. Examples were sometimes identified by appearance alone, and commenters explicitly disputed whether the patterns indicate AI use."
+    },
+    {
+      "id": "SRC-UI-003",
+      "url": "https://benzatine.com/news-room/spotting-ai-crafted-apps-3-key-indicators-of-inadequate-design",
+      "source_type": "Practitioner article and secondary commentary",
+      "confidence": "contextual",
+      "claims_supported": [
+        "The article identifies generic visual design, polish that exceeds real functionality, and neglected error, loading, and edge states as recurring concerns in rapidly generated applications.",
+        "It argues that nonfunctional apparent controls and unsupported generic error messages harm usability despite polished presentation."
+      ],
+      "limitations": "A brief commercial article that summarizes attributed opinions without presenting a method, sample, primary transcripts, or controlled data. Use only as qualitative prompts for functional and state review."
+    },
+    {
+      "id": "SRC-UI-004",
+      "url": "https://dev.to/olehvolos/users-can-tell-when-your-ui-was-ai-generated-and-they-dont-like-it-33kn",
+      "source_type": "Practitioner opinion article",
+      "confidence": "contextual",
+      "claims_supported": [
+        "The author associates generic component defaults, blue or purple palettes, hero and feature-grid templates, weak brand coherence, and failure under real content and edge cases with unfinished generated UI.",
+        "The article also states that generic UI can be appropriate for prototypes and internal tools and credits generated foundations with speed and potential baseline structure.",
+        "It recommends using actual content and paying attention to loading, empty, onboarding, and error states before treating generated output as finished."
+      ],
+      "limitations": "An individual opinion piece with broad claims about users and percentages that are not accompanied by study methods or data. It is not evidence that users can reliably infer authorship or that defaults must be cosmetically replaced."
+    },
+    {
+      "id": "SRC-UI-005",
+      "url": "https://pages.thefountaininstitute.com/posts/7-tells-that-a-ui-is-ai-generated",
+      "source_type": "Practitioner commentary",
+      "confidence": "contextual",
+      "claims_supported": [
+        "The article lists neon palettes, dark background glow, emoji, purple gradients, nested cards, multicolored side accents, and unlabeled status dots as recurring visual motifs the author associates with generated UI.",
+        "Its underlying review questions concern excessive color competition, decorative effects without purpose, container nesting, and status indicators whose meaning is unclear."
+      ],
+      "limitations": "A deliberately humorous list with causal explanations but no disclosed corpus, measurement, or validation. It provides contextual review prompts only and cannot support visual bans or authorship findings."
+    },
+    {
+      "id": "SRC-UI-006",
+      "url": "https://www.w3.org/TR/WCAG22/",
+      "source_type": "W3C Recommendation and normative accessibility standard",
+      "confidence": "high for applicable web content conformance requirements",
+      "claims_supported": [
+        "WCAG 2.2 defines technology-neutral, testable success criteria under perceivable, operable, understandable, and robust principles and advises use of WCAG 2.2 for current accessibility policy.",
+        "Applicable criteria cover text alternatives, structure and sequence, color and contrast, resize and reflow, keyboard access, focus, motion and flashing, target size, labels and errors, names and roles, and status messages.",
+        "Conformance levels, complete-process scope, accessibility-supported use, and explicit criterion exceptions must be preserved rather than reduced to a generic accessibility claim."
+      ],
+      "limitations": "WCAG 2.2 is scoped to web content, does not cover every disability need, and distinguishes normative success criteria from informative understanding and techniques. Legal and contractual targets vary by product and jurisdiction."
+    },
+    {
+      "id": "SRC-UI-007",
+      "url": "https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/",
+      "source_type": "Authoritative WAI-ARIA Authoring Practices guidance",
+      "confidence": "high for ARIA keyboard-interface design guidance; patterns are informative, not WCAG conformance requirements by themselves",
+      "claims_supported": [
+        "Keyboard interfaces need predictable tab order and navigation patterns, with Tab generally moving among components and arrow keys operating within composites.",
+        "The visual focus indicator must remain visible and selection must remain distinguishable from focus.",
+        "Roving tabindex and aria-activedescendant are documented strategies for managing focus within supported composite widgets."
+      ],
+      "limitations": "The APG is implementation guidance for web widgets and warns elsewhere that examples need production adaptation. Native HTML should be preferred when it supplies the needed semantics and behavior."
+    },
+    {
+      "id": "SRC-UI-008",
+      "url": "https://www.w3.org/WAI/WCAG22/Understanding/status-messages.html",
+      "source_type": "Authoritative WAI explanatory guidance for WCAG 2.2 Success Criterion 4.1.3",
+      "confidence": "high for interpreting web status-message requirements",
+      "claims_supported": [
+        "Status messages about results, application state, progress, or errors can need programmatic roles or properties so assistive technology presents them without moving focus.",
+        "Status announcements and context changes are distinct, so routine messages should not seize focus merely to become perceivable."
+      ],
+      "limitations": "An informative Understanding document tied to the normative WCAG criterion. Its status-message scope does not include every dynamic content change or prescribe one live-region implementation for all cases."
+    },
+    {
+      "id": "SRC-UI-009",
+      "url": "https://developer.apple.com/design/human-interface-guidelines/accessibility/",
+      "source_type": "Official Apple Human Interface Guidelines",
+      "confidence": "high for current Apple accessibility design guidance",
+      "claims_supported": [
+        "Apple guidance frames accessible interfaces as intuitive, perceivable, and adaptable and recommends auditing with platform accessibility tools and technologies.",
+        "The guidance addresses scalable text, adequate contrast, multiple cues, sufficiently sized controls, alternatives to gestures, appropriate labels, Full Keyboard Access and other assistive technologies, and response to Reduce Motion."
+      ],
+      "limitations": "Platform design guidance rather than a universal legal standard. Exact recommendations and available components vary by Apple platform and OS version; consult the linked topic and developer APIs for the target."
+    },
+    {
+      "id": "SRC-UI-010",
+      "url": "https://developer.android.com/develop/ui/compose/layouts/adaptive/get-started-with-adaptive-apps",
+      "source_type": "Official Android developer guidance",
+      "confidence": "high for current Android adaptive-app guidance",
+      "claims_supported": [
+        "Android adaptive apps respond to the app window, posture, density, and font size by recomposing rather than only stretching or shrinking UI.",
+        "Window size classes and adaptive navigation or multi-pane components support compact, medium, and expanded layouts while preserving navigation targets.",
+        "The guidance calls for input beyond touch, state continuity across configuration changes, and testing different window sizes and device configurations."
+      ],
+      "limitations": "The implementation examples focus on Jetpack Compose and Material 3 Adaptive. Other Android UI stacks need equivalent behavior, and product-specific pane and transition decisions still require testing."
+    },
+    {
+      "id": "SRC-UI-011",
+      "url": "https://learn.microsoft.com/en-us/windows/apps/design/accessibility/accessibility-overview",
+      "source_type": "Official Microsoft Windows application guidance",
+      "confidence": "high for current Windows app accessibility guidance",
+      "claims_supported": [
+        "Windows app accessibility relies on correct UI Automation exposure, accessible names, roles and content, keyboard support, system scaling, high contrast, and assistive-technology testing.",
+        "Built-in controls provide baseline keyboard and accessibility behavior, while custom controls require equivalent automation support.",
+        "Current linked Windows testing guidance recommends automated checks plus manual keyboard and assistive-technology validation for primary flows."
+      ],
+      "limitations": "Guidance spans several Windows UI frameworks whose exact control and automation APIs differ. Teams must follow the documentation for the actual framework and supported Windows versions."
+    },
+    {
+      "id": "SRC-UI-012",
+      "url": "https://learn.microsoft.com/en-us/windows/apps/design/basics/navigation-basics",
+      "source_type": "Official Microsoft Windows application design guidance",
+      "confidence": "high for current Windows app navigation guidance",
+      "claims_supported": [
+        "Windows provides navigation controls intended to produce a consistent and reliable app navigation experience.",
+        "Custom back-stack behavior should remain consistent with platform patterns, including dismissing transient UI before navigating away.",
+        "Navigation structure and history decisions depend on page hierarchy, peer groups, and frequent switching behavior."
+      ],
+      "limitations": "Windows-specific guidance for supported app frameworks. It does not define browser history, iOS, Android, game, or kiosk navigation behavior."
+    },
+    {
+      "id": "SRC-UI-013",
+      "url": "https://www.ftc.gov/business-guidance/resources/consumer-reviews-testimonials-rule-questions-answers",
+      "source_type": "Official United States Federal Trade Commission business guidance about a federal trade regulation rule",
+      "confidence": "high for the described United States rule and staff guidance, subject to facts and jurisdiction",
+      "claims_supported": [
+        "The Consumer Reviews and Testimonials Rule addresses fake, false, and deceptive reviews and testimonials and became effective on October 21, 2024.",
+        "Businesses and intermediaries can face liability for specified creation, sale, purchase, procurement, or dissemination of fake or false reviews or testimonials.",
+        "The rule and guidance address company insiders, controlled review sites, review suppression, and fake indicators of social-media influence."
+      ],
+      "limitations": "FTC staff guidance is not comprehensive or a safe harbor, application depends on context and facts, and other jurisdictions have different laws. Obtain appropriate legal review for a specific product."
+    },
+    {
+      "id": "SRC-UI-014",
+      "url": "https://doi.org/10.1016/j.ijhcs.2012.06.003",
+      "source_type": "Peer-reviewed primary experimental HCI study",
+      "confidence": "high for the reported controlled experiments; contextual for product design decisions",
+      "claims_supported": [
+        "In two screenshot-rating studies, visual complexity and prototypicality affected aesthetic judgments at very short exposure times.",
+        "Within the tested stimuli and design, lower visual complexity and higher prototypicality received higher perceived-aesthetics ratings."
+      ],
+      "limitations": "The experiments measured rapid aesthetic judgments of website screenshots rather than task success, accessibility, long-term trust, native application behavior, or AI authorship. The results do not require every interface to be low-complexity or conventional."
+    },
+    {
+      "id": "SRC-UI-016",
+      "url": "https://developer.android.com/guide/topics/ui/accessibility/apps",
+      "source_type": "Official Android developer accessibility guidance",
+      "confidence": "high for current Android application accessibility guidance",
+      "claims_supported": [
+        "Android guidance recommends describing applicable UI elements for accessibility services, preserving logical traversal and grouping, and testing with lint, automated tools, and manual accessibility services.",
+        "For touch interfaces, Android recommends a focusable area or touch target of at least 48 by 48 dp for interactive UI elements, while noting that precise pointer input can use smaller targets.",
+        "Built-in Material components often provide baseline sizing and behavior, while custom interactive elements need an explicitly implemented accessible contract."
+      ],
+      "limitations": "Official Android guidance and recommendations rather than a universal web or legal conformance standard. Exact APIs and built-in behavior depend on the Android UI toolkit and version in use."
+    },
+    {
+      "id": "SRC-UI-017",
+      "url": "profile-policy:anti-ai-web-ui/UI-USABILITY-001",
+      "source_type": "Adopted profile release policy; not an external source",
+      "confidence": "policy decision",
+      "claims_supported": [
+        "This profile requires representative task-based usability evidence before a material flow is presented as production-ready.",
+        "The requirement is an intentionally conservative release gate adopted by this profile, not a claim derived from the supplied practitioner articles or rapid screenshot-aesthetics research."
+      ],
+      "limitations": "This provenance record documents an internal policy choice. It is not empirical research, a normative accessibility standard, or a universal industry requirement. Teams may replace it with an explicit authorized release policy, but must not claim user validation that did not occur."
+    },
+    {
+      "id": "SRC-UI-018",
+      "url": "https://developer.apple.com/design/human-interface-guidelines/layout",
+      "source_type": "Official Apple Human Interface Guidelines for layout",
+      "confidence": "high for current Apple platform layout guidance",
+      "claims_supported": [
+        "Apple recommends grouping related items, giving essential information sufficient space, using alignment and hierarchy to support scanning, and distinguishing controls from content.",
+        "Apple layout guidance calls for adaptation across screen and window sizes, orientation, external displays, Display Zoom, Dynamic Type, locale and text length, safe areas, margins, and platform-specific display features.",
+        "Adaptive composition should remain recognizably consistent as windows resize or devices and contexts change."
+      ],
+      "limitations": "Apple-platform design guidance rather than a universal web standard or legal requirement. Available layout tools, materials, safe areas, and conventions vary by Apple platform and OS version."
+    },
+    {
+      "id": "SRC-UI-019",
+      "url": "https://developer.apple.com/design/human-interface-guidelines/tab-bars",
+      "source_type": "Official Apple Human Interface Guidelines for navigation with tab bars",
+      "confidence": "high for current Apple tab-bar navigation guidance",
+      "claims_supported": [
+        "Apple describes tab bars as navigation among top-level app sections and distinguishes navigation from actions.",
+        "Visible, labeled navigation helps people understand their current area and switch sections while preserving navigation state within each section.",
+        "Apple recommends choosing tab count and adaptive tab-bar or sidebar presentation from the app hierarchy, available space, and frequently accessed sections."
+      ],
+      "limitations": "Component-specific Apple-platform guidance, not a requirement that every app use a tab bar. The appropriate navigation component and behavior depend on product hierarchy, supported platform, window size, and OS version."
+    }
+  ]
+}

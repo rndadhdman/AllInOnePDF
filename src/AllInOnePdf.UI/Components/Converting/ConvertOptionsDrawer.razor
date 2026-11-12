@@ -1,0 +1,118 @@
+@* Right-hand blade (FluentPanel via IDialogService.ShowPanelAsync) with the options for one file:
+   output (exporter) options and reading (importer) options in two tabs. Edits apply immediately. *@
+@implements IDialogContentComponent<ConvertOptionsContext>
+@inject IToastService Toasts
+
+<div class="aio-drawer">
+    <div class="aio-drawer-header">
+        <div class="aio-drawer-file">
+            <FluentIcon Value="@(new Icons.Regular.Size20.Document())" Color="Color.Neutral" />
+            <span class="aio-drawer-file-name" title="@Item.FileName">@Item.FileName</span>
+            @if (Exporter is not null)
+            {
+                <FluentIcon Value="@(new Icons.Regular.Size16.ArrowRight())" Color="Color.Neutral" />
+                <span>@Exporter.Format.DisplayName</span>
+            }
+        </div>
+
+        @if (Item.IsBusy)
+        {
+            <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+                This file is converting. Changes apply the next time you convert it.
+            </FluentMessageBar>
+        }
+        else if (Item.IsFinished)
+        {
+            <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+                Changing an option clears the last result; convert again to apply it.
+            </FluentMessageBar>
+        }
+    </div>
+
+    <div class="aio-drawer-body">
+    <FluentTabs @bind-ActiveTabId="_activeTab" Class="aio-drawer-tabs">
+        <FluentTab Id="@OutputTabId" Label="@OutputTabLabel">
+            <div class="aio-drawer-tab-body">
+                @if (Exporter is null)
+                {
+                    <div class="aio-drawer-note">Choose a target format to see its options.</div>
+                }
+                else
+                {
+                    <OptionsPanel Definitions="Exporter.Options" Values="Item.ExportOptions" OnChanged="OnOptionChanged"
+                                  IdPrefix="@($"x-{Item.Id}")" AriaLabel="Output options"
+                                  EmptyText="@($"{Exporter.Format.DisplayName} output has no options.")" />
+                }
+            </div>
+        </FluentTab>
+        <FluentTab Id="@InputTabId" Label="@InputTabLabel">
+            <div class="aio-drawer-tab-body">
+                @if (Item.Importer is null)
+                {
+                    <div class="aio-drawer-note">AllInOne PDF cannot read this type of file.</div>
+                }
+                else
+                {
+                    <OptionsPanel Definitions="Item.Importer.Options" Values="Item.ImportOptions" OnChanged="OnOptionChanged"
+                                  IdPrefix="@($"i-{Item.Id}")" AriaLabel="Reading options"
+                                  EmptyText="@($"Reading {Item.Importer.Format.DisplayName} has no options.")" />
+                }
+            </div>
+        </FluentTab>
+    </FluentTabs>
+    </div>
+
+    <div class="aio-drawer-actions">
+        <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.ArrowCounterclockwise())" OnClick="Reset">
+            Reset to defaults
+        </FluentButton>
+        @if (SimilarCount > 0)
+        {
+            <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Copy())" OnClick="ApplyToSimilar"
+                          Title="Copy these options and target to the other files of the same type">
+                Apply to @SimilarCount other @(SimilarCount == 1 ? "file" : "files")
+            </FluentButton>
+        }
+    </div>
+</div>
+
+@code {
+    private string? _activeTab;
+
+    [Parameter] public ConvertOptionsContext Content { get; set; } = default!;
+
+    [CascadingParameter] public FluentDialog? Dialog { get; set; }
+
+    private ConvertItem Item => Content.Item;
+
+    private ConvertWorkspace Workspace => Content.Workspace;
+
+    private IExporter? Exporter => Workspace.GetExporter(Item);
+
+    private string OutputTabId => $"tab-out-{Item.Id}";
+
+    private string InputTabId => $"tab-in-{Item.Id}";
+
+    private string OutputTabLabel => Exporter is null ? "Output" : $"{Exporter.Format.DisplayName} output";
+
+    private string InputTabLabel => Item.Importer is null ? "Reading" : $"Reading {Item.Importer.Format.DisplayName}";
+
+    private int SimilarCount => Workspace.Items.Count(i => i != Item && !i.IsBusy && i.Importer is not null && i.Importer.Format.Id == Item.Importer?.Format.Id);
+
+    protected override void OnInitialized() => _activeTab = Content.StartWithInput ? InputTabId : OutputTabId;
+
+    // A finished row goes back to Ready: its result no longer matches the options.
+    private void OnOptionChanged(string key) => Workspace.OptionsChanged(Item);
+
+    private void Reset()
+    {
+        Workspace.ResetOptions(Item);
+        Toasts.ShowInfo("Options reset to defaults");
+    }
+
+    private void ApplyToSimilar()
+    {
+        var count = Workspace.ApplyOptionsToSimilar(Item);
+        Toasts.ShowSuccess(count == 1 ? "Options applied to 1 other file" : $"Options applied to {count} other files");
+    }
+}

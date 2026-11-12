@@ -1,0 +1,182 @@
+@page "/themes/{ThemeId}"
+@using AllInOnePdf.UI.Components.ThemeBuilder
+@using AllInOnePdf.UI.Components.Shared
+@implements IAsyncDisposable
+
+<PageTitle>@(State.Working?.Name ?? "Theme builder") · Theme builder · AllInOne PDF</PageTitle>
+
+@if (_notFound)
+{
+    <div class="aio-page">
+        <EmptyState Icon="@(new Icons.Regular.Size48.DocumentAdd())" Title="Theme not found" Description="It may have been deleted. Pick another theme from the gallery.">
+            <FluentButton Appearance="Appearance.Accent" OnClick="@(() => Nav.NavigateTo("/themes"))">Back to themes</FluentButton>
+        </EmptyState>
+    </div>
+}
+else if (State.Working is null || _document is null)
+{
+    <div class="tb-loading" role="status">
+        <FluentProgressRing />
+        <span>Opening the theme builder…</span>
+    </div>
+}
+else
+{
+    var t = State.Working;
+    var warnings = ThemeBuilderValidation.All(t);
+    <div class="tb-root">
+        <h1 class="aio-visually-hidden">Theme builder: @t.Name</h1>
+
+        @* ---------------------------------------------------------------- top bar *@
+        <header class="tb-topbar" role="toolbar" aria-label="Theme">
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowLeft())" Title="Back to themes" aria-label="Back to themes"
+                          OnClick="@(() => Nav.NavigateTo("/themes"))" />
+            <div class="tb-name">
+                <FluentTextField Value="@t.Name" ValueChanged="@((string? v) => Rename(v))" Immediate="true" ImmediateDelay="300"
+                                 AriaLabel="Theme name" Appearance="FluentInputAppearance.Filled" Style="width:100%" />
+            </div>
+            <span class="tb-dirty @(State.IsDirty ? "is-dirty" : null)" role="status" aria-live="polite" title="@(State.IsDirty ? "Unsaved changes" : "All changes saved")">
+                <span class="tb-dirty-dot" aria-hidden="true"></span>
+                <span class="tb-dirty-text">@(State.IsDirty ? "Unsaved" : "Saved")</span>
+            </span>
+            <span class="tb-spacer"></span>
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowUndo())" Title="Undo (Ctrl+Z)" aria-label="Undo"
+                          aria-keyshortcuts="Control+Z" Disabled="@(!State.CanUndo)" OnClick="Undo" />
+            <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowRedo())" Title="Redo (Ctrl+Y)" aria-label="Redo"
+                          aria-keyshortcuts="Control+Y" Disabled="@(!State.CanRedo)" OnClick="Redo" />
+            <span class="tb-sep" aria-hidden="true"></span>
+            @if (_narrow)
+            {
+                @* Below 1100 px Reset, Export and Save as… move into one menu so the bar never overflows. *@
+                <FluentMenuButton Text="More" ButtonAppearance="Appearance.Stealth" title="More actions" aria-label="More actions">
+                    <FluentMenuItem Disabled="@(!CanReset)" OnClick="@(_ => ResetToSaved())">Reset to saved</FluentMenuItem>
+                    <FluentMenuItem OnClick="@(_ => ExportAsync())">Export</FluentMenuItem>
+                    <FluentMenuItem Disabled="@_saving" OnClick="@(_ => SaveAsAsync())">Save as…</FluentMenuItem>
+                </FluentMenuButton>
+            }
+            else
+            {
+                <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowReset())" Disabled="@(!CanReset)" OnClick="ResetToSaved"
+                              Title="Discard changes since the last save">Reset</FluentButton>
+                <FluentButton Appearance="Appearance.Stealth" IconStart="@(new Icons.Regular.Size20.ArrowDownload())" OnClick="ExportAsync" Title="Export as a JSON file">Export</FluentButton>
+                <FluentButton Appearance="Appearance.Outline" OnClick="SaveAsAsync" Disabled="@_saving">Save as…</FluentButton>
+            }
+            <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.Save())" OnClick="SaveAsync" Disabled="@(_saving || (!State.IsDirty && !State.IsReadOnly))"
+                          Title="@(State.IsReadOnly ? "Save your changes as a new theme (Ctrl+S)" : "Save (Ctrl+S)")">
+                @(State.IsReadOnly ? "Save copy" : "Save")
+            </FluentButton>
+        </header>
+
+        <DraftRecoveryBar Written="State.PendingDraft" OnRestore="RestoreDraft" OnDiscard="DiscardDraftAsync" />
+
+        @if (State.IsReadOnly)
+        {
+            <div class="tb-banner">
+                <FluentMessageBar Intent="MessageIntent.Info" AllowDismiss="false">
+                    This is a built-in theme and cannot be changed. Save copy keeps your changes as a new theme that you can go on editing.
+                </FluentMessageBar>
+            </div>
+        }
+
+        <div class="tb-main">
+            @* ------------------------------------------------------- section list (1600 px and up) *@
+            <nav class="tb-rail" aria-label="Settings sections">
+                <SettingsSections Query="@_settingsQuery" QueryChanged="OnSettingsQuery" OpenGroup="@_openGroup" OpenGroupChanged="OpenSection" />
+            </nav>
+
+            @* ------------------------------------------------------------ preview *@
+            <section class="tb-preview" aria-label="Preview">
+                <div class="tb-preview-bar" role="toolbar" aria-label="Preview options" @ref="_bar">
+                    @* Segmented control: one outlined group of joined buttons, the chosen mode filled and underlined. *@
+                    <div class="tb-modes" role="radiogroup" aria-label="Preview mode">
+                        <button type="button" role="radio" aria-checked="@(_mode == "fast" ? "true" : "false")"
+                                class="tb-mode @(_mode == "fast" ? "is-on" : null)"
+                                title="HTML preview that follows every change. Click an element to open its settings." @onclick="@(() => _mode = "fast")">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.Flash())" Color="Color.Neutral" /> Fast
+                        </button>
+                        <button type="button" role="radio" aria-checked="@(_mode == "exact" ? "true" : "false")"
+                                class="tb-mode @(_mode == "exact" ? "is-on" : null)"
+                                title="The PDF itself, page by page. Takes a moment to update after a change." @onclick="@(() => _mode = "exact")">
+                            <FluentIcon Value="@(new Icons.Regular.Size16.DocumentPdf())" Color="Color.Neutral" /> Exact
+                        </button>
+                    </div>
+                    <div class="tb-pick tb-pick-flex tb-pick-sample">
+                        <FluentSelect TOption="string" Value="@_sample.ToString()" ValueChanged="@((string? v) => ChangeSampleAsync(v))" AriaLabel="Sample document" Width="100%">
+                            <FluentOption TOption="string" Value="Welcome">Welcome sample</FluentOption>
+                            <FluentOption TOption="string" Value="Long">Long sample</FluentOption>
+                            @if (Samples.HasCurrentDocument)
+                            {
+                                <FluentOption TOption="string" Value="Current">Current document</FluentOption>
+                            }
+                        </FluentSelect>
+                    </div>
+                    @* An action, not a setting: a menu button that applies a built-in theme's settings (like the More menu). *@
+                    <div class="tb-preset">
+                        <FluentMenuButton Text="Start from…" ButtonAppearance="Appearance.Outline" title="Apply the settings of a built-in theme"
+                                          aria-label="Start from a built-in theme" MenuStyle="max-height: min(70vh, 560px); overflow-y: auto;">
+                            @foreach (var preset in BuiltInThemes.All())
+                            {
+                                var id = preset.Id;
+                                <FluentMenuItem OnClick="@(_ => ApplyPreset(id))">@preset.Name</FluentMenuItem>
+                            }
+                        </FluentMenuButton>
+                    </div>
+                    @* Warnings, zoom and the panel toggle stay together at the end so the toggle never wraps onto a row of its own. *@
+                    <div class="tb-preview-end">
+                        @if (warnings.Count > 0)
+                        {
+                            <span class="tb-warn-pill" role="status" title="@string.Join("\n", warnings)">
+                                <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" />
+                                @warnings.Count<span class="tb-warn-word"> @(warnings.Count == 1 ? "warning" : "warnings")</span>
+                            </span>
+                        }
+                        <div class="tb-pick">
+                            <FluentSelect TOption="string" @bind-Value="_zoom" AriaLabel="Zoom" Width="104px">
+                                <FluentOption TOption="string" Value="fit">Fit width</FluentOption>
+                                <FluentOption TOption="string" Value="0.5">50%</FluentOption>
+                                <FluentOption TOption="string" Value="0.75">75%</FluentOption>
+                                <FluentOption TOption="string" Value="1">100%</FluentOption>
+                                <FluentOption TOption="string" Value="1.25">125%</FluentOption>
+                                <FluentOption TOption="string" Value="1.5">150%</FluentOption>
+                            </FluentSelect>
+                        </div>
+                        <FluentButton Appearance="Appearance.Stealth" Class="tb-panel-toggle-wide" IconStart="@(new Icons.Regular.Size20.PanelRight())"
+                                      Title="@(_panelCollapsed ? "Show settings" : "Hide settings")" aria-label="Settings panel" aria-pressed="@(_panelCollapsed ? "false" : "true")"
+                                      OnClick="@(() => _panelCollapsed = !_panelCollapsed)" />
+                        <FluentButton Appearance="Appearance.Outline" Class="tb-panel-toggle-narrow" IconStart="@(new Icons.Regular.Size20.Options())"
+                                      aria-expanded="@(_drawerOpen ? "true" : "false")" OnClick="@(() => _drawerOpen = !_drawerOpen)">Settings</FluentButton>
+                    </div>
+                </div>
+                <div class="tb-preview-body">
+                    @if (_mode == "fast")
+                    {
+                        <BuilderPreview @ref="_preview" Document="_document" DocumentKey="@_documentKey" Version="State.Version"
+                                        TotalPages="_exactPages" Zoom="@_zoom" OnSelect="OnPreviewSelect" />
+                    }
+                    else
+                    {
+                        <ExactPreview Document="_document" DocumentKey="@_documentKey" ThemeJson="@State.CurrentJson" Zoom="@_zoom"
+                                      PageCountChanged="@((int n) => _exactPages = n)" />
+                    }
+                </div>
+                <div class="aio-visually-hidden" aria-live="polite">@_announce</div>
+            </section>
+
+            @* ------------------------------------------------------------ settings *@
+            <aside class="tb-panel @(_panelCollapsed ? "is-collapsed" : null) @(_drawerOpen ? "is-open" : null)" aria-label="Theme settings">
+                <div class="tb-panel-bar">
+                    <span class="tb-panel-title">Settings</span>
+                    @if (_selectionLabel is not null)
+                    {
+                        <span class="tb-panel-sel">Selected: @_selectionLabel</span>
+                    }
+                    <FluentButton Appearance="Appearance.Stealth" Class="tb-panel-close" IconStart="@(new Icons.Regular.Size20.Dismiss())" Title="Close settings"
+                                  aria-label="Close settings" OnClick="@(() => _drawerOpen = false)" />
+                </div>
+                <SettingsPanel Version="State.Version" OpenGroup="@_openGroup" OpenGroupChanged="@((string? g) => _openGroup = g)"
+                               Query="@_settingsQuery" QueryChanged="OnSettingsQuery"
+                               OpenSub="@_openSub" OpenSubChanged="@((string? s) => _openSub = s)" />
+            </aside>
+        </div>
+    </div>
+}

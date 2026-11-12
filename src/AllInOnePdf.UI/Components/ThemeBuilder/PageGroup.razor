@@ -1,0 +1,63 @@
+@inherits SettingsGroupBase
+
+<EnumSetting TEnum="PageSizeName" Label="Size" Get="() => T.Page.Size" Set="v => T.Page.Size = v" Text="SizeText" />
+<EnumSetting TEnum="PageOrientation" Label="Orientation" Segmented="true" Get="() => T.Page.Orientation" Set="v => T.Page.Orientation = v" />
+@if (T.Page.Size == PageSizeName.Custom)
+{
+    <NumberSetting Label="Width" Unit="mm" Min="50" Max="600" Step="1" Get="() => T.Page.CustomWidthMm" Set="v => T.Page.CustomWidthMm = v" />
+    <NumberSetting Label="Height" Unit="mm" Min="50" Max="900" Step="1" Get="() => T.Page.CustomHeightMm" Set="v => T.Page.CustomHeightMm = v" />
+}
+
+<div class="tb-subhead">
+    <span>Margins</span>
+    <FluentSwitch @bind-Value="_linked" Label="Link all four" />
+</div>
+@if (_linked)
+{
+    <NumberSetting Label="All margins" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Key="margin-all"
+                   Get="() => T.Page.MarginTopMm" Set="SetAll" Warning="@MarginWarning" />
+}
+else
+{
+    <NumberSetting Label="Top" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => T.Page.MarginTopMm" Set="v => T.Page.MarginTopMm = v" Key="margin-top" />
+    <NumberSetting Label="Bottom" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => T.Page.MarginBottomMm" Set="v => T.Page.MarginBottomMm = v" Key="margin-bottom" />
+    <NumberSetting Label="Left" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => T.Page.MarginLeftMm" Set="v => T.Page.MarginLeftMm = v" Key="margin-left" />
+    <NumberSetting Label="Right" Unit="mm" Min="0" Max="60" InputMax="150" Step="0.5" Get="() => T.Page.MarginRightMm" Set="v => T.Page.MarginRightMm = v" Key="margin-right" Warning="@MarginWarning" />
+}
+
+<ColorField Label="Background" Get="() => T.Page.Background" Set="v => T.Page.Background = v ?? T.Page.Background" Warning="@ContrastWarning" />
+
+@code {
+    private bool _linked;
+
+    protected override void OnInitialized()
+    {
+        var p = T.Page;
+        _linked = p.MarginTopMm == p.MarginBottomMm && p.MarginTopMm == p.MarginLeftMm && p.MarginTopMm == p.MarginRightMm;
+    }
+
+    private void SetAll(double v)
+    {
+        T.Page.MarginTopMm = v;
+        T.Page.MarginBottomMm = v;
+        T.Page.MarginLeftMm = v;
+        T.Page.MarginRightMm = v;
+    }
+
+    private static string SizeText(PageSizeName size) => size switch
+    {
+        PageSizeName.A4 => "A4 (210 × 297 mm)",
+        PageSizeName.Letter => "Letter (8.5 × 11 in)",
+        PageSizeName.Legal => "Legal (8.5 × 14 in)",
+        PageSizeName.A5 => "A5 (148 × 210 mm)",
+        PageSizeName.A3 => "A3 (297 × 420 mm)",
+        PageSizeName.Tabloid => "Tabloid (11 × 17 in)",
+        PageSizeName.Executive => "Executive (7.25 × 10.5 in)",
+        PageSizeName.B5 => "B5 (176 × 250 mm)",
+        _ => "Custom size",
+    };
+
+    private string? MarginWarning => ThemeBuilderValidation.Margins(T);
+
+    private string? ContrastWarning => ThemeBuilderValidation.TextContrast(T);
+}

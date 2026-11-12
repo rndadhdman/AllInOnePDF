@@ -1,0 +1,67 @@
+@* Slider + numeric field pair bound to one numeric theme property. Both are the shared native inputs (RangeInput,
+   NumberInput): the Fluent web components echo every value the circuit sets back as an edit, which made a drag or a
+   held arrow key oscillate for ever. *@
+@using AllInOnePdf.UI.Components.Shared
+@using AllInOnePdf.UI.Services.Shared
+@inject ThemeBuilderState State
+
+<div class="tb-field">
+    <div class="tb-field-head">
+        <span class="tb-label" id="@($"{_id}-l")">@Label</span>
+        @if (!string.IsNullOrEmpty(Hint))
+        {
+            <span class="tb-hint">@Hint</span>
+        }
+    </div>
+    <div class="tb-num">
+        <RangeInput Class="tb-num-slider" Min="@Min" Max="@Max" Step="@Step" Value="@Get()" ValueChanged="Apply"
+                    AriaLabel="@($"{Label} slider")" />
+        <div class="tb-num-box">
+            <NumberInput Class="tb-num-input" Value="@Get()" ValueChanged="Apply" Min="@Min" Max="@UpperLimit" Step="@Step"
+                         AriaLabel="@(Unit is null ? Label : $"{Label} in {Unit}")" />
+            @if (!string.IsNullOrEmpty(Unit))
+            {
+                <span class="tb-unit" aria-hidden="true">@Unit</span>
+            }
+        </div>
+    </div>
+    @if (!string.IsNullOrEmpty(Warning))
+    {
+        <div class="tb-warn" role="status">
+            <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Warning" />
+            <span>@Warning</span>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public Func<double> Get { get; set; } = () => 0;
+    [Parameter, EditorRequired] public Action<double> Set { get; set; } = _ => { };
+    [Parameter] public double Min { get; set; }
+    [Parameter] public double Max { get; set; } = 100;
+    [Parameter] public double Step { get; set; } = 1;
+    /// <summary>The numeric field may accept values beyond the slider's range up to this limit.</summary>
+    [Parameter] public double? InputMax { get; set; }
+    [Parameter] public string? Unit { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Warning { get; set; }
+    /// <summary>Undo coalescing key; defaults to the label.</summary>
+    [Parameter] public string? Key { get; set; }
+
+    private readonly string _id = "tbn-" + Guid.NewGuid().ToString("N")[..8];
+
+    private double UpperLimit => Math.Max(Max, InputMax ?? Max);
+
+    private void Apply(double value)
+    {
+        if (NumberInputMath.Normalize(value, Min, UpperLimit, Step) is not { } v || NumberInputMath.Same(v, Get()))
+        {
+            return;
+        }
+
+        // Coalesced by field: a drag or a held arrow key becomes one undo step.
+        Set(v);
+        State.Commit(Key ?? Label);
+    }
+}

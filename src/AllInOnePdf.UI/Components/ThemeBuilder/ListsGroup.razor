@@ -1,0 +1,29 @@
+@inherits SettingsGroupBase
+
+<EnumSetting TEnum="BulletStyle" Label="Bullet" Segmented="true" Get="() => T.Lists.Bullet" Set="v => T.Lists.Bullet = v" Text="BulletText" />
+<EnumSetting TEnum="NumberStyle" Label="Numbering" Get="() => T.Lists.Numbering" Set="v => T.Lists.Numbering = v" Text="NumberText" />
+<NumberSetting Label="Indent" Unit="pt" Min="6" Max="48" Step="0.5" Key="list-indent" Get="() => T.Lists.IndentPt" Set="v => T.Lists.IndentPt = v" />
+<NumberSetting Label="Space between items" Unit="pt" Min="0" Max="16" Step="0.5" Key="list-sp" Get="() => T.Lists.ItemSpacingPt" Set="v => T.Lists.ItemSpacingPt = v" />
+<ColorField Label="Marker colour" AllowNull="true" InheritLabel="Accent colour" Inherited="() => T.Colors.Accent" Get="() => T.Lists.MarkerColor" Set="v => T.Lists.MarkerColor = v" />
+<SwitchSetting Label="Draw task checkboxes" Get="() => T.Lists.TaskCheckboxes" Set="v => T.Lists.TaskCheckboxes = v" />
+
+@code {
+    private static string BulletText(BulletStyle b) => b switch
+    {
+        BulletStyle.Circle => "◦",
+        BulletStyle.Square => "▪",
+        BulletStyle.Dash => "–",
+        BulletStyle.Arrow => "›",
+        _ => "•",
+    };
+
+    private static string NumberText(NumberStyle n) => n switch
+    {
+        NumberStyle.DecimalParen => "1)  2)  3)",
+        NumberStyle.LowerAlpha => "a.  b.  c.",
+        NumberStyle.UpperAlpha => "A.  B.  C.",
+        NumberStyle.LowerRoman => "i.  ii.  iii.",
+        NumberStyle.UpperRoman => "I.  II.  III.",
+        _ => "1.  2.  3.",
+    };
+}

@@ -1,0 +1,26 @@
+.drb {
+    flex: 0 0 auto;
+}
+
+.drb.is-shown {
+    padding: 8px 12px 0;
+}
+
+.drb-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    width: 100%;
+}
+
+.drb-text {
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+.drb-actions {
+    display: inline-flex;
+    gap: 8px;
+    flex: 0 0 auto;
+}

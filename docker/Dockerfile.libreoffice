@@ -1,0 +1,7 @@
+# LibreOffice headless, used by build/check-office.ps1 to confirm that exported Word, Excel and PowerPoint files
+# open in an independent office suite and convert to PDF. Build once:
+#   docker build -f docker/Dockerfile.libreoffice -t allinonepdf-libreoffice .
+FROM alpine:3.20
+RUN apk add --no-cache libreoffice ttf-dejavu font-noto openjdk17-jre-headless && rm -rf /var/cache/apk/*
+ENV HOME=/tmp
+WORKDIR /data

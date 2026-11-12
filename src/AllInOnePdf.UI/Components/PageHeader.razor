@@ -1,0 +1,20 @@
+@* Standard page header: title, one-line description, right-aligned command bar. Use on every page. *@
+<header class="aio-page-header">
+    <div class="aio-page-header-text">
+        <h1 class="aio-page-title">@Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <p class="aio-page-description">@Description</p>
+        }
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="aio-page-actions" role="toolbar" aria-label="Page actions">@Actions</div>
+    }
+</header>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+}

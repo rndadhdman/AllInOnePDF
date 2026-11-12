@@ -1,0 +1,7 @@
+# Installed to /usr/share/lintian/overrides/allinonepdf. AllInOne PDF is an add-on package built outside Debian: it
+# ships a self-contained .NET application (runtime included) under /opt, as the FHS allows for add-on software.
+allinonepdf: dir-or-file-in-opt
+# pdfium and SkiaSharp are prebuilt upstream binaries with these libraries linked in statically.
+allinonepdf: embedded-library
+# The bundled runtime and native libraries ship exactly as published (no stripping, no rebuild).
+allinonepdf: unstripped-binary-or-object

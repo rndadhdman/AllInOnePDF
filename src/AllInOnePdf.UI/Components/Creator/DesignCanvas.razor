@@ -1,0 +1,237 @@
+﻿@* Design mode: the publication on page sheets. With the latest render's page map (CreatorState.PageMap) a new
+   sheet starts wherever the PDF starts a new page, down to the module: sections split between rows, single-column
+   rows between modules; a multi-column row or a module the PDF splits inside stays on the sheet it starts on and is
+   marked as continuing. Before the first render only explicit breaks split. Click to select, hover for the floating
+   toolbar, drag modules, rows and sections (insertion line), "+" to add rows, sections and pages. *@
+@implements IAsyncDisposable
+
+<div class="cr-canvas" @ref="_root" aria-label="Design canvas. Tab to an element and press Enter to select it; Delete removes the selection, Alt+Up and Alt+Down move it.">
+    @((MarkupString)_style)
+    @if (State.Working is { } p)
+    {
+        var sel = State.Selection;
+        var map = State.PageMap;
+        var sheets = CreatorCanvasSheets.Build(p, map?.Pages);
+        var pageCount = Math.Max(Math.Max(map?.PageCount ?? 0, sheets.Count), sheets.Count > 0 ? sheets[^1].Page : 0);
+        <div class="cr-stage @_scope">
+            @for (var sh = 0; sh < sheets.Count; sh++)
+            {
+                var sheet = sheets[sh];
+                var lastSheet = sh == sheets.Count - 1;
+                <div class="cr-page" @key="@("page:" + sheet.Page)">
+                    <div class="cr-page-label" aria-hidden="true">Page @sheet.Page of @pageCount</div>
+                    <div class="tb-sheet cr-sheet" data-page="@sheet.Page" role="group" aria-label="@($"Page {sheet.Page} of {pageCount}")" @onclick="ClearSelection">
+                        @((MarkupString)CreatorCanvasHtml.HeaderFooterHtml(p, header: true, sheet.Page, pageCount))
+                        <div class="tb-body cr-body">
+                            @foreach (var sp in sheet.Sections)
+                            {
+                                var section = sp.Section;
+                                var sIndex = sp.Index;
+                                var sOn = sel.Id == section.Id;
+                                var sFirst = sp.Part == 0;
+                                if (sp.FreeFlow)
+                                {
+                                    var wPt = CreatorFreeFlow.CanvasWidthPt(p.Theme, section);
+                                    var hPt = CreatorFreeFlow.CanvasHeightPt(p.Theme, section);
+                                    var selItem = section.Items.FirstOrDefault(i => i.Module.Id == sel.Id);
+                                    <section @key="@(section.Id + ":ff")" class="cr-section cr-section-ff @(sOn ? "is-selected" : null)" data-kind="section" data-id="@section.Id" data-part="0"
+                                             data-layout="freeflow" tabindex="0" role="group" aria-label="@(LabelOf("Free-flow section", section.Label, sIndex, p.Sections.Count, sOn))"
+                                             style="@CreatorCanvasHtml.BoxStyle(section.Design)" @onclick="() => Select(CreatorSelectionKind.Section, section.Id)" @onclick:stopPropagation="true">
+                                        <div class="cr-tools cr-tools-section" role="toolbar" aria-label="Section actions">
+                                            <span class="cr-tool cr-tool-handle" draggable="true" data-drag="section" data-id="@section.Id" aria-hidden="true"
+                                                  title="Drag to move the section (or Alt+Up / Alt+Down)" @onclick:stopPropagation="true">
+                                                <FluentIcon Value="@(new Icons.Regular.Size20.ArrowMove())" Width="16px" Color="Color.Custom" CustomColor="currentColor" />
+                                            </span>
+                                            <span class="cr-tools-name">@(string.IsNullOrWhiteSpace(section.Label) ? $"Section {sIndex + 1}" : section.Label) · Free flow</span>
+                                            @Tools(CreatorSelectionKind.Section, section.Id, "section")
+                                        </div>
+                                        <div class="cr-ff" data-section="@section.Id" data-wpt="@CreatorCanvasHtml.ItemNumber(wPt)" data-hpt="@CreatorCanvasHtml.ItemNumber(hPt)"
+                                             style="@CreatorCanvasHtml.CanvasStyle(p.Theme, section)" role="group" aria-label="@($"Free-flow canvas with {section.Items.Count} {(section.Items.Count == 1 ? "module" : "modules")}")">
+                                            @if (section.Items.Count == 0)
+                                            {
+                                                <div class="cr-ff-empty" aria-hidden="true"><span>Drag modules here</span></div>
+                                            }
+                                            @for (var ii = 0; ii < section.Items.Count; ii++)
+                                            {
+                                                var item = section.Items[ii];
+                                                var module = item.Module;
+                                                var mOn = sel.Id == module.Id;
+                                                var name = CreatorModuleCatalog.NameOf(module);
+                                                var cut = map?.IsOverflowing(module.Id) == true;
+                                                <div @key="module.Id" class="cr-item @(module is ImageModule ? "cr-item-image" : null) @(mOn ? "is-selected" : null) @(module.Hidden ? "is-hidden" : null)" data-kind="module" data-item="1" data-id="@module.Id"
+                                                     data-x="@CreatorCanvasHtml.ItemNumber(item.XPt)" data-y="@CreatorCanvasHtml.ItemNumber(item.YPt)"
+                                                     data-w="@CreatorCanvasHtml.ItemNumber(item.WidthPt)" data-h="@CreatorCanvasHtml.ItemNumber(item.HeightPt)" data-lock="@(item.LockAspect ? "1" : "0")"
+                                                     tabindex="0" role="group" aria-label="@(LabelOf(name + " module", module.Label, ii, section.Items.Count, mOn) + $", at {CreatorCanvasHtml.ItemNumber(item.XPt)}, {CreatorCanvasHtml.ItemNumber(item.YPt)}, Z level {item.Z}" + (cut ? ", content is cut off" : ""))"
+                                                     data-tc="@(ThemeBuilderColor.IsValid(module.Design.TextColor) ? "" : null)" data-ta="@(module.Design.Alignment is null ? null : "")"
+                                                     style="@CreatorCanvasHtml.ItemStyle(item)"
+                                                     @onclick="() => Select(CreatorSelectionKind.Module, module.Id)" @onclick:stopPropagation="true" @ondblclick="() => EditContentAsync(module.Id)">
+                                                    <div class="cr-tools cr-tools-module" role="toolbar" aria-label="@($"{name} module actions")">
+                                                        <span class="cr-tools-name">@name@(module.Hidden ? " · hidden" : null)</span>
+                                                        @ItemTools(module.Id, name.ToLowerInvariant() + " module")
+                                                    </div>
+                                                    <div class="cr-item-clip" style="@CreatorCanvasHtml.ItemClipStyle(module.Design)">
+                                                        <div class="cr-mod-body" style="@(CreatorCanvasHtml.ArticleStyle(module.Design) + CreatorCanvasHtml.ClipStyle(module.Design))">
+                                                            @((MarkupString)Html.ModuleHtml(module, p))
+                                                        </div>
+                                                    </div>
+                                                    @if (cut)
+                                                    {
+                                                        <span class="cr-item-warn" title="Content is cut off. Make the box larger." aria-hidden="true">
+                                                            <FluentIcon Value="@(new Icons.Filled.Size16.Warning())" Color="Color.Custom" CustomColor="currentColor" />
+                                                        </span>
+                                                    }
+                                                </div>
+                                            }
+                                            @if (selItem is not null)
+                                            {
+                                                var selName = CreatorModuleCatalog.NameOf(selItem.Module);
+                                                <div class="cr-ff-sel" @key="@("sel:" + selItem.Module.Id)" data-for="@selItem.Module.Id" style="@CreatorCanvasHtml.ItemStyle(selItem, withZ: false)"
+                                                     @onclick:stopPropagation="true" @ondblclick:stopPropagation="true">
+                                                    <div class="cr-tools cr-tools-module" role="toolbar" aria-label="@($"{selName} module actions")">
+                                                        <span class="cr-tools-name">@selName · @CreatorCanvasHtml.ItemNumber(selItem.WidthPt) × @CreatorCanvasHtml.ItemNumber(selItem.HeightPt) pt</span>
+                                                        @ItemTools(selItem.Module.Id, selName.ToLowerInvariant() + " module")
+                                                    </div>
+                                                    @foreach (var h in ResizeHandles)
+                                                    {
+                                                        <span class="cr-handle cr-handle-@h" data-h="@h" aria-hidden="true"></span>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    </section>
+                                    continue;
+                                }
+                                <section @key="@(section.Id + ":" + sp.Part)" class="cr-section @(sOn ? "is-selected" : null) @(sFirst ? null : "cr-part")" data-kind="section" data-id="@section.Id" data-part="@sp.Part"
+                                         tabindex="@(sFirst ? 0 : -1)" role="group" aria-label="@(LabelOf("Section", section.Label, sIndex, p.Sections.Count, sOn) + (sFirst ? "" : ", continued"))"
+                                         style="@CreatorCanvasHtml.BoxStyle(section.Design)" @onclick="() => Select(CreatorSelectionKind.Section, section.Id)" @onclick:stopPropagation="true">
+                                    @if (sFirst)
+                                    {
+                                        <div class="cr-tools cr-tools-section" role="toolbar" aria-label="Section actions">
+                                            <span class="cr-tool cr-tool-handle" draggable="true" data-drag="section" data-id="@section.Id" aria-hidden="true"
+                                                  title="Drag to move the section (or Alt+Up / Alt+Down)" @onclick:stopPropagation="true">
+                                                <FluentIcon Value="@(new Icons.Regular.Size20.ArrowMove())" Width="16px" Color="Color.Custom" CustomColor="currentColor" />
+                                            </span>
+                                            <span class="cr-tools-name">@(string.IsNullOrWhiteSpace(section.Label) ? $"Section {sIndex + 1}" : section.Label)</span>
+                                            @Tools(CreatorSelectionKind.Section, section.Id, "section")
+                                        </div>
+                                    }
+                                    @{ var sClip = CreatorCanvasHtml.ClipStyle(section.Design); }
+                                    <div class="cr-rows @(sClip.Length > 0 ? "cr-clip" : null)" style="@(sClip.Length > 0 ? sClip : null)">
+                                        @foreach (var rp in sp.Rows)
+                                        {
+                                            var row = rp.Row;
+                                            var rIndex = rp.Index;
+                                            var rOn = sel.Id == row.Id;
+                                            var rFirst = rp.Part == 0;
+                                            <div @key="@(row.Id + ":" + rp.Part)" class="cr-row @(rOn ? "is-selected" : null) @(rFirst ? null : "cr-part")" data-kind="row" data-id="@row.Id" data-part="@rp.Part"
+                                                 tabindex="@(rFirst ? 0 : -1)" role="group" aria-label="@(LabelOf("Row", row.Label, rIndex, section.Rows.Count, rOn) + (rFirst ? "" : ", continued"))"
+                                                 style="@CreatorCanvasHtml.BoxStyle(row.Design)" @onclick="() => Select(CreatorSelectionKind.Row, row.Id)" @onclick:stopPropagation="true">
+                                                @if (rFirst)
+                                                {
+                                                    <div class="cr-tools cr-tools-row" role="toolbar" aria-label="Row actions">
+                                                        <span class="cr-tool cr-tool-handle" draggable="true" data-drag="row" data-id="@row.Id" aria-hidden="true"
+                                                              title="Drag to move the row (or Alt+Up / Alt+Down)" @onclick:stopPropagation="true">
+                                                            <FluentIcon Value="@(new Icons.Regular.Size20.ArrowMove())" Width="16px" Color="Color.Custom" CustomColor="currentColor" />
+                                                        </span>
+                                                        <span class="cr-tools-name">@(ColumnLayouts.Match(row.Fractions)?.Name ?? $"{row.Columns.Count} columns")</span>
+                                                        @Tools(CreatorSelectionKind.Row, row.Id, "row")
+                                                    </div>
+                                                }
+                                                @{ var rClip = CreatorCanvasHtml.ClipStyle(row.Design); }
+                                                <div class="cr-grid @(rClip.Length > 0 ? "cr-clip" : null)" style="@(CreatorCanvasHtml.GridStyle(row) + rClip)">
+                                                    @foreach (var cp in rp.Columns)
+                                                    {
+                                                        var column = cp.Column;
+                                                        var cIndex = cp.Index;
+                                                        var cOn = sel.Id == column.Id;
+                                                        var cFirst = cp.Part == 0;
+                                                        var cClip = CreatorCanvasHtml.SelfClipStyle(column.Design);
+                                                        <div @key="@(column.Id + ":" + cp.Part)" class="cr-col @(cOn ? "is-selected" : null) @(column.Modules.Count == 0 ? "is-empty" : null) @(cFirst ? null : "cr-part") @(cClip.Length > 0 ? "cr-clip" : null)"
+                                                             data-kind="column" data-id="@column.Id" data-part="@cp.Part" tabindex="@(cFirst ? 0 : -1)" role="group"
+                                                             aria-label="@(LabelOf("Column", null, cIndex, row.Columns.Count, cOn) + (cFirst ? "" : ", continued"))" style="@(CreatorCanvasHtml.BoxStyle(column.Design) + cClip)"
+                                                             @onclick="() => Select(CreatorSelectionKind.Column, column.Id)" @onclick:stopPropagation="true">
+                                                            @for (var mi = cp.ModuleStart; mi < cp.ModuleEnd && mi < column.Modules.Count; mi++)
+                                                            {
+                                                                var module = column.Modules[mi];
+                                                                var mOn = sel.Id == module.Id;
+                                                                var name = CreatorModuleCatalog.NameOf(module);
+                                                                <div @key="module.Id" class="cr-mod @(mOn ? "is-selected" : null) @(module.Hidden ? "is-hidden" : null)" data-kind="module" data-id="@module.Id"
+                                                                     data-index="@mi" draggable="true" data-drag="module" tabindex="0" role="group"
+                                                                     aria-label="@(LabelOf(name + " module", module.Label, mi, column.Modules.Count, mOn))"
+                                                                     data-tc="@(ThemeBuilderColor.IsValid(module.Design.TextColor) ? "" : null)" data-ta="@(module.Design.Alignment is null ? null : "")"
+                                                                     style="@CreatorCanvasHtml.ModuleStyle(module.Design)"
+                                                                     @onclick="() => Select(CreatorSelectionKind.Module, module.Id)" @onclick:stopPropagation="true">
+                                                                    <div class="cr-tools cr-tools-module" role="toolbar" aria-label="@($"{name} module actions")">
+                                                                        <span class="cr-tool cr-tool-handle" aria-hidden="true" title="Drag to move (or Alt+Up / Alt+Down)">
+                                                                            <FluentIcon Value="@(new Icons.Regular.Size16.ReOrderDotsVertical())" Color="Color.Custom" CustomColor="currentColor" />
+                                                                        </span>
+                                                                        <span class="cr-tools-name">@name@(module.Hidden ? " · hidden" : null)</span>
+                                                                        @Tools(CreatorSelectionKind.Module, module.Id, name.ToLowerInvariant() + " module")
+                                                                    </div>
+                                                                    <div class="cr-mod-body" style="@(CreatorCanvasHtml.ArticleStyle(module.Design) + CreatorCanvasHtml.ClipStyle(module.Design))">
+                                                                        @((MarkupString)Html.ModuleHtml(module, p))
+                                                                    </div>
+                                                                </div>
+                                                                @if (map?.Of(module.Id) is { } ms && ms.Last > sheet.Page && ms.First <= sheet.Page)
+                                                                {
+                                                                    <div class="cr-continues" aria-hidden="true" @key="@(module.Id + ":cont")"><span>Continues on page @(sheet.Page + 1)</span></div>
+                                                                }
+                                                            }
+                                                            @if (column.Modules.Count == 0)
+                                                            {
+                                                                <button type="button" class="cr-col-empty" @onclick="() => OnAddModule.InvokeAsync(column.Id)" @onclick:stopPropagation="true"
+                                                                        aria-label="@($"Add a module to column {cIndex + 1}")">
+                                                                    <FluentIcon Value="@(new Icons.Regular.Size16.Add())" Color="Color.Custom" CustomColor="currentColor" />
+                                                                    <span>Add module</span>
+                                                                </button>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                                @if (rp.Continues && !rp.HasNextPart)
+                                                {
+                                                    <div class="cr-continues" aria-hidden="true"><span>Continues on page @(sheet.Page + 1)</span></div>
+                                                }
+                                            </div>
+                                            @if (!rp.HasNextPart)
+                                            {
+                                                <div class="cr-add-row-slot" @key="@(row.Id + ":add")">
+                                                    <button type="button" class="cr-add cr-add-row" title="Add a row here" aria-label="@($"Add a row after row {rIndex + 1} of section {sIndex + 1}")"
+                                                            @onclick="() => State.AddRow(section.Id, null, rIndex + 1)" @onclick:stopPropagation="true">
+                                                        <FluentIcon Value="@(new Icons.Regular.Size16.Add())" Color="Color.Custom" CustomColor="currentColor" />
+                                                        <span>Add row</span>
+                                                    </button>
+                                                </div>
+                                            }
+                                        }
+                                        @if (section.Rows.Count == 0)
+                                        {
+                                            <button type="button" class="cr-col-empty cr-section-empty" @onclick="() => State.AddRow(section.Id)" @onclick:stopPropagation="true">
+                                                <FluentIcon Value="@(new Icons.Regular.Size16.Add())" Color="Color.Custom" CustomColor="currentColor" />
+                                                <span>Add row</span>
+                                            </button>
+                                        }
+                                    </div>
+                                </section>
+                            }
+                            @if (lastSheet)
+                            {
+                                <div class="cr-add-section-slot">
+                                    <button type="button" class="cr-add cr-add-section" title="Add a section at the end" @onclick="() => State.AddSection()" @onclick:stopPropagation="true">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.Add())" Color="Color.Custom" CustomColor="currentColor" />
+                                        <span>Add section</span>
+                                    </button>
+                                    <button type="button" class="cr-add cr-add-section" title="Add a section that starts on a new page" @onclick="() => State.AddPage()" @onclick:stopPropagation="true">
+                                        <FluentIcon Value="@(new Icons.Regular.Size16.DocumentAdd())" Color="Color.Custom" CustomColor="currentColor" />
+                                        <span>Add page</span>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        @((MarkupString)CreatorCanvasHtml.HeaderFooterHtml(p, header: false, sheet.Page, pageCount))
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

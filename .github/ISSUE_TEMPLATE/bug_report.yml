@@ -1,0 +1,50 @@
+name: Bug report
+description: Something does not work the way it should.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps from opening the app. Attach the file you used if you can share it.
+      placeholder: |
+        1. Open Convert
+        2. Drop report.docx
+        3. Choose PDF and convert
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Settings › About › Copy diagnostics, then paste here. It lists the version, operating system and how the app was installed.
+      render: text
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How you installed it
+      options:
+        - Windows installer (MSI)
+        - Windows portable zip
+        - Debian or Ubuntu package (.deb)
+        - Fedora package (.rpm)
+        - Flatpak
+        - Linux portable (tar.gz or zip)
+        - Built from source
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Crash log
+      description: If the app crashed, the logs folder inside the data folder (shown in the diagnostics) has a crash-*.log file. Paste it here.
+      render: text

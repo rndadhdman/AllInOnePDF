@@ -1,0 +1,106 @@
+﻿@* Four edge distances (margin or padding) with a "same on all sides" link. *@
+@using AllInOnePdf.UI.Components.Shared
+@inject CreatorState State
+
+<div class="cr-field cr-spacing">
+    <div class="cr-field-head">
+        <span class="cr-label" id="@_id">@Label</span>
+        <button type="button" class="cr-link-btn" aria-pressed="@(_linked ? "true" : "false")" @onclick="ToggleLink"
+                title="@(_linked ? "Edit each side separately" : "Use the same value on all sides")">
+            <FluentIcon Value="@(_linked ? (Icon)new Icons.Regular.Size16.Link() : new Icons.Regular.Size16.LinkDismiss())" Color="Color.Accent" />
+            <span>@(_linked ? "Same on all sides" : "Each side")</span>
+        </button>
+    </div>
+    @if (_linked)
+    {
+        <div class="cr-spacing-one">
+            <NumberInput Class="cr-num-input" Value="@Value.TopPt" Min="0" Max="@Max" Step="1" ValueChanged="SetAll" AriaLabel="@($"{Label} on all sides in points")" />
+            <span class="cr-unit" aria-hidden="true">pt</span>
+        </div>
+    }
+    else
+    {
+        <div class="cr-spacing-grid" role="group" aria-labelledby="@_id">
+            @foreach (var (side, get, set) in Sides())
+            {
+                <label class="cr-spacing-cell">
+                    <span class="cr-spacing-side">@side</span>
+                    <NumberInput Class="cr-num-input" Value="@get()" Min="0" Max="@Max" Step="1" ValueChanged="@(v => Apply(set, get, v, side))"
+                                 AriaLabel="@($"{Label} {side.ToLowerInvariant()} in points")" />
+                </label>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Visible label ("Margin", "Padding").</summary>
+    [Parameter, EditorRequired] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Reads the spacing object (re-read on every render: undo replaces it).</summary>
+    [Parameter, EditorRequired] public Func<Spacing> Get { get; set; } = () => new();
+
+    /// <summary>Largest accepted value in points.</summary>
+    [Parameter] public double Max { get; set; } = 200;
+
+    private readonly string _id = "crs-" + Guid.NewGuid().ToString("N")[..8];
+    private bool _linked;
+    private bool _initialised;
+
+    private Spacing Value => Get();
+
+    protected override void OnParametersSet()
+    {
+        if (!_initialised)
+        {
+            var s = Value;
+            _linked = s.TopPt == s.RightPt && s.TopPt == s.BottomPt && s.TopPt == s.LeftPt;
+            _initialised = true;
+        }
+    }
+
+    private void ToggleLink()
+    {
+        _linked = !_linked;
+        if (_linked)
+        {
+            SetAll(Value.TopPt);
+        }
+    }
+
+    private IEnumerable<(string Side, Func<double> Get, Action<double> Set)> Sides()
+    {
+        var s = Value;
+        yield return ("Top", () => s.TopPt, v => s.TopPt = v);
+        yield return ("Right", () => s.RightPt, v => s.RightPt = v);
+        yield return ("Bottom", () => s.BottomPt, v => s.BottomPt = v);
+        yield return ("Left", () => s.LeftPt, v => s.LeftPt = v);
+    }
+
+    private double Clamp(double v) => double.IsFinite(v) ? Math.Clamp(Math.Round(v, 1), 0, Max) : 0;
+
+    private void SetAll(double v)
+    {
+        v = Clamp(v);
+        var s = Value;
+        if (s.TopPt == v && s.RightPt == v && s.BottomPt == v && s.LeftPt == v)
+        {
+            return;
+        }
+
+        s.TopPt = s.RightPt = s.BottomPt = s.LeftPt = v;
+        State.Commit("spacing:" + Label + ":" + State.Selection.Id);
+    }
+
+    private void Apply(Action<double> set, Func<double> get, double v, string side)
+    {
+        v = Clamp(v);
+        if (Math.Abs(get() - v) < 1e-9)
+        {
+            return;
+        }
+
+        set(v);
+        State.Commit("spacing:" + Label + ":" + side + ":" + State.Selection.Id);
+    }
+}

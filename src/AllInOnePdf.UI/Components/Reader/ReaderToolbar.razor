@@ -1,0 +1,263 @@
+@* Reading toolbar: document info, mode, palette, typography, outline/focus toggles, open, convert and close.
+   Toggles are Stealth buttons with aria-pressed and a selected background (never Accent). Open, "Convert this"
+   and Close sit in a fixed end group so they keep the same place in Reflow and Pages modes. *@
+
+<div class="rd-toolbar" role="toolbar" aria-label="Reading options">
+    <div class="rd-tb-doc">
+        <div class="rd-tb-title" title="@Title">@Title</div>
+        <div class="rd-tb-meta">
+            @if (WordCount > 0)
+            {
+                @($"{WordsLabel} · {ReadingTimeLabel}")
+            }
+            else
+            {
+                @* Images and empty documents: "0 words · 1 min read" said nothing true. *@
+                @("No text")
+            }
+        </div>
+    </div>
+
+    <div class="rd-tb-group rd-tb-mode" role="radiogroup" aria-label="View">
+        <button type="button" class="rd-seg @(Mode == ReaderMode.Reflow ? "is-on" : null)" role="radio"
+                aria-checked="@(Mode == ReaderMode.Reflow ? "true" : "false")" title="Reflow: text wraps to fit the window (1)" @onclick="() => ModeChanged.InvokeAsync(ReaderMode.Reflow)">
+            <FluentIcon Value="@(new Icons.Regular.Size16.TextDescription())" Color="Color.Custom" CustomColor="currentColor" />
+            <span>Reflow</span>
+        </button>
+        <button type="button" class="rd-seg @(Mode == ReaderMode.Pages ? "is-on" : null)" role="radio"
+                aria-checked="@(Mode == ReaderMode.Pages ? "true" : "false")" title="Pages: print preview (2)" @onclick="() => ModeChanged.InvokeAsync(ReaderMode.Pages)">
+            <FluentIcon Value="@(new Icons.Regular.Size16.DocumentOnePage())" Color="Color.Custom" CustomColor="currentColor" />
+            <span>Pages</span>
+        </button>
+    </div>
+
+    <div class="rd-tb-tools">
+        @if (Mode == ReaderMode.Reflow)
+        {
+            <div class="rd-tb-group rd-swatches" role="radiogroup" aria-label="Palette">
+                @foreach (var palette in Palettes)
+                {
+                    var on = palette == Settings.Palette;
+                    <button type="button" class="rd-swatch rd-swatch-@palette.ToString().ToLowerInvariant() @(on ? "is-on" : null)" role="radio"
+                            aria-checked="@(on ? "true" : "false")" title="@palette" aria-label="@($"{palette} palette")"
+                            @onclick="() => SelectPalette(palette)">
+                        <span aria-hidden="true">A</span>
+                    </button>
+                }
+            </div>
+
+            <div class="rd-tb-group rd-size" role="group" aria-label="Text size">
+                <FluentButton Appearance="Appearance.Stealth" Title="Smaller text (-)" aria-label="Smaller text"
+                              Disabled="@(Settings.FontSizePx <= ReaderViewSettings.MinFontSize)" OnClick="() => Change(Settings.WithFontSizeStep(-1))">
+                    <span class="rd-size-glyph rd-size-small" aria-hidden="true">A</span>
+                </FluentButton>
+                <span class="rd-size-value" aria-live="polite" title="Text size">@Settings.FontSizePx.ToString("0", System.Globalization.CultureInfo.InvariantCulture)</span>
+                <FluentButton Appearance="Appearance.Stealth" Title="Larger text (+)" aria-label="Larger text"
+                              Disabled="@(Settings.FontSizePx >= ReaderViewSettings.MaxFontSize)" OnClick="() => Change(Settings.WithFontSizeStep(+1))">
+                    <span class="rd-size-glyph rd-size-large" aria-hidden="true">A</span>
+                </FluentButton>
+            </div>
+
+            <div class="rd-tb-group rd-panel-anchor">
+                <FluentButton Id="rd-text-settings" Appearance="Appearance.Stealth" Class="@ToggleClass(_panelOpen)" Title="Text settings"
+                              aria-label="Text settings" aria-pressed="@(_panelOpen ? "true" : "false")"
+                              aria-expanded="@(_panelOpen ? "true" : "false")" aria-controls="rd-text-panel"
+                              IconStart="@(new Icons.Regular.Size20.TextFont())" OnClick="TogglePanel">
+                    <span class="rd-tb-hide-narrow">Text</span>
+                </FluentButton>
+                @if (_panelOpen)
+                {
+                    <div class="rd-panel-backdrop" @onclick="ClosePanelFromBackdrop"></div>
+                    <div class="rd-panel" id="rd-text-panel" role="dialog" aria-label="Text settings" data-open="true">
+                        <div class="rd-panel-section">
+                            <div class="rd-panel-label" id="rd-font-label">Font</div>
+                            <div class="rd-fonts" role="radiogroup" aria-labelledby="rd-font-label">
+                                @foreach (var font in ReaderViewSettings.FontFamilies)
+                                {
+                                    var on = string.Equals(font, Settings.Font, StringComparison.OrdinalIgnoreCase);
+                                    <button type="button" class="rd-font @(on ? "is-on" : null)" role="radio" aria-checked="@(on ? "true" : "false")"
+                                            @onclick="() => Change(Settings with { Font = font })">
+                                        <span class="rd-font-sample" style="font-family:@ReaderViewSettings.FontStack(font)" aria-hidden="true">Aa</span>
+                                        <span class="rd-font-name">@font</span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="rd-panel-section">
+                            <div class="rd-panel-row">
+                                <span class="rd-panel-label">Line height</span>
+                                <span class="rd-panel-value">@Settings.LineHeight.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)</span>
+                            </div>
+                            <FluentSlider TValue="double" Min="ReaderViewSettings.MinLineHeight" Max="ReaderViewSettings.MaxLineHeight" Step="0.05"
+                                          Value="@Settings.LineHeight" ValueChanged="@((double v) => Change(Settings with { LineHeight = v }))"
+                                          aria-label="Line height" />
+                        </div>
+
+                        <div class="rd-panel-section">
+                            <div class="rd-panel-row">
+                                <span class="rd-panel-label">Line width</span>
+                                <span class="rd-panel-value">@Settings.MeasureCh characters</span>
+                            </div>
+                            <FluentSlider TValue="int" Min="ReaderViewSettings.MinMeasure" Max="ReaderViewSettings.MaxMeasure" Step="1"
+                                          Value="@Settings.MeasureCh" ValueChanged="@((int v) => Change(Settings with { MeasureCh = v }))"
+                                          aria-label="Line width in characters" />
+                        </div>
+
+                        <div class="rd-panel-section rd-panel-row">
+                            <span class="rd-panel-label">Justify text</span>
+                            <FluentSwitch Value="@Settings.Justify" ValueChanged="@((bool v) => Change(Settings with { Justify = v }))" aria-label="Justify text" />
+                        </div>
+
+                        <p class="rd-panel-note">Changes here last for this session. To change your defaults, go to Settings.</p>
+                        <div class="rd-panel-foot">
+                            <FluentButton Appearance="Appearance.Lightweight" OnClick="ResetTypography" Disabled="@IsDefaultTypography">Reset to defaults</FluentButton>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <FluentButton Appearance="Appearance.Stealth" Class="@ToggleClass(ShowOutline)" Title="Outline (T)" aria-label="Outline"
+                          aria-pressed="@(ShowOutline ? "true" : "false")"
+                          IconStart="@(new Icons.Regular.Size20.TextBulletListTree())" OnClick="OnToggleOutline">
+                <span class="rd-tb-hide-narrow">Outline</span>
+            </FluentButton>
+        }
+
+        <FluentButton Appearance="Appearance.Stealth" Class="@ToggleClass(Focus)" Title="@(Focus ? "Leave focus mode (F or Esc)" : "Focus mode (F)")"
+                      aria-label="Focus mode" aria-pressed="@(Focus ? "true" : "false")"
+                      IconStart="@(Focus ? new Icons.Regular.Size20.FullScreenMinimize() : new Icons.Regular.Size20.FullScreenMaximize())" OnClick="OnToggleFocus">
+            <span class="rd-tb-hide-narrow">Focus</span>
+        </FluentButton>
+    </div>
+
+    <div class="rd-tb-end">
+        <span class="rd-tb-divider" aria-hidden="true"></span>
+        @if (IsDesktop && Groups.Count > 0)
+        {
+            @* Desktop: a menu listing every readable type; each entry opens the native dialog filtered to it. *@
+            <FluentButton Id="@OpenButtonId" Appearance="Appearance.Outline" Title="Open another file" aria-label="Open another file"
+                          aria-haspopup="menu" aria-expanded="@(_openMenu ? "true" : "false")"
+                          IconStart="@(new Icons.Regular.Size20.FolderOpen())" IconEnd="@(new Icons.Regular.Size16.ChevronDown())"
+                          OnClick="ToggleOpenMenu">Open</FluentButton>
+            <FluentMenu Anchor="@OpenButtonId" @bind-Open="_openMenu" VerticalPosition="VerticalPosition.Bottom" HorizontalPosition="HorizontalPosition.End" Anchored="true">
+                <FluentMenuItem OnClick="OpenAnyAsync">
+                    <FluentIcon Value="@(new Icons.Regular.Size16.FolderOpen())" Slot="start" Color="Color.Neutral" />
+                    Browse all readable files…
+                </FluentMenuItem>
+                @foreach (var group in Groups)
+                {
+                    <FluentDivider Role="DividerRole.Separator" />
+                    @foreach (var entry in group.Formats)
+                    {
+                        var format = entry.Format;
+                        <FluentMenuItem OnClick="@(() => OpenTypeAsync(format))" title="@entry.ExtensionList">
+                            <FluentIcon Value="@entry.Icon" Width="16px" Slot="start" Color="Color.Neutral" />
+                            @entry.Name
+                        </FluentMenuItem>
+                    }
+                }
+            </FluentMenu>
+        }
+        else
+        {
+            <FluentButton Id="@OpenButtonId" Appearance="Appearance.Outline" Title="Open another file" aria-label="Open another file"
+                          IconStart="@(new Icons.Regular.Size20.FolderOpen())" OnClick="OnOpen">Open</FluentButton>
+        }
+        <FluentButton Appearance="Appearance.Outline" Title="Add this document to Convert"
+                      IconStart="@(new Icons.Regular.Size20.DocumentArrowRight())" OnClick="OnConvert">Convert this</FluentButton>
+        <FluentButton Appearance="Appearance.Stealth" Title="Close this document and go back to Recent and File types"
+                      IconStart="@(new Icons.Regular.Size20.Dismiss())" OnClick="OnClose">Close</FluentButton>
+    </div>
+</div>
+
+@code {
+    private static readonly ReaderTheme[] Palettes = [ReaderTheme.Paper, ReaderTheme.Sepia, ReaderTheme.Dusk, ReaderTheme.Night];
+
+    [Parameter, EditorRequired] public ReaderViewSettings Settings { get; set; } = new();
+
+    /// <summary>The user's reading defaults from Settings; "Reset to defaults" goes back to these.</summary>
+    [Parameter] public ReaderViewSettings Defaults { get; set; } = new();
+    [Parameter] public EventCallback<ReaderViewSettings> SettingsChanged { get; set; }
+    [Parameter] public EventCallback<ReaderTheme> PaletteSelected { get; set; }
+    [Parameter] public ReaderMode Mode { get; set; }
+    [Parameter] public EventCallback<ReaderMode> ModeChanged { get; set; }
+    [Parameter] public string Title { get; set; } = "Untitled";
+    [Parameter] public int WordCount { get; set; }
+    [Parameter] public bool ShowOutline { get; set; }
+    [Parameter] public bool Focus { get; set; }
+    [Parameter] public EventCallback OnToggleOutline { get; set; }
+    [Parameter] public EventCallback OnToggleFocus { get; set; }
+    [Parameter] public EventCallback OnOpen { get; set; }
+    [Parameter] public EventCallback OnConvert { get; set; }
+
+    /// <summary>Closes the document and returns to the start page (Recent and File types).</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>True in the Photino host, where Open shows a menu of types (native dialogs can filter by type).</summary>
+    [Parameter] public bool IsDesktop { get; set; }
+
+    /// <summary>Readable formats grouped for the Open menu.</summary>
+    [Parameter] public IReadOnlyList<AllInOnePdf.UI.Services.Shared.FormatGroup> Groups { get; set; } = [];
+
+    /// <summary>Desktop only: open the native dialog filtered to one type.</summary>
+    [Parameter] public EventCallback<FileFormat> OnOpenType { get; set; }
+
+    /// <summary>Element id of the Open button, so the web host can anchor a file input to it.</summary>
+    [Parameter] public string OpenButtonId { get; set; } = "rd-open";
+
+    private bool _panelOpen;
+    private bool _openMenu;
+
+    private void ToggleOpenMenu() => _openMenu = !_openMenu;
+
+    private Task OpenAnyAsync()
+    {
+        _openMenu = false;
+        return OnOpen.InvokeAsync();
+    }
+
+    private Task OpenTypeAsync(FileFormat format)
+    {
+        _openMenu = false;
+        return OnOpenType.InvokeAsync(format);
+    }
+
+    private string WordsLabel => WordCount == 1 ? "1 word" : $"{WordCount.ToString("N0", System.Globalization.CultureInfo.CurrentCulture)} words";
+
+    private string ReadingTimeLabel
+    {
+        get
+        {
+            var minutes = Math.Max(1, (int)Math.Ceiling(WordCount / 200d));
+            return minutes < 60 ? $"{minutes} min read" : $"{minutes / 60} h {minutes % 60} min read";
+        }
+    }
+
+    private static string ToggleClass(bool on) => on ? "rd-toggle is-on" : "rd-toggle";
+
+    /// <summary>Closes the text settings panel; returns true when it was open.</summary>
+    public bool ClosePanel()
+    {
+        if (!_panelOpen)
+        {
+            return false;
+        }
+
+        _panelOpen = false;
+        StateHasChanged();
+        return true;
+    }
+
+    private void TogglePanel() => _panelOpen = !_panelOpen;
+
+    private void ClosePanelFromBackdrop() => _panelOpen = false;
+
+    private Task SelectPalette(ReaderTheme palette) => PaletteSelected.InvokeAsync(palette);
+
+    private Task Change(ReaderViewSettings settings) => SettingsChanged.InvokeAsync(settings.Normalized());
+
+    private bool IsDefaultTypography => ReaderViewSettings.WithTypographyOf(Settings, Defaults) == Settings;
+
+    private Task ResetTypography() => Change(ReaderViewSettings.WithTypographyOf(Settings, Defaults));
+}

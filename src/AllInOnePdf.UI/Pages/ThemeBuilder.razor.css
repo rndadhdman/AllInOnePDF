@@ -1,0 +1,354 @@
+.tb-root {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--aio-header-height, 48px));
+    min-height: 420px;
+    background: var(--neutral-layer-1);
+}
+
+.tb-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    height: calc(100vh - var(--aio-header-height, 48px));
+    color: var(--neutral-foreground-hint);
+}
+
+/* ---- top bar ---------------------------------------------------------- */
+.tb-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 52px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-layer-1);
+}
+
+.tb-name {
+    flex: 0 1 320px;
+    min-width: 140px;
+}
+
+.tb-dirty {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px;
+    font-size: 12px;
+    color: var(--neutral-foreground-hint);
+    white-space: nowrap;
+}
+
+.tb-dirty-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--neutral-stroke-rest);
+}
+
+.tb-dirty.is-dirty .tb-dirty-dot {
+    background: var(--accent-fill-rest);
+}
+
+.tb-dirty.is-dirty {
+    color: var(--neutral-foreground-rest);
+}
+
+.tb-spacer {
+    flex: 1 1 auto;
+}
+
+.tb-sep {
+    width: 1px;
+    height: 24px;
+    margin: 0 4px;
+    background: var(--neutral-stroke-divider-rest);
+}
+
+.tb-banner {
+    flex: 0 0 auto;
+    padding: 8px 12px 0;
+}
+
+/* ---- main area -------------------------------------------------------- */
+.tb-main {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    min-height: 0;
+}
+
+.tb-preview {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.tb-preview-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 48px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-layer-2);
+}
+
+/* Segmented control, Windows style: one outlined group of joined buttons; the chosen one is filled and carries an
+   accent line under its label. Same look as the segmented settings in the panel. */
+.tb-modes {
+    display: inline-flex;
+    border: 1px solid var(--neutral-stroke-rest);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tb-mode {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 14px;
+    border: 0;
+    background: var(--neutral-fill-rest, var(--neutral-layer-1));
+    color: var(--neutral-foreground-rest);
+    font: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.tb-mode + .tb-mode {
+    border-left: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.tb-mode:hover {
+    background: var(--neutral-fill-hover, var(--neutral-fill-stealth-hover));
+}
+
+.tb-mode.is-on {
+    background: var(--neutral-fill-stealth-active, var(--neutral-fill-secondary-rest));
+    font-weight: 600;
+}
+
+.tb-mode.is-on::after {
+    content: "";
+    position: absolute;
+    left: 25%;
+    right: 25%;
+    bottom: 2px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--accent-fill-rest);
+}
+
+.tb-mode:focus-visible {
+    outline: 2px solid var(--accent-fill-rest);
+    outline-offset: -3px;
+}
+
+.tb-pick {
+    display: inline-flex;
+}
+
+/* Sample and preset pickers give up width before anything wraps. */
+.tb-pick-flex {
+    flex: 0 1 auto;
+    min-width: 120px;
+}
+
+.tb-pick-sample {
+    width: 180px;
+}
+
+.tb-preset {
+    display: inline-flex;
+}
+
+.tb-pick-flex ::deep fluent-select {
+    min-width: 0;
+}
+
+.tb-preview-end {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.tb-warn-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: var(--neutral-fill-secondary-rest, rgba(127, 127, 127, .12));
+    font-size: 12px;
+    color: var(--neutral-foreground-rest);
+    cursor: help;
+}
+
+/* Below 1400 px the status shows the count only (the word stays for screen readers; the list of warnings is in the
+   tooltip), so the preview bar fits on one row. */
+.tb-warn-word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+@media (min-width: 1400px) {
+    .tb-warn-word {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip: auto;
+    }
+}
+
+.tb-preview-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+/* ---- settings panel --------------------------------------------------- */
+.tb-panel {
+    flex: 0 0 360px;
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border-left: 1px solid var(--neutral-stroke-divider-rest);
+    background: var(--neutral-layer-1);
+}
+
+.tb-panel.is-collapsed {
+    display: none;
+}
+
+.tb-panel-bar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 4px 8px 4px 14px;
+    border-bottom: 1px solid var(--neutral-stroke-divider-rest);
+}
+
+.tb-panel-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.tb-panel-sel {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--neutral-foreground-hint);
+    font-size: 12px;
+}
+
+.tb-panel ::deep .tb-panel-inner {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.tb-panel-bar ::deep .tb-panel-close,
+.tb-preview-bar ::deep .tb-panel-toggle-narrow {
+    display: none;
+}
+
+.tb-panel-bar ::deep .tb-panel-close {
+    margin-left: auto;
+}
+
+/* ---- section list: its own column from 1600 px, hidden below (the panel is an accordion there) ---- */
+.tb-rail {
+    display: none;
+}
+
+@media (min-width: 1600px) {
+    .tb-rail {
+        flex: 0 0 220px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border-right: 1px solid var(--neutral-stroke-divider-rest);
+        background: var(--neutral-layer-1);
+    }
+
+    .tb-rail ::deep .tb-rail-inner {
+        flex: 1 1 auto;
+    }
+
+    /* Settings keep a working width; the preview takes the rest and centres the page in it. */
+    .tb-panel {
+        flex-basis: 400px;
+        width: 400px;
+    }
+}
+
+@media (min-width: 2200px) {
+    .tb-rail {
+        flex-basis: 240px;
+    }
+
+    .tb-panel {
+        flex-basis: 420px;
+        width: 420px;
+    }
+}
+
+/* ---- narrow screens: the panel becomes a drawer ------------------------ */
+@media (max-width: 1100px) {
+    .tb-panel,
+    .tb-panel.is-collapsed {
+        display: flex;
+        position: absolute;
+        /* Below the preview bar (its height comes from the page script), so "Start from…" and the other pickers stay usable. */
+        top: var(--tb-bar-h, 48px);
+        right: 0;
+        bottom: 0;
+        z-index: 5;
+        width: min(380px, 100%);
+        box-shadow: var(--aio-shadow-16);
+        transform: translateX(100%);
+        visibility: hidden;
+        transition: transform .18s ease, visibility .18s;
+    }
+
+    .tb-panel.is-open {
+        transform: none;
+        visibility: visible;
+    }
+
+    .tb-panel-bar ::deep .tb-panel-close,
+    .tb-preview-bar ::deep .tb-panel-toggle-narrow {
+        display: inline-flex;
+    }
+
+    .tb-preview-bar ::deep .tb-panel-toggle-wide {
+        display: none;
+    }
+}
+
+/* Below 1100 px Reset / Export / Save as… live in the "More" menu (the page sets the flag via matchMedia).
+   The dirty indicator keeps its text at every width. */
+@media (max-width: 760px) {
+    .tb-topbar {
+        flex-wrap: wrap;
+    }
+}

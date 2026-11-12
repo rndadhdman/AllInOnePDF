@@ -1,0 +1,20 @@
+@inherits SettingsGroupBase
+
+<SwitchSetting Label="Add a cover page" Get="() => T.Cover.Enabled" Set="v => T.Cover.Enabled = v" />
+@if (T.Cover.Enabled)
+{
+    <EnumSetting TEnum="CoverStyle" Label="Style" Segmented="true" Get="() => T.Cover.Style" Set="v => T.Cover.Style = v" />
+    <SwitchSetting Label="Title" Get="() => T.Cover.ShowTitle" Set="v => T.Cover.ShowTitle = v" />
+    <SwitchSetting Label="Subtitle" Get="() => T.Cover.ShowSubtitle" Set="v => T.Cover.ShowSubtitle = v" />
+    <SwitchSetting Label="Author" Get="() => T.Cover.ShowAuthor" Set="v => T.Cover.ShowAuthor = v" />
+    <SwitchSetting Label="Date" Get="() => T.Cover.ShowDate" Set="v => T.Cover.ShowDate = v" />
+    <NumberSetting Label="Title size" Unit="pt" Min="16" Max="96" Step="1" Key="cover-size" Get="() => T.Cover.TitleSizePt" Set="v => T.Cover.TitleSizePt = v" />
+    <ColorField Label="Background" AllowNull="true" InheritLabel="Page background" Inherited="() => T.Page.Background" Get="() => T.Cover.Background" Set="v => T.Cover.Background = v" />
+    <ColorField Label="Title colour" AllowNull="true" InheritLabel="Heading colour" Inherited="() => T.Headings.Color" Get="() => T.Cover.TitleColor" Set="v => T.Cover.TitleColor = v" />
+    @if (T.Cover.Style != CoverStyle.Banner)
+    {
+        <SwitchSetting Label="Accent bar above the title" Get="() => T.Cover.AccentBar" Set="v => T.Cover.AccentBar = v" />
+    }
+    <TextSetting Label="Note" Placeholder="For example: Draft, or Confidential" Get="() => T.Cover.Note" Set="v => T.Cover.Note = v" />
+    <TextSetting Label="Title override" Placeholder="Empty: the document title" Get="() => T.Cover.TitleOverride" Set="v => T.Cover.TitleOverride = v" />
+}

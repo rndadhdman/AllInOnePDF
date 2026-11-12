@@ -1,0 +1,58 @@
+@* Replacement for a page that threw. Shown by the ErrorBoundary in MainLayout. *@
+@inject IHostServices Host
+
+<section class="aio-error" role="alert" aria-labelledby="aio-error-title">
+    <div class="aio-error-card">
+        <div class="aio-error-icon" aria-hidden="true">
+            <FluentIcon Value="@(new Icons.Regular.Size24.ErrorCircle())" Color="Color.Error" />
+        </div>
+        <div class="aio-error-body">
+            <h2 id="aio-error-title" class="aio-error-title">This page stopped because of an error</h2>
+            <p class="aio-error-text">
+                Saved files and settings are not affected, but changes on this page that were not saved may be lost.
+                Try again to restart the page, or choose another page in the navigation. To report the problem, copy the
+                details and include them.
+            </p>
+
+            @if (Error is not null)
+            {
+                <details class="aio-error-details">
+                    <summary>Details</summary>
+                    <pre class="aio-error-trace">@Details</pre>
+                </details>
+            }
+
+            <div class="aio-error-actions">
+                <FluentButton Appearance="Appearance.Accent" IconStart="@(new Icons.Regular.Size20.ArrowClockwise())" OnClick="RetryAsync">Try again</FluentButton>
+                @if (Error is not null)
+                {
+                    <FluentButton Appearance="Appearance.Outline" IconStart="@(new Icons.Regular.Size20.Copy())" OnClick="CopyAsync">@(_copied ? "Copied" : "Copy details")</FluentButton>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter] public Exception? Error { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+
+    private bool _copied;
+
+    private string Details => Error is null ? string.Empty : $"{Error.GetType().FullName}: {Error.Message}\n\n{Error.StackTrace}";
+
+    private Task RetryAsync() => OnRetry.InvokeAsync();
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await Host.CopyToClipboardAsync(Details);
+            _copied = true;
+        }
+        catch (Exception)
+        {
+            _copied = false;
+        }
+    }
+}
